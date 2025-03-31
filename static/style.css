@@ -1,0 +1,121 @@
+body {
+    display: flex ;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    height: 100vh;
+    overflow: hidden  ;
+}
+
+
+#toggle-left{
+    position: absolute;
+    top: 10px;
+    left: 300px;
+    z-index: 1000;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#toggle-right{
+    position: absolute;
+    top: 10px;
+    left: 450px;
+    z-index: 1000;
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.sidebarleft {
+    width: 250px;
+    background-color: aliceblue;
+    padding: 15px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.5s ease;
+    display: flex ;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}
+
+
+.sidebarright {
+    width: 250px;
+    background-color: rgb(183, 172, 168);
+    padding: 15px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.5s ease;
+    display: flex ;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 1000;
+}
+
+.sidebarleft.hidden {
+    transform: translateX(-100%);
+}
+
+
+.sidebarright.hidden {
+    transform: translateX(100%);
+}
+
+
+.main-content {
+    flex-grow: 1;
+    padding: 20px;
+    transition: margin-left 0.5s ease;
+    position: relative;
+    z-index: 0;
+}
+
+.main-content canvas {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+body.sidebarleft-hidden .main-content {
+    margin-left: 0;
+}
+
+body.sidebarright-hidden .main-content {
+    margin-right: 0;
+}
+
+
+ #multisliderRight {
+    flex-grow: 1 ;
+    display: flex;
+    height: fit-content;
+    align-items: center;
+ }
+
+#multisliderLeft {
+        flex-grow: 1 ;
+        display: flex;
+        height: fit-content;
+        align-items: center;
+    }
+
+
+    #myChart {
+        width: 100%;
+        height: 100%;
+    }
