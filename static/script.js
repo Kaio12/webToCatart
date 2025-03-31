@@ -1,3 +1,8 @@
+//script coté navigateur
+//intègre des sliders (nexusUI) et un nuage de points (chart.js)
+// envoie (et reçoit) des messages via socket.io vers max/msp
+
+//sendOSC met en forme et envoie les messages OSC
 function sendOSC(address, args) {
     if (socket && socket.connected) {
         socket.emit('osc', { address, args });
@@ -6,6 +11,7 @@ function sendOSC(address, args) {
     }
 }
 
+// construit les sliders
 document.addEventListener('DOMContentLoaded', () => {
     const toggleleft = document.getElementById('toggle-left');
     const sidebarleft = document.getElementById('sidebarleft');
@@ -67,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const ctx = document.getElementById('myChart');
 
+//construit le nuage de points
 const data = {
     datasets: [{
       label: 'Scatter Dataset',
@@ -129,7 +136,7 @@ const myChart  = new Chart(ctx, {
 });
 
 
-
+//socket.io connection
 const socket = io("http://127.0.0.1:5000/browser"); // Connect to the /browser namespace
 
 socket.on('connect', function() {
