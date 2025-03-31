@@ -10,16 +10,28 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ -1883.0, 4.0, 1479.0, 802.0 ],
+		"rect" : [ -1883.0, 3.0, 1033.0, 802.0 ],
 		"gridsize" : [ 15.0, 15.0 ],
 		"boxes" : [ 			{
+				"box" : 				{
+					"id" : "obj-9",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 175.0, 151.0, 52.0, 22.0 ],
+					"text" : "data 5 6"
+				}
+
+			}
+, 			{
 				"box" : 				{
 					"id" : "obj-5",
 					"maxclass" : "message",
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 440.0, 85.0, 90.0, 22.0 ],
+					"patching_rect" : [ 375.0, 77.0, 90.0, 22.0 ],
 					"text" : "script npm stop"
 				}
 
@@ -31,7 +43,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 315.0, 74.0, 91.0, 22.0 ],
+					"patching_rect" : [ 379.0, 36.0, 91.0, 22.0 ],
 					"text" : "script npm start"
 				}
 
@@ -75,7 +87,7 @@
 					"numoutlets" : 1,
 					"offset" : [ 0.0, 0.0 ],
 					"outlettype" : [ "bang" ],
-					"patching_rect" : [ 371.0, 253.0, 400.0, 220.0 ],
+					"patching_rect" : [ 344.0, 258.0, 400.0, 220.0 ],
 					"viewvisibility" : 1
 				}
 
@@ -103,6 +115,8 @@
 					"saved_object_attributes" : 					{
 						"autostart" : 0,
 						"defer" : 0,
+						"node_bin_path" : "",
+						"npm_bin_path" : "",
 						"watch" : 0
 					}
 ,
@@ -157,6 +171,13 @@
 				"patchline" : 				{
 					"destination" : [ "obj-6", 0 ],
 					"source" : [ "obj-8", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-6", 0 ],
+					"source" : [ "obj-9", 0 ]
 				}
 
 			}
