@@ -31,3 +31,4 @@ Max.addHandler("data", (...msg) => {
     console.log("Message from Max:", msg);
     socket.emit("message", JSON.stringify(msg));
 });
+

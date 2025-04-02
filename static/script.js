@@ -11,6 +11,7 @@ function sendOSC(address, args) {
     }
 }
 
+let data = [];
 // construit les sliders
 document.addEventListener('DOMContentLoaded', () => {
     const toggleleft = document.getElementById('toggle-left');
@@ -30,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
         body.classList.toggle('sidebright-hidden');
     });
 
-    var multisliderRight = new Nexus.Multislider('#multisliderRight', {
+    let multisliderRight = new Nexus.Multislider('#multisliderRight', {
     'size': [200,600],
     'numberOfSliders': 3,
     'min': 0,
@@ -50,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
   sendOSC("/multisliderRight", v);
     });
 
-    multisliderLeft = new Nexus.Multislider('#multisliderLeft',{
+    let multisliderLeft = new Nexus.Multislider('#multisliderLeft',{
     'size': [200,600],
     'numberOfSliders': 3,
     'min': 0,
@@ -73,69 +74,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const ctx = document.getElementById('myChart');
 
-//construit le nuage de points
-const data = {
-    datasets: [{
-      label: 'Scatter Dataset',
-      data: [{
-        x: -10,
-        y: 0
-      }, {
-        x: 0,
-        y: 10
-      }, {
-        x: 10,
-        y: 5
-      }, {
-        x: 0.5,
-        y: 5.5
-      }],
-      backgroundColor: 'rgb(255, 99, 132)'
-    }],
-  };
-
-const myChart  = new Chart(ctx, {
-    type: 'scatter',
-    data: data,
-    options: {
-        plugins: {
-            title: {
-              display: false // Hides the title
-            },
-            legend: {
-              display: false // Hides the legend
-            },
-            tooltip: { enabled: false }, // Disable tooltips
-            hover: { mode: null }, // Disable hover effect
-            interaction: { mode: null } // Disable interactions
-        },
-        scales: {
-          x: {
-            grid: {
-                display: false  // Hide X-axis grid
-            }
-        },
-        y: {
-            grid: {
-                display: false  // Hide Y-axis grid
-            }
-        },
-        },
-        onHover: (event, chartElements) => {
-          if (chartElements.length > 0) {
-              const datasetIndex = chartElements[0].datasetIndex;
-              const dataIndex = chartElements[0].index;
-              const value = myChart.data.datasets[datasetIndex].data[dataIndex];
-              console.log(value);
-              var result = [value.x, value.y];
-              console.log(result);
-              sendOSC("/hover", result);
-          }
-      }
-    }
-});
-
-
 //socket.io connection
 const socket = io("http://127.0.0.1:5000/browser"); // Connect to the /browser namespace
 
@@ -144,6 +82,47 @@ socket.on('connect', function() {
     socket.emit('message', "Hello from the browser");
 });
 
-socket.on('to_browser', (data) => {
+let myChart;
+
+socket.on('to_browser', (jsonString) => {
+    data = JSON.parse(jsonString);
     console.log("Message from Max/MSP:", data);
+
+    //construit le nuage de points
+    if (!myChart) {
+      myChart= new Chart(ctx, {
+        type: 'scatter',
+        data: {
+          datasets: [{
+            label: 'Coordinates',
+            data: data, 
+            backgroundColor: 'blue',
+          }]
+      },
+      options: {
+        plugins: {
+                  title: {display: false }, 
+                  legend: {display: false},
+                  tooltip: { enabled: false }, 
+                  hover: { mode: null }, 
+                  interaction: { mode: null }
+                },
+        scales: {
+                  x: {grid: {display: false}},
+                  y: {grid: {display: false}},
+                },
+        onHover: (event, chartElements) => {
+            if (chartElements.length > 0) {
+                const datasetIndex = chartElements[0].datasetIndex;
+                const dataIndex = chartElements[0].index;
+                const value = myChart.data.datasets[datasetIndex].data[dataIndex];
+                sendOSC("/hover", [value.x, value.y]);
+            }
+          }
+      }
 });
+    } else {
+      myChart.data.datasets[0].data = data;
+        myChart.update();
+    }
+  });
