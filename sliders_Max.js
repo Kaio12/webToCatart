@@ -27,8 +27,8 @@ socket.on('to_max', (data) => {
     maxApi.outlet(data);
 });
 
-Max.addHandler("data", (...msg) => {
+Max.addHandler("data", (msg) => {
     console.log("Message from Max:", msg);
-    socket.emit("message", JSON.stringify(msg));
+    socket.emit("message", msg);
 });
 

@@ -1,6 +1,6 @@
 //script coté navigateur
 //intègre des sliders (nexusUI) et un nuage de points (chart.js)
-// envoie (et reçoit) des messages via socket.io vers max/msp
+// envoie (et reçoit) des messages via socket.io vers ou de max/msp
 
 //sendOSC met en forme et envoie les messages OSC
 function sendOSC(address, args) {
@@ -11,7 +11,6 @@ function sendOSC(address, args) {
     }
 }
 
-let data = [];
 // construit les sliders
 document.addEventListener('DOMContentLoaded', () => {
     const toggleleft = document.getElementById('toggle-left');
@@ -83,11 +82,23 @@ socket.on('connect', function() {
 });
 
 let myChart;
+let data;
 
-socket.on('to_browser', (jsonString) => {
-    data = JSON.parse(jsonString);
-    console.log("Message from Max/MSP:", data);
+socket.on('to_browser', (raw) => {
+  console.log("type de raw :", typeof raw);
+  console.log("Message brut reçu de Max/MSP:", raw);
 
+  try {
+    let rawData = JSON.parse(raw);
+
+    data = rawData.map(point => ({
+      x: parseFloat(point.x),
+      y: parseFloat(point.y)
+    })).filter(point => !isNaN(point.x) && !isNaN(point.y));
+    console.log("Parsed from Max/MSP:", data);
+  } catch (e) {
+    console.error("erreur de parsing :", e);
+  };
     //construit le nuage de points
     if (!myChart) {
       myChart= new Chart(ctx, {
@@ -108,8 +119,16 @@ socket.on('to_browser', (jsonString) => {
                   interaction: { mode: null }
                 },
         scales: {
-                  x: {grid: {display: false}},
-                  y: {grid: {display: false}},
+                  x: {
+                    type: 'linear',
+                    min: 2500,
+                    max: 6500,
+                    grid: {display: false}},
+                  y: {
+                    type: 'linear',
+                    min: 0,
+                    max: 0.6,
+                    grid: {display: false}},
                 },
         onHover: (event, chartElements) => {
             if (chartElements.length > 0) {
