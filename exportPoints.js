@@ -15,7 +15,8 @@ function exportPoints()
                         {
                             var point = {
                                 x: DistX[i],
-                                y: DistY[i]
+                                y: DistY[i],
+                                sampleId: i
                             };
                             points.push(point);
                         }

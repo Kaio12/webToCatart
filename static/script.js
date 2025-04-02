@@ -5,6 +5,7 @@
 //sendOSC met en forme et envoie les messages OSC
 function sendOSC(address, args) {
     if (socket && socket.connected) {
+      console.log("🚀 Sending OSC:", address, args);
         socket.emit('osc', { address, args });
     } else {
         console.error("Socket is not connected. Cannot send OSC message.");
@@ -93,7 +94,8 @@ socket.on('to_browser', (raw) => {
 
     data = rawData.map(point => ({
       x: parseFloat(point.x),
-      y: parseFloat(point.y)
+      y: parseFloat(point.y),
+      sampleId: point.sampleId
     })).filter(point => !isNaN(point.x) && !isNaN(point.y));
     console.log("Parsed from Max/MSP:", data);
   } catch (e) {
@@ -135,7 +137,7 @@ socket.on('to_browser', (raw) => {
                 const datasetIndex = chartElements[0].datasetIndex;
                 const dataIndex = chartElements[0].index;
                 const value = myChart.data.datasets[datasetIndex].data[dataIndex];
-                sendOSC("/hover", [value.x, value.y]);
+                sendOSC("/hover", value.sampleId);
             }
           }
       }
