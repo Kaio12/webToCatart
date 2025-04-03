@@ -84,6 +84,18 @@ socket.on('connect', function() {
 
 let myChart;
 let data;
+let bounds;
+function getBounds(data) {
+  let xs = data.map(p => p.x);
+  let ys = data.map(p => p.y);
+
+  return {
+      xMin: Math.min(...xs),
+      xMax: Math.max(...xs),
+      yMin: Math.min(...ys),
+      yMax: Math.max(...ys)
+  };
+}
 
 socket.on('to_browser', (raw) => {
   console.log("type de raw :", typeof raw);
@@ -98,6 +110,8 @@ socket.on('to_browser', (raw) => {
       sampleId: point.sampleId
     })).filter(point => !isNaN(point.x) && !isNaN(point.y));
     console.log("Parsed from Max/MSP:", data);
+    bounds = getBounds(data);
+
   } catch (e) {
     console.error("erreur de parsing :", e);
   };
@@ -123,13 +137,13 @@ socket.on('to_browser', (raw) => {
         scales: {
                   x: {
                     type: 'linear',
-                    min: 2500,
-                    max: 6500,
+                    min: bounds.xMin - 50,
+                    max: bounds.xMax + 50,
                     grid: {display: false}},
                   y: {
                     type: 'linear',
-                    min: 0,
-                    max: 0.6,
+                    min: bounds.yMin - 0.05,
+                    max: bounds.yMax + 0.05,
                     grid: {display: false}},
                 },
         onHover: (event, chartElements) => {
@@ -144,6 +158,12 @@ socket.on('to_browser', (raw) => {
 });
     } else {
       myChart.data.datasets[0].data = data;
+
+      // Update axes dynamically
+      myChart.options.scales.x.min = bounds.xMin - 50;
+      myChart.options.scales.x.max = bounds.xMax + 50;
+      myChart.options.scales.y.min = bounds.yMin - 0.05;
+      myChart.options.scales.y.max = bounds.yMax + 0.05;
         myChart.update();
     }
   });
