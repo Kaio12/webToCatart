@@ -85,15 +85,22 @@ socket.on('connect', function() {
 let myChart;
 let data;
 let bounds;
+
 function getBounds(data) {
   let xs = data.map(p => p.x);
   let ys = data.map(p => p.y);
+  let ls = data.map(p => p.loudnessMax);
+  let es = data.map(p => p.energyMax);
 
   return {
       xMin: Math.min(...xs),
       xMax: Math.max(...xs),
       yMin: Math.min(...ys),
-      yMax: Math.max(...ys)
+      yMax: Math.max(...ys),
+      lMin: Math.min(...ls),
+      lMax: Math.max(...ls),
+      eMin: Math.min(...es),
+      eMax: Math.max(...es)
   };
 }
 
@@ -104,17 +111,35 @@ socket.on('to_browser', (raw) => {
   try {
     let rawData = JSON.parse(raw);
 
-    data = rawData.map(point => ({
+    let parsed = rawData.map(point => ({
       x: parseFloat(point.x),
       y: parseFloat(point.y),
-      sampleId: point.sampleId
+      sampleId: point.sampleId,
+      loudnessMax: parseFloat(point.loudnessmax),
+      energyMax: parseFloat(point.energymax)
     })).filter(point => !isNaN(point.x) && !isNaN(point.y));
-    console.log("Parsed from Max/MSP:", data);
+
+    data = parsed;
     bounds = getBounds(data);
 
-  } catch (e) {
-    console.error("erreur de parsing :", e);
-  };
+    // définit une fonction pour scaler les valeurs
+    const mapRange = (val, inMin, inMax, outMin, outMax) =>
+      ((val - inMin) / (inMax - inMin)) * (outMax - outMin) + outMin;
+
+    // Transform data for Chart.js
+    const chartData = data.map(p => {
+    const radius = mapRange(p.loudnessMax, bounds.lMin, bounds.lMax, 5, 20);
+    const energyHue = mapRange(p.energyMax, bounds.eMin, bounds.eMax, 240, 0); // blue to red
+    const color = `hsl(${energyHue}, 100%, 50%)`;
+    return {
+      x: p.x,
+      y: p.y,
+      sampleId: p.sampleId,
+      radius,
+      backgroundColor: color
+    };
+  });
+
     //construit le nuage de points
     if (!myChart) {
       myChart= new Chart(ctx, {
@@ -123,7 +148,8 @@ socket.on('to_browser', (raw) => {
           datasets: [{
             label: 'Coordinates',
             data: data, 
-            backgroundColor: 'blue',
+            backgroundColor: chartData.map(p => p.backgroundColor),
+            pointRadius: chartData.map(p => p.radius),
           }]
       },
       options: {
@@ -166,4 +192,7 @@ socket.on('to_browser', (raw) => {
       myChart.options.scales.y.max = bounds.yMax + 0.05;
         myChart.update();
     }
+  } catch (e) {
+    console.error("erreur de parsing :", e);
+  }
   });
