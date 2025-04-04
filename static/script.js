@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-const ctx = document.getElementById('myChart');
+const ctx = document.getElementById('myChart').getContext('2d');
 
 //socket.io connection
 const socket = io("http://127.0.0.1:5000/browser"); // Connect to the /browser namespace
@@ -153,12 +153,15 @@ socket.on('to_browser', (raw) => {
           }]
       },
       options: {
+        interaction: {
+          mode: 'nearest',
+          intersect: false,
+          axis: 'xy'
+        },
         plugins: {
                   title: {display: false }, 
                   legend: {display: false},
                   tooltip: { enabled: false }, 
-                  hover: { mode: null }, 
-                  interaction: { mode: null }
                 },
         scales: {
                   x: {
@@ -170,10 +173,18 @@ socket.on('to_browser', (raw) => {
                     type: 'linear',
                     min: bounds.yMin - 0.05,
                     max: bounds.yMax + 0.05,
-                    grid: {display: false}},
+                    grid: {display: false}
+                  },
                 },
+
         onHover: (event, chartElements) => {
-            if (chartElements.length > 0) {
+          const nearestPoints = myChart.getElementsAtEventForMode(
+            event,
+            'nearest',
+            { intersect: false, radius: 30 },
+            false
+          );
+            if (nearestPoints.length) {
                 const datasetIndex = chartElements[0].datasetIndex;
                 const dataIndex = chartElements[0].index;
                 const value = myChart.data.datasets[datasetIndex].data[dataIndex];
