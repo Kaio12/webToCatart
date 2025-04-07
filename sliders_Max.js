@@ -6,8 +6,17 @@ const Max = require('max-api');
 
 const maxApi = require('max-api');
 const  io  = require('socket.io-client'); 
+const axios = require ('axios');
 
-const socket = io("http://127.0.0.1:5001/max");
+let socket;
+
+axios.get("http://localhost:5001/api/ip")
+    .then(response => {
+        const ip = response.data.ip;
+        const url = `http://${ip}:5001/max`;
+        console.log("Connexion au socket :", url);
+
+        socket = io(url);
 
 socket.on('connect', () => {
     console.log("WebSocket is open now.");
@@ -27,8 +36,12 @@ socket.on('to_max', (data) => {
     maxApi.outlet(data);
 });
 
+})
+.catch(error => {
+  console.error("Impossible de récupérer l'IP depuis le serveur Flask :", error);
+});
+
 Max.addHandler("data", (msg) => {
     console.log("Message from Max:", msg);
     socket.emit("message", msg);
 });
-
