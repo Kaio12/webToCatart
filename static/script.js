@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const ctx = document.getElementById('myChart').getContext('2d');
 
 //socket.io connection
-const socket = io("http://127.0.0.1:5000/browser"); // Connect to the /browser namespace
+const socket = io("http://127.0.0.1:5001/browser"); // Connect to the /browser namespace
 
 socket.on('connect', function() {
     console.log('Connecté ou pas?');
