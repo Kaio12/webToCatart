@@ -3,7 +3,10 @@ import json
 from collections import deque, Counter
 from datetime import datetime
 import sys
+import stumpy
+import numpy as np
 
+#la taille de la liste en arg dans l'appel du script
 nbItRech = int(sys.argv[1])
 
 
@@ -29,19 +32,19 @@ def is_iterative_gesture(log_path="logs/browser_data2.log", min_repeat=2, sequen
                 except Exception:
                     continue
 
+    args_sequence = np.array(args_sequence)
+    args_sequence = 
+
     # Supprimer les répétitions consécutives
-    filtered = [args_sequence[0]] if args_sequence else []
-    for val in args_sequence[1:]:
-        if val != filtered[-1]:
-            filtered.append(val)
+    mask = np.insert(args_sequence[1:] != args_sequence[:-1], 0, True)
+    filtered = args_sequence[mask]
+    print("Liste filtrée (sans répétitions consécutives) :", filtered.tolist())
 
     # Détection de séquences répétées
     seen = Counter()
-    recent = deque(maxlen=sequence_length)
-    for val in filtered:
-        recent.append(val)
-        if len(recent) == sequence_length:
-            seen[tuple(recent)] += 1
+    for i in range(len(filtered)-sequence_length +1):
+        window = tuple(filtered[i:i + sequence_length])
+        seen[window] += 1
 
     # Affichage
     repeated = {seq: count for seq, count in seen.items() if count >= min_repeat}
@@ -51,6 +54,17 @@ def is_iterative_gesture(log_path="logs/browser_data2.log", min_repeat=2, sequen
             print(f"  Séquence {seq} répétée {count} fois")
     else:
         print("Aucun geste itératif détecté.")
+
+    # analyse temporelle avec stumpy
+    if len(args_sequence) >= sequence_length:
+        print("\nAnalyse STUMP des motifs similaires :")
+        mp = stumpy.stump(args_sequence, m=sequence_length)
+        motif_index = int(np.argmin(mp[:, 0]))  # motif le plus similaire
+        motif = args_sequence[motif_index:motif_index + sequence_length]
+        print(f"Motif récurrent détecté à l'index {motif_index} : {motif.tolist()}")
+    else:
+        print("\nPas assez de données pour une analyse STUMP.")
+
 
 if __name__ == "__main__":
     is_iterative_gesture()
