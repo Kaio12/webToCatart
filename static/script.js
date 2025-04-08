@@ -21,6 +21,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    document.getElementById("delete-log").addEventListener("click", () => {
+      fetch("/delete", { method: "POST" })
+        .then(response => {
+          if (response.ok) {
+            console.log("Fichier supprimé !");
+          } else {
+            console.error("Erreur lors de la suppression.");
+          }
+        });
+    });
+
 
     toggleleft.addEventListener('click', () => {
         sidebarleft.classList.toggle('hidden');

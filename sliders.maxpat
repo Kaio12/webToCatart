@@ -10,18 +10,17 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 5.0, -993.0, 784.0, 924.0 ],
+		"rect" : [ -1863.0, -11.0, 1104.0, 924.0 ],
 		"gridsize" : [ 15.0, 15.0 ],
 		"boxes" : [ 			{
 				"box" : 				{
 					"id" : "obj-83",
-					"linecount" : 5,
 					"maxclass" : "message",
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 457.0, 318.0, 50.0, 76.0 ],
-					"text" : "0.655833 0.7575 0.614167"
+					"patching_rect" : [ 457.0, 318.0, 50.0, 22.0 ],
+					"text" : "12"
 				}
 
 			}
@@ -165,7 +164,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 336.0, 873.0, 59.0, 22.0 ],
-					"text" : "16 15 8 3"
+					"text" : "14 8 7 5"
 				}
 
 			}
@@ -1862,7 +1861,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 1209.0, 1205.0, 248.0, 22.0 ],
-					"text" : "mouse exit 1236.159249 0.532746"
+					"text" : "mouse exit 4286.21 0.577879"
 				}
 
 			}
@@ -1874,7 +1873,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 338.0, 713.0, 138.0, 22.0 ],
-					"text" : "1334.062113 0.530865"
+					"text" : "4278.679011 0.568476"
 				}
 
 			}
@@ -2133,7 +2132,7 @@
 					"cursor_nearest" : 1,
 					"cursor_nearestcolor" : [ 1.0, 0.0, 0.0, 1.0 ],
 					"cursor_noringoffset" : 0,
-					"cursor_position" : [ 1296.407165270349196, 0.532745773359858 ],
+					"cursor_position" : [ 4286.210000793884319, 0.57787890243009 ],
 					"cursor_shape" : "cross",
 					"cursor_size" : 4,
 					"cursor_sizeunit" : 0,
@@ -2287,7 +2286,7 @@
 					"numoutlets" : 1,
 					"offset" : [ 0.0, 0.0 ],
 					"outlettype" : [ "bang" ],
-					"patching_rect" : [ 563.0, 203.0, 400.0, 220.0 ],
+					"patching_rect" : [ 581.0, 212.0, 800.0, 244.0 ],
 					"viewvisibility" : 1
 				}
 

@@ -59,6 +59,17 @@ def handle_max_message(data):
     print('Received message from Max/MSP: ' + data)
     socketio.emit('to_browser', data, namespace='/browser')  # Forward to browser namespace
 
+@app.route('/delete' , methods= ['POST'])
+def delete_file():
+    log_dir = "logs"
+    filepath = os.path.join(log_dir, "browser_data2.log")
+    if os.path.exists(filepath):
+        os.remove(filepath)
+        print(f"Fichier log supprimé: {filepath}")
+    else:
+        print("Fichier log non trouvé")
+    return render_template('index.html')
+
 @socketio.on('osc', namespace='/max')
 def handle_max_osc(data):
     print('Received OSC from Max/MSP: ' + json.dumps(data, indent=2))
