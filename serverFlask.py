@@ -1,10 +1,13 @@
-from flask import Flask, render_template
-from flask_socketio import SocketIO, request
+from flask import Flask, render_template, request
+from flask_socketio import SocketIO
 import json
 import os
 from datetime import datetime
 import socket
 import csv
+import time
+import webbrowser
+import threading
 
 # pour la mise en cache des coordonnées des grains
 catched_points = None
@@ -92,6 +95,7 @@ def log_browser_data(data, is_osc=False):
     with open(log_file, "a") as csvf:
         writer = csv.writer(csvf)
         writer.writerow([timestamp, data])
+
 
 # Lancement du serveur sur toutes les interfaces réseau, sur le port 5000
 if __name__ == '__main__':

@@ -32,8 +32,11 @@ socket.on('close', () => {
 });
 
 socket.on('to_max', (data) => {
-    console.log("Message from browser:", data);
-    maxApi.outlet(data);
+    //console.log("Message from browser:", data);
+    let json = JSON.stringify(data)
+    console.log(json);
+    let obj = JSON.parse(json);
+    maxApi.outlet(obj.args);
 });
 
 })

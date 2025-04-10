@@ -114,7 +114,7 @@ function getBounds(data) {
 // Fonction pour envoyer des messages OSC via socket.io
 sendOSC = function(address, args) {
   if (socket && socket.connected) {
-      console.log("🚀 Sending OSC:", address, args);
+      console.log("Sending OSC:", address, args);
       socket.emit('osc', { address, args });
   } else {
       console.error("Socket is not connected. Cannot send OSC message.");
