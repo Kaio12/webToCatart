@@ -5,14 +5,15 @@
 // construit les deux barres latérales et les sliders
 // === Initialisation de l'interface ===
 // Création des sliders latéraux avec NexusUI, et gestion de leur interaction.
+
 document.addEventListener('DOMContentLoaded', () => {
     const toggleleft = document.getElementById('toggle-left');
     const sidebarleft = document.getElementById('sidebarleft');
     const toggleright = document.getElementById('toggle-right');
     const sidebarright = document.getElementById('sidebarright');
-
     const body = document.body;
 
+    // gestion du bouton fullscreen
     document.getElementById("fullscreen-btn").addEventListener("click", () => {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen();
@@ -20,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.exitFullscreen();
       }
     });
-
+    // gestion du bouton suppression du fichier log
     document.getElementById("delete-log").addEventListener("click", () => {
       fetch("/delete", { method: "POST" })
         .then(response => {
@@ -32,58 +33,56 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-
+    // en attendant la gestion par mouvements des doigts
     toggleleft.addEventListener('click', () => {
         sidebarleft.classList.toggle('hidden');
         body.classList.toggle('sidebarleft-hidden');
-    });
-
+        });
     toggleright.addEventListener('click', () => {
         sidebarright.classList.toggle('hidden');
         body.classList.toggle('sidebright-hidden');
-    });
+        });
 
     // Création du multislider droit
     let multisliderRight = new Nexus.Multislider('#multisliderRight', {
-    'size': [200,600],
-    'numberOfSliders': 3,
-    'min': 0,
-    'max': 1,
-    'step': 0,
-    'candycane': 3,
-    'values': [0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1],
-    'smoothing': 0,
-    'mode': 'bar',
-    });
-
+      'size': [200,600],
+      'numberOfSliders': 3,
+      'min': 0,
+      'max': 1,
+      'step': 0,
+      'candycane': 3,
+      'values': [0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1],
+      'smoothing': 0,
+      'mode': 'bar',
+      });
+      
     multisliderRight.colorize("accent","#ff0");
     multisliderRight.colorize("fill","#333");
 
     multisliderRight.on('change',function(v) {
-  console.log(v);
-  sendOSC("/multisliderRight", v);
-    });
+      console.log(v);
+      sendOSC("/multisliderRight", v);
+      });
 
     // Création du multislider gauche
-    let multisliderLeft = new Nexus.Multislider('#multisliderLeft',{
-    'size': [200,600],
-    'numberOfSliders': 3,
-    'min': 0,
-    'max': 1,
-    'step': 0,
-    'candycane': 3,
-    'values': [0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1],
-    'smoothing': 0,
-    'mode': 'bar',
-    });
-
+    let multisliderLeft = new Nexus.Multislider('#multisliderLeft', {
+      'size': [200,600],
+      'numberOfSliders': 3,
+      'min': 0,
+      'max': 1,
+      'step': 0,
+      'candycane': 3,
+      'values': [0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1],
+      'smoothing': 0,
+      'mode': 'bar',
+      });
     multisliderLeft.colorize("accent","#ff0");
     multisliderLeft.colorize("fill","#333");
 
     multisliderLeft.on('change',function(v) {
-  console.log(v);
-  sendOSC("/multisliderLeft", v);
-    });
+      console.log(v);
+      sendOSC("/multisliderLeft", v);
+      });
 });
 
 // === Préparation du nuage de points Chart.js ===
@@ -96,9 +95,9 @@ let bounds;
 // Fonction utilitaire pour calculer les bornes des valeurs (x, y, loudness, energy)
 function getBounds(data) {
   let xs = data.map(p => p.x);
-  let ys = data.map(p => p.y);
-  let ls = data.map(p => p.loudnessMax);
-  let es = data.map(p => p.energyMax);
+      let ys = data.map(p => p.y);
+      let ls = data.map(p => p.loudnessMax);
+      let es = data.map(p => p.energyMax);
 
   return {
       xMin: Math.min(...xs),
@@ -237,8 +236,6 @@ fetch("/api/ip")
     // Confirmation de la connexion socket établie
     socket.on('connect', () => {
       console.log("✅ Connecté à", data.ip);
-      
-     
-    });
+      });
   })
   .catch(err => console.error("❌ Erreur de récupération IP :", err));

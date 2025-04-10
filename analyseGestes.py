@@ -1,70 +1,63 @@
 import os
-import json
-from collections import deque, Counter
-from datetime import datetime
-import sys
-import stumpy
+from collections import Counter
 import numpy as np
+import pandas as pd
+import ast
 
-#la taille de la liste en arg dans l'appel du script
-nbItRech = int(sys.argv[1])
-
-
-def is_iterative_gesture(log_path="logs/browser_data2.log", min_repeat=2, sequence_length=nbItRech):
+# Fonction principale pour détecter les gestes itératifs à partir d'un fichier de log
+def is_iterative_gesture(log_path="logs/hover_data.csv", min_repeat=2):
+    # Vérifie si le fichier de log existe
     if not os.path.exists(log_path):
         print("Fichier non trouvé.")
         return
-#init le tableau de la séquence d'évènements
+  
     args_sequence = []
-    #Un gestionnaire de contexte est un objet qui met en place un contexte prédéfini au moment de l'exécution de l'instruction with.
+    # Lecture du fichier CSV et transformation des données
     with open(log_path, "r") as f:
-        for line in f:
-            if "OSC" in line and '"/hover"' in line:
-                try:
-                    #on récupère uniquement l'arg
-                    osc_data = json.loads(line.split("OSC:")[1])
-                    args = osc_data.get("args")
-                    #The isinstance() function returns True if the specified object is of the specified type, otherwise False.
-                    if isinstance(args, list) and args:
-                        args_sequence.append(args[0])
-                    elif isinstance(args, int):
-                        args_sequence.append(args)
-                except Exception:
-                    continue
+        f = pd.read_csv(log_path, header=None, names = ["timestamp", "data"])
+        f["data"] = f["data"].apply(ast.literal_eval)  # Évalue les chaînes de caractères en objets Python
+        f["args"] = f["data"].apply(lambda d: d["args"])  # Extrait les arguments des données
 
-    args_sequence = np.array(args_sequence)
-    args_sequence = 
+        args_sequence = f["args"].tolist()  # Convertit la colonne des arguments en liste
+        args_sequence = np.array(args_sequence).astype(np.float64)  # Convertit la liste en tableau NumPy de type float64
 
-    # Supprimer les répétitions consécutives
-    mask = np.insert(args_sequence[1:] != args_sequence[:-1], 0, True)
-    filtered = args_sequence[mask]
-    print("Liste filtrée (sans répétitions consécutives) :", filtered.tolist())
+    best_seq = None
+    best_count = 0
+    best_length = 0
+    second_best_count = 0
+    filtered = []
 
-    # Détection de séquences répétées
-    seen = Counter()
-    for i in range(len(filtered)-sequence_length +1):
-        window = tuple(filtered[i:i + sequence_length])
-        seen[window] += 1
+    # Teste plusieurs longueurs possibles de séquence pour détecter les gestes itératifs
+    for test_len in range(2, min(20, len(args_sequence))):
+        # Supprime les répétitions consécutives à chaque test
+        mask = np.insert(args_sequence[1:] != args_sequence[:-1], 0, True)
+        filtered = args_sequence[mask]
 
-    # Affichage
-    repeated = {seq: count for seq, count in seen.items() if count >= min_repeat}
-    if repeated:
-        print("GESTE ITÉRATIF DÉTECTÉ :")
+        seen = Counter()  # Compteur pour suivre les séquences vues
+        for i in range(len(filtered) - test_len + 1):
+            window = tuple(filtered[i:i + test_len])  # Crée une fenêtre de la séquence actuelle
+            seen[window] += 1  # Incrémente le compteur pour cette fenêtre
+
+        # Filtre les séquences qui ont été répétées suffisamment de fois
+        repeated = {seq: count for seq, count in seen.items() if count >= min_repeat}
         for seq, count in repeated.items():
-            print(f"  Séquence {seq} répétée {count} fois")
+            print(f"  Candidat : {seq} — {count} fois (taille {test_len})")
+        if repeated:
+            most_common = max(repeated.items(), key=lambda x: x[1])  # Trouve la séquence la plus fréquente
+            if most_common[1] > best_count:
+                second_best_count = best_count
+                best_seq, best_count, best_length = most_common[0], most_common[1], test_len  # Met à jour la meilleure séquence
+
+    # Affiche le résultat de la détection des gestes itératifs
+    if best_seq:
+        print ("\nSéquence filtrée : ")
+        print (filtered.tolist())
+        print(f"\nGESTE ITÉRATIF DÉTECTÉ :\n  Séquence {best_seq} répétée {best_count} fois (longueur détectée : {best_length})")
+        print(f"  Score précédent (deuxième meilleur) : {second_best_count}")
     else:
-        print("Aucun geste itératif détecté.")
-
-    # analyse temporelle avec stumpy
-    if len(args_sequence) >= sequence_length:
-        print("\nAnalyse STUMP des motifs similaires :")
-        mp = stumpy.stump(args_sequence, m=sequence_length)
-        motif_index = int(np.argmin(mp[:, 0]))  # motif le plus similaire
-        motif = args_sequence[motif_index:motif_index + sequence_length]
-        print(f"Motif récurrent détecté à l'index {motif_index} : {motif.tolist()}")
-    else:
-        print("\nPas assez de données pour une analyse STUMP.")
+        print("\nAucun geste itératif détecté.")
 
 
+# Exécution conditionnelle pour démarrer le script
 if __name__ == "__main__":
     is_iterative_gesture()

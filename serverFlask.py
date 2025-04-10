@@ -1,9 +1,14 @@
 from flask import Flask, render_template
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, request
 import json
 import os
 from datetime import datetime
 import socket
+import csv
+
+# pour la mise en cache des coordonnées des grains
+catched_points = None
+
 
 # === Serveur Flask avec Socket.IO pour la communication entre navigateur et Max/MSP ===
 # Ce serveur gère des messages OSC bidirectionnels et enregistre les données reçues côté navigateur.
@@ -25,6 +30,7 @@ def get_local_ip():
     return IP
 
 local_ip = get_local_ip()
+
 
 # Route principale qui sert la page HTML avec l'interface utilisateur
 @app.route("/")
@@ -62,7 +68,7 @@ def handle_max_message(data):
 @app.route('/delete' , methods= ['POST'])
 def delete_file():
     log_dir = "logs"
-    filepath = os.path.join(log_dir, "browser_data2.log")
+    filepath = os.path.join(log_dir, "hover_data.csv")
     if os.path.exists(filepath):
         os.remove(filepath)
         print(f"Fichier log supprimé: {filepath}")
@@ -80,11 +86,12 @@ def log_browser_data(data, is_osc=False):
     timestamp = datetime.now().isoformat()
     log_dir = "logs"
     os.makedirs(log_dir, exist_ok=True)
-    log_file = os.path.join(log_dir, "browser_data2.log")
+    log_file = os.path.join(log_dir, "hover_data.csv")
 
     entry_type = "OSC" if is_osc else "MSG"
-    with open(log_file, "a") as f:
-        f.write(f"[{timestamp}] {entry_type}: {json.dumps(data)}\n")
+    with open(log_file, "a") as csvf:
+        writer = csv.writer(csvf)
+        writer.writerow([timestamp, data])
 
 # Lancement du serveur sur toutes les interfaces réseau, sur le port 5000
 if __name__ == '__main__':
