@@ -10,9 +10,158 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ -943.0, -11.0, 645.0, 951.0 ],
+		"rect" : [ -1714.0, 3.0, 1007.0, 945.0 ],
 		"gridsize" : [ 15.0, 15.0 ],
 		"boxes" : [ 			{
+				"box" : 				{
+					"id" : "obj-51",
+					"maxclass" : "live.meter~",
+					"numinlets" : 1,
+					"numoutlets" : 2,
+					"outlettype" : [ "float", "int" ],
+					"patching_rect" : [ 190.0, 1241.0, 53.0, 78.0 ],
+					"slidercolor" : [ 0.094525624565048, 0.094525586030663, 0.09452559599708, 1.0 ]
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-48",
+					"maxclass" : "newobj",
+					"numinlets" : 1,
+					"numoutlets" : 1,
+					"outlettype" : [ "signal" ],
+					"patching_rect" : [ 135.0, 1209.0, 52.0, 22.0 ],
+					"text" : "r~ effect"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-45",
+					"maxclass" : "newobj",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 214.0, 1137.0, 60.0, 22.0 ],
+					"text" : "s~ concat"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-44",
+					"maxclass" : "newobj",
+					"numinlets" : 1,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 1292.279999999999745, 292.0, 51.0, 22.0 ],
+					"text" : "pcontrol"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-41",
+					"maxclass" : "newobj",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patcher" : 					{
+						"fileversion" : 1,
+						"appversion" : 						{
+							"major" : 9,
+							"minor" : 0,
+							"revision" : 5,
+							"architecture" : "x64",
+							"modernui" : 1
+						}
+,
+						"classnamespace" : "box",
+						"rect" : [ -604.0, 238.0, 743.0, 288.0 ],
+						"gridsize" : [ 15.0, 15.0 ],
+						"visible" : 1,
+						"boxes" : [ 							{
+								"box" : 								{
+									"id" : "obj-4",
+									"maxclass" : "newobj",
+									"numinlets" : 1,
+									"numoutlets" : 0,
+									"patching_rect" : [ 32.0, 159.0, 54.0, 22.0 ],
+									"text" : "s~ effect"
+								}
+
+							}
+, 							{
+								"box" : 								{
+									"id" : "obj-3",
+									"library_path0" : "/Users/philippecaillot/Documents/programmation/max/faustgen/externals/msp/faustgen~.mxo/Contents/Resources/",
+									"machinecode" : "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eV9saXN0IjogWyIvVXNlcnMvcGhpbGlwcGVjYWlsbG90L0RvY3VtZW50cy9wcm9ncmFtbWF0aW9uL21heC9mYXVzdGdlbi9leHRlcm5hbHMvbXNwL2ZhdXN0Z2Vufi5teG8vQ29udGVudHMvUmVzb3VyY2VzL3N0ZGZhdXN0LmxpYiJdLCJpbmNsdWRlX3BhdGhuYW1lcyI6IFsiL1VzZXJzL3BoaWxpcHBlY2FpbGxvdC9Eb2N1bWVudHMvcHJvZ3JhbW1hdGlvbi9tYXgvZmF1c3RnZW4vZXh0ZXJuYWxzL21zcC9mYXVzdGdlbn4ubXhvL0NvbnRlbnRzL1Jlc291cmNlcyIsIi9zaGFyZS9mYXVzdCIsIi91c3IvbG9jYWwvc2hhcmUvZmF1c3QiLCIvdXNyL3NoYXJlL2ZhdXN0IiwiLiJdLCJzaXplIjogNCwiaW5wdXRzIjogMiwib3V0cHV0cyI6IDIsInNyX2luZGV4IjogMCwibWV0YSI6IFsgeyAiY29tcGlsZV9vcHRpb25zIjogIi1sYW5nIGxsdm0gMTUuMC43IC1jdCAxIC1lcyAxIC1tY2QgMTYgLW1kZCAxMDI0IC1tZHkgMzMgLWRvdWJsZSAtZnR6IDAiIH0seyAiZmlsZW5hbWUiOiAiZmF1c3RnZW4tMSIgfSx7ICJuYW1lIjogImZhdXN0Z2VuLTEiIH1dLCJ1aSI6IFsgeyJ0eXBlIjogInZncm91cCIsImxhYmVsIjogImZhdXN0Z2VuLTEiLCJpdGVtcyI6IFtdfV19AF9kZXN0cm95bXlkc3AAX2NsYXNzSW5pdG15ZHNwAF9pbnN0YW5jZUNvbnN0YW50c215ZHNwAF9pbnN0YW5jZUNsZWFybXlkc3AAX2NvbXB1dGVteWRzcABfYWxsb2NhdGVteWRzcABfZ2V0SlNPTm15ZHNwAGx0bXAxAGx0bXAwAAAAAAAAAA==",
+									"machinecode_size" : 3384,
+									"maxclass" : "newobj",
+									"numinlets" : 2,
+									"numoutlets" : 4,
+									"outlettype" : [ "signal", "signal", "", "" ],
+									"patching_rect" : [ 32.0, 123.0, 102.0, 22.0 ],
+									"sample_format" : 1,
+									"serial_number" : "K5J63M669M64 bits",
+									"sourcecode" : "import(\"stdfaust.lib\");\nprocess=_,_;",
+									"sourcecode_size" : 36,
+									"text" : "faustgen~ multiEf",
+									"varname" : "faustgen-5230882256",
+									"version" : "1.73"
+								}
+
+							}
+, 							{
+								"box" : 								{
+									"id" : "obj-2",
+									"maxclass" : "newobj",
+									"numinlets" : 1,
+									"numoutlets" : 1,
+									"outlettype" : [ "signal" ],
+									"patching_rect" : [ 32.0, 88.0, 58.0, 22.0 ],
+									"text" : "r~ concat"
+								}
+
+							}
+, 							{
+								"box" : 								{
+									"comment" : "",
+									"id" : "obj-1",
+									"index" : 1,
+									"maxclass" : "inlet",
+									"numinlets" : 0,
+									"numoutlets" : 1,
+									"outlettype" : [ "" ],
+									"patching_rect" : [ 32.0, 36.0, 30.0, 30.0 ]
+								}
+
+							}
+ ],
+						"lines" : [ 							{
+								"patchline" : 								{
+									"destination" : [ "obj-3", 0 ],
+									"source" : [ "obj-2", 0 ]
+								}
+
+							}
+, 							{
+								"patchline" : 								{
+									"destination" : [ "obj-4", 0 ],
+									"source" : [ "obj-3", 0 ]
+								}
+
+							}
+ ],
+						"originid" : "pat-597",
+						"toolbaradditions" : [ "packagemanager" ]
+					}
+,
+					"patching_rect" : [ 1292.279999999999745, 326.0, 54.0, 22.0 ],
+					"text" : "p effects"
+				}
+
+			}
+, 			{
 				"box" : 				{
 					"id" : "obj-2",
 					"maxclass" : "newobj",
@@ -383,139 +532,12 @@
 , 			{
 				"box" : 				{
 					"id" : "obj-58",
-					"linecount" : 2,
 					"maxclass" : "message",
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 351.0, 300.0, 134.0, 35.0 ],
-					"text" : "0.741667 0.57 0.751667"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"autosave" : 1,
-					"bgmode" : 1,
-					"border" : 0,
-					"clickthrough" : 0,
-					"enablehscroll" : 0,
-					"enablevscroll" : 0,
-					"id" : "obj-9",
-					"linecount" : 2,
-					"lockeddragscroll" : 0,
-					"lockedsize" : 0,
-					"maxclass" : "newobj",
-					"numinlets" : 3,
-					"numoutlets" : 4,
-					"offset" : [ 0.0, 0.0 ],
-					"outlettype" : [ "signal", "signal", "", "" ],
-					"patching_rect" : [ 226.5, 1150.5, 285.0, 196.0 ],
-					"presentation_linecount" : 2,
-					"saved_attribute_attributes" : 					{
-						"valueof" : 						{
-							"parameter_invisible" : 1,
-							"parameter_longname" : "amxd~",
-							"parameter_modmode" : 0,
-							"parameter_shortname" : "amxd~",
-							"parameter_type" : 3
-						}
-
-					}
-,
-					"saved_object_attributes" : 					{
-						"parameter_enable" : 1,
-						"patchername" : "Space Echo.amxd",
-						"patchername_fallback" : "C74:/packages/Max for Live/patchers/Max Audio Effect/Space Echo/Space Echo.amxd"
-					}
-,
-					"snapshot" : 					{
-						"filetype" : "C74Snapshot",
-						"version" : 2,
-						"minorversion" : 0,
-						"name" : "snapshotlist",
-						"origin" : "max~",
-						"type" : "list",
-						"subtype" : "Undefined",
-						"embed" : 1,
-						"snapshot" : 						{
-							"name" : "Space Echo.amxd",
-							"origname" : "C74:/packages/Max for Live/patchers/Max Audio Effect/Space Echo/Space Echo.amxd",
-							"valuedictionary" : 							{
-								"parameter_values" : 								{
-									"WarbleAmount" : 14.0,
-									"WarbleSpeed" : 21.0,
-									"bpm" : 30.0,
-									"clipping" : 0.63,
-									"feedback" : 47.0,
-									"highpass" : 1873.543307086613368,
-									"inertia" : 5.143692913385824,
-									"live.menu" : 13.0,
-									"lowpass" : 3280.0,
-									"reverb_wetdry" : 27.200001,
-									"revtime" : 2800.0,
-									"tempo" : 0.0,
-									"wet/dry" : 19.685039370078826
-								}
-
-							}
-,
-							"active" : 1
-						}
-,
-						"snapshotlist" : 						{
-							"current_snapshot" : 0,
-							"entries" : [ 								{
-									"filetype" : "C74Snapshot",
-									"version" : 2,
-									"minorversion" : 0,
-									"name" : "Space Echo.amxd",
-									"origin" : "Space Echo.amxd",
-									"type" : "amxd",
-									"subtype" : "Undefined",
-									"embed" : 0,
-									"snapshot" : 									{
-										"name" : "Space Echo.amxd",
-										"origname" : "C74:/packages/Max for Live/patchers/Max Audio Effect/Space Echo/Space Echo.amxd",
-										"valuedictionary" : 										{
-											"parameter_values" : 											{
-												"WarbleAmount" : 14.0,
-												"WarbleSpeed" : 21.0,
-												"bpm" : 30.0,
-												"clipping" : 0.63,
-												"feedback" : 47.0,
-												"highpass" : 1873.543307086613368,
-												"inertia" : 5.143692913385824,
-												"live.menu" : 13.0,
-												"lowpass" : 3280.0,
-												"reverb_wetdry" : 27.200001,
-												"revtime" : 2800.0,
-												"tempo" : 0.0,
-												"wet/dry" : 19.685039370078826
-											}
-
-										}
-,
-										"active" : 1
-									}
-,
-									"fileref" : 									{
-										"name" : "Space Echo.amxd",
-										"filename" : "Space Echo.amxd.maxsnap",
-										"filepath" : "~/Documents/Max 9/Snapshots",
-										"filepos" : -1,
-										"snapshotfileid" : "9f420f8f5895675b036b2bce25371bd4"
-									}
-
-								}
- ]
-						}
-
-					}
-,
-					"text" : "amxd~ \"C74:/packages/Max for Live/patchers/Max Audio Effect/Space Echo/Space Echo.amxd\"",
-					"varname" : "amxd~",
-					"viewvisibility" : 1
+					"patching_rect" : [ 351.0, 300.0, 134.0, 22.0 ],
+					"text" : "31"
 				}
 
 			}
@@ -2248,7 +2270,7 @@
 					"maxclass" : "ezdac~",
 					"numinlets" : 2,
 					"numoutlets" : 0,
-					"patching_rect" : [ 124.0, 1226.0, 45.0, 45.0 ]
+					"patching_rect" : [ 135.0, 1266.0, 45.0, 45.0 ]
 				}
 
 			}
@@ -2750,16 +2772,7 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-9", 1 ],
-					"order" : 0,
-					"source" : [ "obj-31", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-9", 0 ],
-					"order" : 1,
+					"destination" : [ "obj-45", 0 ],
 					"source" : [ "obj-31", 0 ]
 				}
 
@@ -2869,6 +2882,13 @@
 			}
 , 			{
 				"patchline" : 				{
+					"destination" : [ "obj-41", 0 ],
+					"source" : [ "obj-44", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
 					"destination" : [ "obj-39", 0 ],
 					"order" : 0,
 					"source" : [ "obj-47", 0 ]
@@ -2880,6 +2900,30 @@
 					"destination" : [ "obj-66", 0 ],
 					"order" : 1,
 					"source" : [ "obj-47", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-34", 1 ],
+					"order" : 1,
+					"source" : [ "obj-48", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-34", 0 ],
+					"order" : 2,
+					"source" : [ "obj-48", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-51", 0 ],
+					"order" : 0,
+					"source" : [ "obj-48", 0 ]
 				}
 
 			}
@@ -2967,7 +3011,16 @@
 			}
 , 			{
 				"patchline" : 				{
+					"destination" : [ "obj-44", 0 ],
+					"order" : 0,
+					"source" : [ "obj-61", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
 					"destination" : [ "obj-60", 0 ],
+					"order" : 1,
 					"source" : [ "obj-61", 0 ]
 				}
 
@@ -3009,50 +3062,9 @@
 				}
 
 			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-34", 1 ],
-					"source" : [ "obj-9", 1 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-34", 0 ],
-					"source" : [ "obj-9", 0 ]
-				}
-
-			}
  ],
 		"originid" : "pat-4",
-		"parameters" : 		{
-			"obj-9" : [ "amxd~", "amxd~", 0 ],
-			"parameterbanks" : 			{
-				"0" : 				{
-					"index" : 0,
-					"name" : "",
-					"parameters" : [ "-", "-", "-", "-", "-", "-", "-", "-" ]
-				}
-
-			}
-,
-			"inherited_shortname" : 1
-		}
-,
 		"dependency_cache" : [ 			{
-				"name" : "Space Echo.amxd",
-				"bootpath" : "C74:/packages/Max for Live/patchers/Max Audio Effect/Space Echo",
-				"type" : "amxd",
-				"implicit" : 1
-			}
-, 			{
-				"name" : "Space Echo.amxd.maxsnap",
-				"bootpath" : "~/Documents/Max 9/Snapshots",
-				"patcherrelativepath" : "../../Max 9/Snapshots",
-				"type" : "mx@s",
-				"implicit" : 1
-			}
-, 			{
 				"name" : "exportPoints.js",
 				"bootpath" : "~/Documents/programmation/geste",
 				"patcherrelativepath" : ".",
@@ -3067,6 +3079,10 @@
 			}
 , 			{
 				"name" : "imubu.mxo",
+				"type" : "iLaX"
+			}
+, 			{
+				"name" : "mc.faustgen~.mxo",
 				"type" : "iLaX"
 			}
 , 			{
