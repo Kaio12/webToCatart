@@ -12,7 +12,6 @@ import threading
 # pour la mise en cache des coordonnées des grains
 catched_points = None
 
-
 # === Serveur Flask avec Socket.IO pour la communication entre navigateur et Max/MSP ===
 # Ce serveur gère des messages OSC bidirectionnels et enregistre les données reçues côté navigateur.
 
@@ -65,9 +64,12 @@ def handle_browser_osc(data):
 # et transmission au navigateur
 @socketio.on('message', namespace='/max')
 def handle_max_message(data):
-    print('Received message from Max/MSP: ' + data)
-    socketio.emit('to_browser', data, namespace='/browser')  # Forward to browser namespace
+    global catched_points
+    catched_points = data
+    print('Received message from Max/MSP: ' + catched_points)
+    socketio.emit('to_browser', catched_points, namespace='/browser')  # Forward to browser namespace
 
+# gestion bouton delete, efface le fichier log
 @app.route('/delete' , methods= ['POST'])
 def delete_file():
     log_dir = "logs"
@@ -78,6 +80,17 @@ def delete_file():
     else:
         print("Fichier log non trouvé")
     return render_template('index.html')
+
+
+# gestion bouton demande_points, envoie les points
+@app.route('/catched_points', methods = ['GET'])
+def send_points():
+    if catched_points:
+        socketio.emit('to_browser', catched_points, namespace='/browser')
+        return {"status": "ok", "message": "Points sent"}, 200
+    else:
+        return {"status": "empty", "message": "No points available"}, 204
+
 
 @socketio.on('osc', namespace='/max')
 def handle_max_osc(data):
@@ -97,6 +110,6 @@ def log_browser_data(data, is_osc=False):
         writer.writerow([timestamp, data])
 
 
-# Lancement du serveur sur toutes les interfaces réseau, sur le port 5000
+# Lancement du serveur sur toutes les interfaces réseau, sur le port 5001
 if __name__ == '__main__':
      socketio.run(app, host='0.0.0.0', port=5001)

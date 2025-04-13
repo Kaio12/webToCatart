@@ -33,6 +33,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    document.getElementById("ask-points").addEventListener("click", () => {
+      fetch("/catched_points", { method: "GET" })
+        .then(response => {
+          if (response.ok) {
+            console.log("✅ Points demandés au serveur !");
+          } else {
+            console.error("❌ Erreur lors de la demande des points.");
+          }
+        })
+        .catch(error => {
+          console.error("❌ Erreur réseau :", error);
+        });
+    });
+
+
     // en attendant la gestion par mouvements des doigts
     toggleleft.addEventListener('click', () => {
         sidebarleft.classList.toggle('hidden');
