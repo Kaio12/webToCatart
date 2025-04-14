@@ -1,0 +1,8 @@
+#position {
+  width: 100vw; /* Full width of the viewport */
+  height: 100vh; /* Full height of the viewport */
+  position: absolute; /* Ensure it covers the entire window */
+  top: 0;
+  left: 0;
+  background-color: #f0f0f0; /* Optional: Set a background color */
+}

@@ -39,6 +39,10 @@ local_ip = get_local_ip()
 def hello():
     return render_template('index.html')
 
+@app.route("/effect")
+def effect():
+    return render_template('gestion_effet.html')
+
 # Route API pour renvoyer dynamiquement l'adresse IP du serveur au client navigateur
 @app.route("/api/ip")
 def get_ip():
