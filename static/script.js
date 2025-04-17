@@ -123,7 +123,6 @@ function getBounds(data) {
 function hslToHex(h, s, l) {
   s /= 100;
   l /= 100;
-
   const k = n => (n + h / 30) % 12;
   const a = s * Math.min(l, 1 - l);
   const f = n =>
@@ -131,10 +130,32 @@ function hslToHex(h, s, l) {
 
   return (f(0) << 16) + (f(1) << 8) + f(2);
 }
+function hslToRgb(h, s, l) {
+  let r, g, b;
 
+  if (s === 0) {
+    r = g = b = l; // achromatic
+  } else {
+    const hue2rgb = (p, q, t) => {
+      if (t < 0) t += 1;
+      if (t > 1) t -= 1;
+      if (t < 1/6) return p + (q - p) * 6 * t;
+      if (t < 1/2) return q;
+      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+      return p;
+    };
+
+    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+    const p = 2 * l - q;
+    r = hue2rgb(p, q, h + 1/3);
+    g = hue2rgb(p, q, h);
+    b = hue2rgb(p, q, h - 1/3);
+  }
+
+  return [r, g, b];
+}
 
 // === Pixi.js Setup ===
-let app;
 let pixiPoints = [];
 let pointerPos = { x: -9999, y: -9999 };
 const proximityThreshold = 80;
@@ -143,30 +164,29 @@ const baseWidth = 800;
 const baseHeight = 800;
 let data = [];
 
-function setupPixi() {
-  app = new PIXI.Application();
-  app.init({
+async function setupPixi() {
+  const app = new PIXI.Application();
+  await app.init({
     resizeTo: window,
     backgroundColor: 0xffffff
-  }).then(() => {
-    const container = document.getElementById("pixi-container");
-    if (container) container.appendChild(app.canvas);
-
-    app.stage.interactive = true;
-    app.stage.on("pointermove", (e) => {
-      pointerPos = e.data.global;
-    });
-
-    window.addEventListener('resize', () => {
-      app.renderer.resize(window.innerWidth, window.innerHeight);
-      drawPixiPoints(data);
-    });
-
-    app.ticker.add(updatePixiPoints);
   });
+  const container = document.getElementById("pixi-container");
+  if (container) container.appendChild(app.canvas);
+  app.stage.interactive = true;
+  app.stage.on("pointermove", (e) => {
+    pointerPos = e.data.global;
+  });
+
+  window.addEventListener('resize', () => {
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    drawPixiPoints(data, app);
+  });
+
+  app.ticker.add(updatePixiPoints.bind(null, app));
+  window.pixiApp = app; // expose app if needed globally
 }
 
-function drawPixiPoints(pointsData) {
+function drawPixiPoints(pointsData, app) {
   if (!app) return;
   app.stage.removeChildren();
   pixiPoints.length = 0;
@@ -184,9 +204,10 @@ function drawPixiPoints(pointsData) {
 
     const radius = mapRange(p.loudnessMax, bounds.lMin, bounds.lMax, 5, 20);
     const hue = mapRange(p.energyMax, bounds.eMin, bounds.eMax, 240, 0);
-    const color = hslToHex(hue, 100, 50); // retourne un entier hexadécimal utilisable directement
+    const [r, gVal, b] = hslToRgb(hue / 360, 1, 0.5);
+    const color = (r * 255 << 16) + (gVal * 255 << 8) + (b * 255) | 0;
     g.x = mapRange(p.x, bounds.xMin, bounds.xMax, 50, window.innerWidth - 50);
-    g.y = mapRange(p.y, bounds.yMin, bounds.yMax, 50, window.innerHeight - 50);
+    g.y = mapRange(p.y, bounds.yMin, bounds.yMax, window.innerHeight - 50, 50);
 
     g.baseRadius = radius;
     g.currentRadius = radius;
@@ -208,7 +229,7 @@ function drawPixiPoints(pointsData) {
   });
 }
 
-function updatePixiPoints() {
+function updatePixiPoints(app) {
   const now = performance.now();
 
   for (const point of pixiPoints) {
@@ -256,7 +277,7 @@ fetch("/api/ip")
         })).filter(p => !isNaN(p.x) && !isNaN(p.y));
 
         data = parsed;
-        drawPixiPoints(data);
+        drawPixiPoints(data, window.pixiApp);
       } catch (e) {
         console.error("erreur parsing", e);
       }
