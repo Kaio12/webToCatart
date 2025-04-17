@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const sidebarright = document.getElementById('sidebarright');
   const body = document.body;
 
-  // Fullscreen button
+  // bouton Fullscreen
   document.getElementById("fullscreen-btn").addEventListener("click", () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Delete log button
+  // bouton Delete log
   document.getElementById("delete-log").addEventListener("click", () => {
     fetch("/delete", { method: "POST" })
       .then(response => {
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   });
 
-  // Ask points button
+  // bouton demande points (en cas de rechargement, à automatiser)
   document.getElementById("ask-points").addEventListener("click", () => {
     fetch("/catched_points", { method: "GET" })
       .then(response => {
@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   });
 
-  // Sidebar toggle
+  // bouton barres latérales
   toggleleft.addEventListener('click', () => {
     sidebarleft.classList.toggle('hidden');
     body.classList.toggle('sidebarleft-hidden');
@@ -88,11 +88,11 @@ document.addEventListener('DOMContentLoaded', () => {
     sendOSC("/multisliderLeft", v);
   });
 
-  // Init Pixi canvas
+  // initialisation du canvas Pixi 
   setupPixi();
 });
 
-// === OSC socket communication ===
+// === Communication avec Max/MSP via socket.io ===
 let sendOSC = function (address, args) {
   if (socket && socket.connected) {
     console.log("Sending OSC:", address, args);
@@ -102,7 +102,8 @@ let sendOSC = function (address, args) {
   }
 };
 
-// === Utilitaires ===
+// === Fonctions utilitaires ===
+// Calcule les limites (min et max) des coordonnées et des valeurs pour un ensemble de points
 function getBounds(data) {
   let xs = data.map(p => p.x);
   let ys = data.map(p => p.y);
@@ -120,6 +121,7 @@ function getBounds(data) {
   };
 }
 
+// Convertit une couleur HSL en format hexadécimal
 function hslToHex(h, s, l) {
   s /= 100;
   l /= 100;
@@ -130,6 +132,7 @@ function hslToHex(h, s, l) {
 
   return (f(0) << 16) + (f(1) << 8) + f(2);
 }
+// Convertit une couleur HSL en valeurs RGB
 function hslToRgb(h, s, l) {
   let r, g, b;
 
@@ -155,7 +158,7 @@ function hslToRgb(h, s, l) {
   return [r, g, b];
 }
 
-// === Pixi.js Setup ===
+// === Configuration de Pixi.js pour le rendu graphique ===
 let pixiPoints = [];
 let pointerPos = { x: -9999, y: -9999 };
 const proximityThreshold = 80;
@@ -164,6 +167,7 @@ const baseWidth = 800;
 const baseHeight = 800;
 let data = [];
 
+// Initialise et configure l'application Pixi.js pour le rendu interactif
 async function setupPixi() {
   const app = new PIXI.Application();
   await app.init({
