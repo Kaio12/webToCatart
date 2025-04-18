@@ -42,7 +42,7 @@ axios.get("http://localhost:5001/api/ip")
             let json = JSON.stringify(data);
             console.log(json);  // Log console côté Node
             let obj = JSON.parse(json);
-            Max.outlet(obj.args);  // Envoie uniquement les arguments (ex: [x, y, z]) dans Max
+            Max.outlet(obj.address, obj.args);  // Envoie uniquement les arguments (ex: [x, y, z]) dans Max  obj.args
         });
 
     })

@@ -7,15 +7,11 @@ fetch("/api/ip")
   .then(data => {
     socket = io(`http://${data.ip}:5001/browser`);
     window.socket = socket;
-
     socket.on('connect', () => {
-      console.log("✅ Connecté à", data.ip);
+      console.log("Connecté à", data.ip);
     });
   }
 );
-
-
-
 
 // === Communication avec Max/MSP via socket.io ===
 let sendOSC = function (address, args) {
@@ -27,8 +23,8 @@ let sendOSC = function (address, args) {
     }
   };
 
-
+// === Transmission coordonnées ===
 position.on('change',function(v) {
     console.log(v);
-    sendOSC("/effectPos", v);
+    sendOSC("/effectPos", [v.x, v.y]);
   })

@@ -243,7 +243,7 @@ function updatePixiPoints(app) {
       point.targetRadius = point.baseRadius * 1.8;
 
       if (now - point.lastTrigger > cooldown) {
-        sendOSC("/hover", point.sampleId);
+        sendOSC("/hover", point.sampleId);// point.sampleId
         point.lastTrigger = now;
       }
     } else {

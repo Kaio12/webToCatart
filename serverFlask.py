@@ -5,9 +5,6 @@ import os
 from datetime import datetime
 import socket
 import csv
-import time
-import webbrowser
-import threading
 
 # pour la mise en cache des coordonnées des grains
 catched_points = None
@@ -32,7 +29,6 @@ def get_local_ip():
     return IP
 
 local_ip = get_local_ip()
-
 
 # Route principale qui sert la page HTML avec l'interface utilisateur
 @app.route("/")
