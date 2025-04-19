@@ -1,6 +1,6 @@
 #position {
-  width: 100vw; /* Full width of the viewport */
-  height: 100vh; /* Full height of the viewport */
+  width: 100%; /* Full width of the viewport */
+  height: 100%; /* Full height of the viewport */
   position: absolute; /* Ensure it covers the entire window */
   top: 0;
   left: 0;

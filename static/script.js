@@ -191,11 +191,17 @@ async function setupPixi() {
 }
 
 function drawPixiPoints(pointsData, app) {
-  if (!app) return;
+  if (!app) {console.error("pixi pas initialisée");
+    return;}
+  if (!Array.isArray(pointsData) || pointsData.length === 0) {
+      console.warn("Aucune donnée à afficher.");
+      return;
+    }
   app.stage.removeChildren();
   pixiPoints.length = 0;
 
   const bounds = getBounds(pointsData);
+  console.log("📊 BOUNDS calculés :", bounds);
 
   const scaleX = window.innerWidth / baseWidth;
   const scaleY = window.innerHeight / baseHeight;
@@ -227,6 +233,13 @@ function drawPixiPoints(pointsData, app) {
       this.endFill();
     };
 
+    console.log(`🟡 Point ${index}:`, {
+      originalX: p.x,
+      originalY: p.y,
+      mappedX: g.x,
+      mappedY: g.y,
+      radius: radius
+    });
     g.drawSelf();
     app.stage.addChild(g);
     pixiPoints.push(g);
@@ -270,8 +283,8 @@ fetch("/api/ip")
 
     socket.on('to_browser', (raw) => {
       try {
+        console.log(raw); // vérifier si on reçoit bien les données de max
         const rawData = JSON.parse(raw);
-
         const parsed = rawData.map(point => ({
           x: parseFloat(point.x),
           y: parseFloat(point.y),

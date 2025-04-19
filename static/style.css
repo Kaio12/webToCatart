@@ -75,7 +75,6 @@ body {
     transform: translateX(100%);
 }
 
-
 .main-content {
     flex-grow: 1;
     padding: 20px;
@@ -99,7 +98,6 @@ body.sidebarright-hidden .main-content {
     margin-right: 0;
 }
 
-
  #multisliderRight {
     flex-grow: 1 ;
     display: flex;
@@ -114,8 +112,12 @@ body.sidebarright-hidden .main-content {
         align-items: center;
     }
 
+#myChart {
+        width: 100%;
+        height: 100%;
+    }
 
-    #myChart {
+#pixi-container {
         width: 100%;
         height: 100%;
     }
