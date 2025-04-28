@@ -91,6 +91,15 @@ def send_points():
     else:
         return {"status": "empty", "message": "No points available"}, 204
 
+# gestion bouton demande_sf, envoie le fichier son
+@app.route('/soundfile', methods = ['GET'])
+def soundfile():
+    if soundfile:
+        socketio.emit('to_browser', soundfile, namespace='/borwser')
+        return {"status": "ok", "message": "Soundfile sent"}, 200
+    else:
+        return {"status": "empty", "message": "No soundfile available"}, 204
+
 
 @socketio.on('osc', namespace='/max')
 def handle_max_osc(data):

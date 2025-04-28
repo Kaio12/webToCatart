@@ -31,15 +31,30 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch("/catched_points", { method: "GET" })
       .then(response => {
         if (response.ok) {
-          console.log("✅ Points demandés au serveur !");
+          console.log("Points demandés au serveur.");
         } else {
-          console.error("❌ Erreur lors de la demande des points.");
+          console.error("Erreur lors de la demande des points.");
         }
       })
       .catch(error => {
-        console.error("❌ Erreur réseau :", error);
+        console.error("Erreur réseau :", error);
       });
   });
+
+// bouton demande fichier son
+document.getElementById("ask-soundfile").addEventListener("click", () => {
+  fetch("/soundfile", { method: "GET" })
+    .then(response => {
+      if (response.ok {
+        console.log("fichier son demandé au serveur");
+      } else {
+        console.error("Erreur lors de la demande du fichier son.");
+      }
+      })
+      .catch(error => {
+        console.error("Erreur réseau:", error);
+      });
+    });
 
   // bouton barres latérales
   toggleleft.addEventListener('click', () => {
@@ -92,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupPixi();
 });
 
-// === Communication avec Max/MSP via socket.io ===
+// === Envoie messages OSC via socket.io ===
 let sendOSC = function (address, args) {
   if (socket && socket.connected) {
     console.log("Sending OSC:", address, args);
@@ -180,7 +195,7 @@ async function setupPixi() {
   app.stage.on("pointermove", (e) => {
     pointerPos = e.data.global;
   });
-
+// au cas ou la fenêtre change de taille, on redessine les points
   window.addEventListener('resize', () => {
     app.renderer.resize(window.innerWidth, window.innerHeight);
     drawPixiPoints(data, app);
@@ -274,7 +289,7 @@ let socket;
 fetch("/api/ip")
   .then(response => response.json())
   .then(data => {
-    socket = io(`http://${data.ip}:5001/browser`);
+    socket = io(`http://${data.ip}:5001/browser`);//renvoie l'adresse ip
     window.socket = socket;
 
     socket.on('connect', () => {
