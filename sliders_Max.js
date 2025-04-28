@@ -5,6 +5,7 @@ const path = require('path');              // Gère les chemins de fichiers (pas
 const Max = require('max-api');            // API pour communiquer avec Max/MSP
 const io = require('socket.io-client');    // Client WebSocket compatible avec Socket.IO
 const axios = require('axios');            // Pour faire des requêtes HTTP (ici, pour récupérer l'IP du serveur)
+const WavEncoder = require('wav-encoder'); // Afin d'encoder des données brutes en WAV
 
 // Variable pour stocker le socket une fois connecté
 let socket;
@@ -51,8 +52,36 @@ axios.get("http://localhost:5001/api/ip")
     });
 
 
-// 7. Réception de messages depuis Max/MSP
+// 7. Envoi de messages depuis Max/MSP
 Max.addHandler("data", (msg) => {
     console.log("Message from Max:", msg);
-    socket.emit("message", msg);  // Envoie vers Flask (namespace /max), qui le relaye au navigateur
+    axios.post("http://localhost:5001/api/data", msg, {
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => {
+            console.log("Données envoyées au serveur via HTTP:", response.data);
+        })
+        .catch(error => {
+            console.error("Erreur lors de l'envoi HTTP vers le serveur:", error);
+        });
 });
+
+
+Max.addHandler("audio", (msg) => {
+    console.log("Message audio from Max:", msg);
+    
+});
+/* axios.post("http://localhost:5001/api/data", msg, {
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => {
+            console.log("Données envoyées au serveur via HTTP:", response.data);
+        })
+        .catch(error => {
+            console.error("Erreur lors de l'envoi HTTP vers le serveur:", error);
+        });
+*/

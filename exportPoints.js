@@ -1,4 +1,6 @@
+outlets = 2;
 
+// exporte de max vers browser les coordonnées de chaque grain
 function exportPoints()
 {
     var mubu = new MubuJS("echantillons");
@@ -25,10 +27,22 @@ function exportPoints()
                             };
                             points.push(point);
                         }
-                var jsonPoints = JSON.stringify(points);
+                var jsonPoints = JSON.stringify({type: "points", points});
                 post("JSON points ", jsonPoints, "\n");
                 outlet (0, jsonPoints); // envoie le JSON à Max
             }
 
+        }
+    }
+
+// exporte de max vers browser les données brutes audio
+function exportSound() {
+    var mubu = new MubuJS("echantillons");
+    mubu.refer("echantillons");
+
+    if (mubu != null) {
+        var audio = mubu.gettrack(1, "audio");
+        var raw = audio.getmxcolumn(1); // récupère un tableau de float
+        outlet(1, JSON.stringify(raw) );
         }
     }

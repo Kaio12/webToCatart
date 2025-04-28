@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById("ask-soundfile").addEventListener("click", () => {
   fetch("/soundfile", { method: "GET" })
     .then(response => {
-      if (response.ok {
+      if (response.ok) {
         console.log("fichier son demandé au serveur");
       } else {
         console.error("Erreur lors de la demande du fichier son.");
@@ -294,25 +294,37 @@ fetch("/api/ip")
 
     socket.on('connect', () => {
       console.log("✅ Connecté à", data.ip);
+      loadPoints(); // Charger les points une fois connecté
     });
+  });
 
-    socket.on('to_browser', (raw) => {
-      try {
-        console.log(raw); // vérifier si on reçoit bien les données de max
-        const rawData = JSON.parse(raw);
-        const parsed = rawData.map(point => ({
-          x: parseFloat(point.x),
-          y: parseFloat(point.y),
-          sampleId: point.sampleId,
-          loudnessMax: parseFloat(point.loudnessmax),
-          energyMax: parseFloat(point.energymax)
-        })).filter(p => !isNaN(p.x) && !isNaN(p.y));
+// fonction pour charger les points via HTTP
+async function loadPoints() {
+  try {
+    const response = await fetch("/catched_points");
+    if (!response.ok) {
+      console.error("Erreur HTTP:", response.status);
+      return;
+    }
+    const rawData = await response.json();
 
-        data = parsed;
-        drawPixiPoints(data, window.pixiApp);
-      } catch (e) {
-        console.error("erreur parsing", e);
-      }
-    });
-  })
-  .catch(err => console.error("❌ Erreur de récupération IP :", err));
+    if (rawData.type === "points" && Array.isArray(rawData.points)) {
+      const parsed = rawData.points.map(point => ({
+        x: parseFloat(point.x),
+        y: parseFloat(point.y),
+        sampleId: point.sampleId,
+        loudnessMax: parseFloat(point.loudnessmax),
+        energyMax: parseFloat(point.energymax)
+      })).filter(p => !isNaN(p.x) && !isNaN(p.y));
+      
+      data = parsed;
+      drawPixiPoints(data, window.pixiApp);
+    } else if (rawData.type === "soundfile") {
+      console.log("🎵 Reçu un fichier son : ", rawData.filename);
+    } else {
+      console.warn("Type de données inconnu :", rawData);
+    }
+  } catch (error) {
+    console.error("Erreur de chargement des points:", error);
+  }
+}
