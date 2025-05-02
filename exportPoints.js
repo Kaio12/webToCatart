@@ -31,7 +31,6 @@ function exportPoints()
                 post("JSON points ", jsonPoints, "\n");
                 outlet (0, jsonPoints); // envoie le JSON à Max
             }
-
         }
     }
 
@@ -41,8 +40,11 @@ function exportSound() {
     mubu.refer("echantillons");
 
     if (mubu != null) {
-        var audio = mubu.gettrack(1, "audio");
-        var raw = audio.getmxcolumn(1); // récupère un tableau de float
-        outlet(1, JSON.stringify(raw) );
+        //var audio = mubu.gettrack(1, "audio");
+        //var raw = audio.getmxcolumn(1); // récupère un tableau de float
+        //outlet(1, JSON.stringify(raw) );
+        //(bufferindex [Number], trackid [Number | String], filepath [String], options [String])
+        mubu.writetrack (1, "audio", "/Users/philippecaillot/Documents/programmation/geste/audiofiles/enr.wav" );
+        post("fichier sauvé...?");
         }
     }
