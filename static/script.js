@@ -65,6 +65,9 @@ if (navigator.requestMIDIAccess) {
   console.warn("WebMidi non supporté");
 }
 
+  //charge le modele MLP
+  loadMLPModel();
+
   // charge le fichier son
 fetch('/audio/enr.wav')
   .then(response => response.arrayBuffer())
@@ -74,6 +77,17 @@ fetch('/audio/enr.wav')
     console.log("Audio chargé en mémoire");
   })
   .catch(e => console.error("erreur dans le chargement du fichier audio en mémoire :", e));
+
+  // charge le modele de regression
+async function loadMLPModel() {
+  try {
+    const res = await fetch("/mlp_model");
+    mlpModel = await res.json();
+    console.log("modele MLP chargé");
+  } catch (err) {
+    console.error("erreur de chargement du modele MLP", err);
+  }
+}
 
 
   // bouton Fullscreen

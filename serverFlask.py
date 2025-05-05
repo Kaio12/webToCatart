@@ -49,6 +49,7 @@ def effect():
 def get_ip():
     return {"ip": local_ip}
 
+
 # gestion bouton delete, efface le fichier log
 @app.route('/delete' , methods= ['POST'])
 def delete_file():
@@ -88,6 +89,9 @@ def upload_file():
 def serve_audio(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
+@app.route("/mlp_model")
+def mlp_model():
+    return send_from_directory(UPLOAD_FOLDER, "mlp_model.json")
 
 # === Communication côté navigateur ===
 # Réception de messages texte ou OSC depuis le navigateur,
