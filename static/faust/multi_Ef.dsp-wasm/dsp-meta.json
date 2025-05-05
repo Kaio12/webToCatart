@@ -1,0 +1,151 @@
+{
+    "name": "multi_Ef",
+    "filename": "multi_Ef.dsp",
+    "version": "2.80.4",
+    "compile_options": "-lang wasm-i -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -single -ftz 2",
+    "library_list": [
+        "/usr/share/faust/stdfaust.lib",
+        "/usr/share/faust/filters.lib",
+        "/usr/share/faust/signals.lib",
+        "/usr/share/faust/maths.lib",
+        "/usr/share/faust/platform.lib",
+        "/usr/share/faust/delays.lib",
+        "/usr/share/faust/misceffects.lib"
+    ],
+    "include_pathnames": [
+        "/share/faust",
+        "/usr/local/share/faust",
+        "/usr/share/faust",
+        "."
+    ],
+    "size": 1081416,
+    "inputs": 1,
+    "outputs": 1,
+    "meta": [
+        {
+            "compile_options": "-lang wasm-i -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -single -ftz 2"
+        },
+        {
+            "delays.lib/name": "Faust Delay Library"
+        },
+        {
+            "delays.lib/version": "1.1.0"
+        },
+        {
+            "filename": "multi_Ef.dsp"
+        },
+        {
+            "filters.lib/fbcombfilter:author": "Julius O. Smith III"
+        },
+        {
+            "filters.lib/fbcombfilter:copyright": "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>"
+        },
+        {
+            "filters.lib/fbcombfilter:license": "MIT-style STK-4.3 license"
+        },
+        {
+            "filters.lib/lowpass0_highpass1": "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>"
+        },
+        {
+            "filters.lib/name": "Faust Filters Library"
+        },
+        {
+            "filters.lib/version": "1.7.1"
+        },
+        {
+            "maths.lib/author": "GRAME"
+        },
+        {
+            "maths.lib/copyright": "GRAME"
+        },
+        {
+            "maths.lib/license": "LGPL with exception"
+        },
+        {
+            "maths.lib/name": "Faust Math Library"
+        },
+        {
+            "maths.lib/version": "2.8.1"
+        },
+        {
+            "misceffects.lib/echo:author": "Romain Michon"
+        },
+        {
+            "misceffects.lib/name": "Misc Effects Library"
+        },
+        {
+            "misceffects.lib/version": "2.5.1"
+        },
+        {
+            "name": "multi_Ef"
+        },
+        {
+            "platform.lib/name": "Generic Platform Library"
+        },
+        {
+            "platform.lib/version": "1.3.0"
+        },
+        {
+            "signals.lib/name": "Faust Signal Routing Library"
+        },
+        {
+            "signals.lib/version": "1.6.0"
+        }
+    ],
+    "ui": [
+        {
+            "type": "vgroup",
+            "label": "multi_Ef",
+            "items": [
+                {
+                    "type": "hslider",
+                    "label": "duration",
+                    "varname": "fHslider3",
+                    "shortname": "duration",
+                    "address": "/multi_Ef/duration",
+                    "index": 32828,
+                    "init": 50,
+                    "min": 0,
+                    "max": 100,
+                    "step": 0.001
+                },
+                {
+                    "type": "hslider",
+                    "label": "feedback",
+                    "varname": "fHslider2",
+                    "shortname": "feedback",
+                    "address": "/multi_Ef/feedback",
+                    "index": 32820,
+                    "init": 0.5,
+                    "min": 0,
+                    "max": 1,
+                    "step": 0.01
+                },
+                {
+                    "type": "hslider",
+                    "label": "g",
+                    "varname": "fHslider0",
+                    "shortname": "g",
+                    "address": "/multi_Ef/g",
+                    "index": 12,
+                    "init": 0.4,
+                    "min": 0,
+                    "max": 1,
+                    "step": 0.001
+                },
+                {
+                    "type": "hslider",
+                    "label": "intdel",
+                    "varname": "fHslider1",
+                    "shortname": "intdel",
+                    "address": "/multi_Ef/intdel",
+                    "index": 32800,
+                    "init": 0,
+                    "min": 0,
+                    "max": 4096,
+                    "step": 1
+                }
+            ]
+        }
+    ]
+}

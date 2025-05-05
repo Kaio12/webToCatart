@@ -1,5 +1,8 @@
 //****** partie audio
 
+let faustNode = null; //pour integrer l'effet audio codé en faust
+let grainBus = null; // bus fixe pour router les grains vers l'effet
+
 let audioBuffer = null;
 let audioContext = new AudioContext();
 console.log("AudioContext state :", audioContext.state);
@@ -30,8 +33,39 @@ document.addEventListener('DOMContentLoaded', () => {
   const sidebarright = document.getElementById('sidebarright');
   const body = document.body;
 
+//insere le node effet faust
+  (async () => {
+    const { createFaustNode } = await import("./faust/multi_Ef.dsp-wasm/create-node.js");
+    const result = await createFaustNode(audioContext, "multi_Ef", 0);
+    faustNode = result.faustNode;
 
-// charge le fichier son
+    // crée un bus pour les grains
+    grainBus = audioContext.createGain();
+    grainBus.connect(faustNode);
+    faustNode.connect(audioContext.destination);
+
+    if (!faustNode) {
+      console.error("Erreur : faustNode non créé");
+      return;
+    }
+
+    //parametres de l'effet audio faust
+    faustNode.setParamValue("/multi_Ef/g", 0.8);
+    faustNode.setParamValue("/multi_Ef/feedback", 0.9);
+    faustNode.setParamValue("/multi_Ef/intdel", 3000);
+    faustNode.setParamValue("/multi_Ef/duration", 90);
+
+    console.log("Faust DSP multi_Ef chargé et connecté.");
+  })();
+
+  //gestion des accés midi
+if (navigator.requestMIDIAccess) {
+  navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
+} else {
+  console.warn("WebMidi non supporté");
+}
+
+  // charge le fichier son
 fetch('/audio/enr.wav')
   .then(response => response.arrayBuffer())
   .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
@@ -136,8 +170,14 @@ function playGrain(startMs, durationMs) {
 
   const source = audioContext.createBufferSource();
   source.buffer = audioBuffer;
-  source.connect(audioContext.destination);
-  const startSec = startMs / 1000; //conversion en s
+
+  //connexion au faustnode
+  if (grainBus) {
+    source.connect(grainBus);
+  } else {
+    source.connect(audioContext.destination);
+
+  }  const startSec = startMs / 1000; //conversion en s
   const durationSec = durationMs / 1000;
 
   source.start(0, startSec, durationSec);
@@ -321,13 +361,13 @@ function updatePixiPoints(app) {
       point.targetRadius = point.baseRadius * 1.8; //on marque le point joué en augmentant sa taille.
 
       if (now - point.lastTrigger > cooldown) {
-        sendOSC("/hover", point.sampleId);// point.sampleId
+        
         point.lastTrigger = now;
 
         //joue le grain
         if (isInside && !wasInside) {
           playGrain(point.startTime, point.duration);
-
+          sendOSC("/hover", point.sampleId);// point.sampleId
         }
 
       }
@@ -339,6 +379,37 @@ function updatePixiPoints(app) {
     point.currentRadius += (point.targetRadius - point.currentRadius) * speed;
     point.drawSelf();
   }
+}
+
+// ***** gestion midi ******
+function onMIDISuccess(midiAccess) {
+  for (let input of midiAccess.inputs.values()) {
+    input.onmidimessage = handleMIDIMessage;
+  }
+  console.log("✅ MIDI ready");
+}
+
+function handleMIDIMessage(message) {
+  const [status, data1, data2] = message.data;
+
+  // Exemple : MIDI CC sur canal 1
+  if ((status & 0xF0) === 0xB0) {
+    const cc = data1;
+    const val = data2 / 127;
+
+    if (!faustNode) return;
+
+    // Exemple : CC#1 -> gain, CC#2 -> delay
+    if (cc === 1) {
+      faustNode.setParamValue("/multi_Ef/gain", val);
+    } else if (cc === 2) {
+      faustNode.setParamValue("/multi_Ef/delay", val);
+    }
+  }
+}
+
+function onMIDIFailure() {
+  console.error("❌ Échec accès MIDI");
 }
 
 // === Connexion socket.io avec Max/MSP ===

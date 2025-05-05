@@ -70,7 +70,6 @@ body {
     transform: translateX(-100%);
 }
 
-
 .sidebarright.hidden {
     transform: translateX(100%);
 }
