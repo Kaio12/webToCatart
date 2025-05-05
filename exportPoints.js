@@ -14,6 +14,8 @@ function exportPoints()
                 DistY = lesdeux.getmxcolumn(2); // récupère les positions y des grains
                 loudnessMax = lesdeux.getmxcolumn(8);
                 energyMax = lesdeux.getmxcolumn(5);
+                Time = lesdeux.gettime();
+                Duration= lesdeux.getmxcolumn(3);
 
                 var points = [];
                 for (let i = 0; i < DistX.length; i++)
@@ -23,7 +25,9 @@ function exportPoints()
                                 y: DistY[i],
                                 loudnessmax : loudnessMax[i],
                                 energymax : energyMax[i],
-                                sampleId: i
+                                sampleId: i,
+                                time : Time[i],
+                                duration : Duration[i]
                             };
                             points.push(point);
                         }
@@ -31,20 +35,5 @@ function exportPoints()
                 post("JSON points ", jsonPoints, "\n");
                 outlet (0, jsonPoints); // envoie le JSON à Max
             }
-        }
-    }
-
-// exporte de max vers browser les données brutes audio
-function exportSound() {
-    var mubu = new MubuJS("echantillons");
-    mubu.refer("echantillons");
-
-    if (mubu != null) {
-        //var audio = mubu.gettrack(1, "audio");
-        //var raw = audio.getmxcolumn(1); // récupère un tableau de float
-        //outlet(1, JSON.stringify(raw) );
-        //(bufferindex [Number], trackid [Number | String], filepath [String], options [String])
-        mubu.writetrack (1, "audio", "/Users/philippecaillot/Documents/programmation/geste/audiofiles/enr.wav" );
-        post("fichier sauvé...?");
         }
     }

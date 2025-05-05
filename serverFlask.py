@@ -1,7 +1,7 @@
 # === Serveur Flask avec Socket.IO pour la communication entre navigateur et Max/MSP ===
 # Ce serveur gère des messages OSC bidirectionnels et enregistre les données reçues côté navigateur.
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_socketio import SocketIO
 import json
 import os
@@ -15,6 +15,9 @@ catched_audio = None
 
 #définition du serveur Flask
 app = Flask(__name__)
+UPLOAD_FOLDER = './uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 app.config['SECRET_KEY'] = 'philippe'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
@@ -70,17 +73,20 @@ def send_points():
     else:
         return {"status": "empty", "message": "No points available"}, 204
 
-@app.route('/soundfile', methods=['GET'])
-def soundfile():
-    global catched_audio
-    if catched_audio:
-        try:
-            son = json.loads(catched_audio)
-        except (TypeError, json.JSONDecodeError):
-            son = catched_audio
-        return jsonify(son), 200
-    else:
-        return {"status": "empty", "message": "No soundfile available"}, 204
+@app.route('/api/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return {"error": "No file part"}, 400
+    file = request.files['file']
+    if file.filename == '':
+        return {"error": "No selected file"}, 400
+    filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+    file.save(filepath)
+    return {"status": "ok", "filename": file.filename}
+
+@app.route('/audio/<filename>')
+def serve_audio(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename)
 
 
 # === Communication côté navigateur ===

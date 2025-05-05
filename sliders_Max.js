@@ -6,6 +6,11 @@ const Max = require('max-api');            // API pour communiquer avec Max/MSP
 const io = require('socket.io-client');    // Client WebSocket compatible avec Socket.IO
 const axios = require('axios');            // Pour faire des requêtes HTTP (ici, pour récupérer l'IP du serveur)
 const WavEncoder = require('wav-encoder'); // Afin d'encoder des données brutes en WAV
+const { constants } = require('fs');
+const fs = require('fs');
+const fsp = require('fs/promises');
+const FormData = require('form-data');
+
 
 // Variable pour stocker le socket une fois connecté
 let socket;
@@ -68,20 +73,22 @@ Max.addHandler("data", (msg) => {
         });
 });
 
+var pathFile = "/Users/philippecaillot/Documents/programmation/geste/audiofiles/enr.wav"
 
-Max.addHandler("audio", (msg) => {
-    console.log("Message audio from Max:", msg);
-    
-});
-/* axios.post("http://localhost:5001/api/data", msg, {
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-        .then(response => {
-            console.log("Données envoyées au serveur via HTTP:", response.data);
-        })
-        .catch(error => {
-            console.error("Erreur lors de l'envoi HTTP vers le serveur:", error);
-        });
-*/
+Max.addHandler("exportSound", async () => {
+    try {
+        await fsp.access(pathFile, constants.F_OK);//vérifie que le fichier son existe
+        console.log("le fichier son existe");
+  
+        const form = new FormData();
+        form.append('file', fs.createReadStream(pathFile));
+  
+        const response = await axios.post("http://localhost:5001/api/upload", form, {
+        headers: form.getHeaders()
+      });
+  
+      console.log("Fichier envoyé au serveur Flask :", response.data);
+    } catch (err) {
+      console.error("Erreur exportSound :", err.message);
+    }
+  });

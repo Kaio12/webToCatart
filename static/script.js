@@ -1,9 +1,46 @@
+//****** partie audio
+
+let audioBuffer = null;
+let audioContext = new AudioContext();
+console.log("AudioContext state :", audioContext.state);
+
+let audioStarted = false;
+
+document.getElementById("audio-toggle").addEventListener("click", () => {
+  if (!audioStarted && audioContext.state === "suspended") {
+    audioContext.resume().then(() => {
+      console.log("AudioContext activé");
+      audioStarted = true;
+      document.getElementById("audio-toggle").textContent = "Arrêter l'audio";
+    });
+  } else if (audioContext.state === "running") {
+    audioContext.suspend().then(() => {
+      console.log("AudioContext suspendu");
+      audioStarted = false;
+      document.getElementById("audio-toggle").textContent = "Démarrer l'audio";
+    });
+  }
+});
+
+
 document.addEventListener('DOMContentLoaded', () => {
   const toggleleft = document.getElementById('toggle-left');
   const sidebarleft = document.getElementById('sidebarleft');
   const toggleright = document.getElementById('toggle-right');
   const sidebarright = document.getElementById('sidebarright');
   const body = document.body;
+
+
+// charge le fichier son
+fetch('/audio/enr.wav')
+  .then(response => response.arrayBuffer())
+  .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
+  .then(decoded => {
+    audioBuffer = decoded;
+    console.log("Audio chargé en mémoire");
+  })
+  .catch(e => console.error("erreur dans le chargement du fichier audio en mémoire :", e));
+
 
   // bouton Fullscreen
   document.getElementById("fullscreen-btn").addEventListener("click", () => {
@@ -43,17 +80,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // bouton demande fichier son
 document.getElementById("ask-soundfile").addEventListener("click", () => {
-  fetch("/soundfile", { method: "GET" })
-    .then(response => {
-      if (response.ok) {
-        console.log("fichier son demandé au serveur");
-      } else {
-        console.error("Erreur lors de la demande du fichier son.");
-      }
-      })
-      .catch(error => {
-        console.error("Erreur réseau:", error);
-      });
+  const sound = new Howl({
+    src: ['http://localhost:5001/audio/enr.wav'],
+    format: ['wav'],
+    html5: true // utile pour les fichiers volumineux
+  });
+  sound.play();
+  console.log("🎧 Fichier son joué depuis /audio/enr.wav");
     });
 
   // bouton barres latérales
@@ -107,7 +140,20 @@ document.getElementById("ask-soundfile").addEventListener("click", () => {
   setupPixi();
 });
 
-// === Envoie messages OSC via socket.io ===
+//fonction pour jouer le grain correspondant au point sélectionné
+function playGrain(startMs, durationMs) {
+  if(!audioBuffer) return;
+
+  const source = audioContext.createBufferSource();
+  source.buffer = audioBuffer;
+  source.connect(audioContext.destination);
+  const startSec = startMs / 1000; //conversion en s
+  const durationSec = durationMs / 1000;
+
+  source.start(0, startSec, durationSec);
+}
+
+// Envoie messages OSC via socket.io ===
 let sendOSC = function (address, args) {
   if (socket && socket.connected) {
     console.log("Sending OSC:", address, args);
@@ -117,7 +163,7 @@ let sendOSC = function (address, args) {
   }
 };
 
-// === Fonctions utilitaires ===
+
 // Calcule les limites (min et max) des coordonnées et des valeurs pour un ensemble de points
 function getBounds(data) {
   let xs = data.map(p => p.x);
@@ -173,7 +219,7 @@ function hslToRgb(h, s, l) {
   return [r, g, b];
 }
 
-// === Configuration de Pixi.js pour le rendu graphique ===
+// Configuration de Pixi.js pour le rendu graphique
 let pixiPoints = [];
 let pointerPos = { x: -9999, y: -9999 };
 const proximityThreshold = 80;
@@ -194,6 +240,9 @@ async function setupPixi() {
   app.stage.interactive = true;
   app.stage.on("pointermove", (e) => {
     pointerPos = e.data.global;
+  });
+  app.canvas.addEventListener("mouseleave", () => {
+    pointerPos = { x: -9999, y: -9999 }; // position très éloignée
   });
 // au cas ou la fenêtre change de taille, on redessine les points
   window.addEventListener('resize', () => {
@@ -231,6 +280,7 @@ function drawPixiPoints(pointsData, app) {
     const hue = mapRange(p.energyMax, bounds.eMin, bounds.eMax, 240, 0);
     const [r, gVal, b] = hslToRgb(hue / 360, 1, 0.5);
     const color = (r * 255 << 16) + (gVal * 255 << 8) + (b * 255) | 0;
+
     g.x = mapRange(p.x, bounds.xMin, bounds.xMax, 50, window.innerWidth - 50);
     g.y = mapRange(p.y, bounds.yMin, bounds.yMax, window.innerHeight - 50, 50);
 
@@ -240,6 +290,9 @@ function drawPixiPoints(pointsData, app) {
     g.lastTrigger = 0;
     g.sampleId = p.sampleId;
     g.color = color;
+
+    g.startTime = p.time;
+    g.duration = p.duration;
 
     g.drawSelf = function () {
       this.clear();
@@ -273,6 +326,10 @@ function updatePixiPoints(app) {
       if (now - point.lastTrigger > cooldown) {
         sendOSC("/hover", point.sampleId);// point.sampleId
         point.lastTrigger = now;
+
+        //joue le grain
+        playGrain(point.startTime, point.duration);
+
       }
     } else {
       point.targetRadius = point.baseRadius;
@@ -314,13 +371,15 @@ async function loadPoints() {
         y: parseFloat(point.y),
         sampleId: point.sampleId,
         loudnessMax: parseFloat(point.loudnessmax),
-        energyMax: parseFloat(point.energymax)
+        energyMax: parseFloat(point.energymax),
+        time: parseFloat(point.time),
+        duration: parseFloat(point.duration)
       })).filter(p => !isNaN(p.x) && !isNaN(p.y));
       
       data = parsed;
       drawPixiPoints(data, window.pixiApp);
     } else if (rawData.type === "soundfile") {
-      console.log("🎵 Reçu un fichier son : ", rawData.filename);
+      console.log("Reçu un fichier son : ", rawData.filename);
     } else {
       console.warn("Type de données inconnu :", rawData);
     }
