@@ -78,16 +78,6 @@ fetch('/audio/enr.wav')
       });
   });
 
-// bouton demande fichier son
-document.getElementById("ask-soundfile").addEventListener("click", () => {
-  const sound = new Howl({
-    src: ['http://localhost:5001/audio/enr.wav'],
-    format: ['wav'],
-    html5: true // utile pour les fichiers volumineux
-  });
-  sound.play();
-  console.log("🎧 Fichier son joué depuis /audio/enr.wav");
-    });
 
   // bouton barres latérales
   toggleleft.addEventListener('click', () => {
@@ -223,7 +213,7 @@ function hslToRgb(h, s, l) {
 let pixiPoints = [];
 let pointerPos = { x: -9999, y: -9999 };
 const proximityThreshold = 80;
-const cooldown = 300;
+const cooldown = 300; // temps minimal entre deux update pour le toucher des points
 const baseWidth = 800;
 const baseHeight = 800;
 let data = [];
@@ -244,6 +234,8 @@ async function setupPixi() {
   app.canvas.addEventListener("mouseleave", () => {
     pointerPos = { x: -9999, y: -9999 }; // position très éloignée
   });
+
+
 // au cas ou la fenêtre change de taille, on redessine les points
   window.addEventListener('resize', () => {
     app.renderer.resize(window.innerWidth, window.innerHeight);
@@ -315,20 +307,28 @@ function drawPixiPoints(pointsData, app) {
 }
 
 function updatePixiPoints(app) {
-  const now = performance.now();
+  const now = performance.now(); //temps écoulé depuis le temps origine
+
 
   for (const point of pixiPoints) {
     const dist = Math.hypot(point.x - pointerPos.x, point.y - pointerPos.y);
 
+    const wasInside = point.isInside || false;
+    const isInside = dist < proximityThreshold;
+    point.isInside = isInside;
+  
     if (dist < proximityThreshold) {
-      point.targetRadius = point.baseRadius * 1.8;
+      point.targetRadius = point.baseRadius * 1.8; //on marque le point joué en augmentant sa taille.
 
       if (now - point.lastTrigger > cooldown) {
         sendOSC("/hover", point.sampleId);// point.sampleId
         point.lastTrigger = now;
 
         //joue le grain
-        playGrain(point.startTime, point.duration);
+        if (isInside && !wasInside) {
+          playGrain(point.startTime, point.duration);
+
+        }
 
       }
     } else {
