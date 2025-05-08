@@ -1,3 +1,7 @@
+// ****** script définit le comportement d'une page destinée à un Iphone controlant un effet faust
+// manque la gestion BT midi.
+//  manque un éventuel mention des données envoyées 
+
 var position = new Nexus.Position('#position')
 
 // === Connexion socket.io avec Max/MSP ===

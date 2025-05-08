@@ -1,15 +1,15 @@
 //****** partie audio
 
-let faustNode = null; //pour integrer l'effet audio codé en faust
+let faustNode = null; //node pour integrer l'effet audio codé en faust
 let grainBus = null; // bus fixe pour router les grains vers l'effet
 
-let audioBuffer = null;
+let audioBuffer = null; //buffer pour intégrer le fichier son reçu de max
 let audioContext = new AudioContext();
 console.log("AudioContext state :", audioContext.state);
 
 let audioStarted = false;
 
-// un bouton pour débloquer l'audiocontext
+// un bouton pour débloquer l'audiocontext (necessaire par sécurité)
 document.getElementById("audio-toggle").addEventListener("click", () => {
   if (!audioStarted && audioContext.state === "suspended") {
     audioContext.resume().then(() => {
@@ -28,6 +28,8 @@ document.getElementById("audio-toggle").addEventListener("click", () => {
 
 // les opérations interviennet après le chargement du DOM
 document.addEventListener('DOMContentLoaded', () => {
+
+  // les différents éléments de la page web récupérés
   const toggleleft = document.getElementById('toggle-left');
   const sidebarleft = document.getElementById('sidebarleft');
   const toggleright = document.getElementById('toggle-right');
@@ -42,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // crée un bus pour les grains
     grainBus = audioContext.createGain();
+    // grain => faust => destination
     grainBus.connect(faustNode);
     faustNode.connect(audioContext.destination);
 
@@ -50,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    //parametres de base de l'effet audio faust
+    //parametres de base de l'effet audio faust (manque un dry/wet??)
     faustNode.setParamValue("/multi_Ef/g", 0.8);
     faustNode.setParamValue("/multi_Ef/feedback", 0.9);
     faustNode.setParamValue("/multi_Ef/intdel", 3000);
@@ -66,6 +69,7 @@ if (navigator.requestMIDIAccess) {
   console.warn("WebMidi non supporté");
 }
 
+  // ********** POUR L'INSTANT INUTILISÉ **********
   //charge le modele MLP (pour traduire le 2d de l'iphone vers les 4 paramètres de l'effet faust)
   loadMLPModel();
 
@@ -90,7 +94,6 @@ async function loadMLPModel() {
   }
 }
 
-
   // bouton Fullscreen
   document.getElementById("fullscreen-btn").addEventListener("click", () => {
     if (!document.fullscreenElement) {
@@ -100,7 +103,7 @@ async function loadMLPModel() {
     }
   });
 
-  // bouton Delete log (je log tous les évènements du browser et de l'ipad)
+  // bouton Delete log (on log tous les évènements du browser et de l'ipad)
   document.getElementById("delete-log").addEventListener("click", () => {
     fetch("/delete", { method: "POST" })
       .then(response => {
@@ -112,6 +115,7 @@ async function loadMLPModel() {
       });
   });
 
+  // ******** NE SERT PLUS A RIEN, A ENLEVER *****
   // bouton demande points (en cas de rechargement, à automatiser)
   document.getElementById("ask-points").addEventListener("click", () => {
     fetch("/catched_points", { method: "GET" })
@@ -128,7 +132,7 @@ async function loadMLPModel() {
   });
 
 
-  // bouton apparition/disparition des barres latérales (à remplacer par un mouvement des doigts)
+  // bouton apparition/disparition des barres latérales (********* à remplacer par un mouvement des doigts)
   toggleleft.addEventListener('click', () => {
     sidebarleft.classList.toggle('hidden');
     body.classList.toggle('sidebarleft-hidden');
@@ -138,7 +142,7 @@ async function loadMLPModel() {
     body.classList.toggle('sidebright-hidden');
   });
 
-  // NexusUI Sliders (pour l'instant inutilisés)
+  // NexusUI Sliders (******** pour l'instant inutilisés ****** A ENLEVER PROBABLEMENT*****)
   let multisliderRight = new Nexus.Multislider('#multisliderRight', {
     'size': [200, 600],
     'numberOfSliders': 3,
@@ -175,11 +179,11 @@ async function loadMLPModel() {
     sendOSC("/multisliderLeft", v);
   });
 
-  // initialisation du canvas Pixi 
+  // initialisation du canvas Pixi utilisé pour afficher les points correspondant aux grains
   setupPixi();
 });
 
-//fonction pour jouer le grain correspondant au point sélectionné
+//fonction pour jouer le grain correspondant au point PIXI sélectionné (survolé)
 function playGrain(startMs, durationMs) {
   if(!audioBuffer) return;
 
@@ -198,6 +202,7 @@ function playGrain(startMs, durationMs) {
   source.start(0, startSec, durationSec);
 }
 
+// NE DEVRAIT PLUS SERVIR, SAUF POUR LOG DES MOUVEMENTS
 // Envoie messages OSC via socket.io ===
 let sendOSC = function (address, args) {
   if (socket && socket.connected) {
@@ -209,7 +214,7 @@ let sendOSC = function (address, args) {
 };
 
 
-// Calcule les limites (min et max) des coordonnées et des valeurs pour un ensemble de points
+// Calcule les limites (min et max) des coordonnées et des valeurs pour un ensemble de points, permet d'adapter à la taille de la fenètre.
 function getBounds(data) {
   let xs = data.map(p => p.x);
   let ys = data.map(p => p.y);
@@ -238,7 +243,7 @@ function hslToHex(h, s, l) {
 
   return (f(0) << 16) + (f(1) << 8) + f(2);
 }
-// Convertit une couleur HSL en valeurs RGB (fournit des couleurs très proches de max)
+// Convertit une couleur HSL en valeurs RGB (fournit des couleurs très proches de CATART dans Max)
 function hslToRgb(h, s, l) {
   let r, g, b;
 
@@ -268,7 +273,10 @@ function hslToRgb(h, s, l) {
 let pixiPoints = [];
 let pointerPos = { x: -9999, y: -9999 };
 const proximityThreshold = 80;
+
+// ******* variable à remonter dans le script??? *****
 const cooldown = 300; // temps minimal entre deux update pour le toucher des points
+
 const baseWidth = 800;
 const baseHeight = 800;
 let data = [];
@@ -278,11 +286,13 @@ async function setupPixi() {
   const app = new PIXI.Application();
   await app.init({
     resizeTo: window,
-    backgroundColor: 0xffffff
+    backgroundColor: 0xffffff // couleur du fond, à adapter, mode clair mode sombre????
   });
   const container = document.getElementById("pixi-container");
   if (container) container.appendChild(app.canvas);
   app.stage.interactive = true;
+
+  // position du pointeur (souris, doigt)
   app.stage.on("pointermove", (e) => {
     pointerPos = e.data.global;
   });
@@ -297,6 +307,7 @@ async function setupPixi() {
     drawPixiPoints(data, app);
   });
 
+// ticker : actualisation de l'app sur chaque frame
   app.ticker.add(updatePixiPoints.bind(null, app));
   window.pixiApp = app; // expose app if needed globally
 }
@@ -312,7 +323,7 @@ function drawPixiPoints(pointsData, app) {
   pixiPoints.length = 0;
 
   const bounds = getBounds(pointsData);
-  console.log("📊 BOUNDS calculés :", bounds);
+  console.log("BOUNDS calculés :", bounds);
 
   const scaleX = window.innerWidth / baseWidth;
   const scaleY = window.innerHeight / baseHeight;
@@ -322,8 +333,9 @@ function drawPixiPoints(pointsData, app) {
 
   pointsData.forEach((p, index) => {
     const g = new PIXI.Graphics();
-
+// radius (taille des points) suit loudness (donné par analyse CATART/Max)
     const radius = mapRange(p.loudnessMax, bounds.lMin, bounds.lMax, 5, 20);
+// couleur du point suit energy (donné par analyse CATART/Max)
     const hue = mapRange(p.energyMax, bounds.eMin, bounds.eMax, 240, 0);
     const [r, gVal, b] = hslToRgb(hue / 360, 1, 0.5);
     const color = (r * 255 << 16) + (gVal * 255 << 8) + (b * 255) | 0;
@@ -348,7 +360,7 @@ function drawPixiPoints(pointsData, app) {
       this.endFill();
     };
 
-    console.log(`🟡 Point ${index}:`, {
+    console.log(`Point ${index}:`, {
       originalX: p.x,
       originalY: p.y,
       mappedX: g.x,
@@ -361,6 +373,7 @@ function drawPixiPoints(pointsData, app) {
   });
 }
 
+//*********FONCTION QUI JOUE LES GRAINS, ENVOIE LES INFOS OSC */
 function updatePixiPoints(app) {
   const now = performance.now(); //temps écoulé depuis le temps origine
 
@@ -395,7 +408,7 @@ function updatePixiPoints(app) {
     point.drawSelf();
   }
 }
-
+//*******POUR L'INSTANT INUTILISÉ ********
 //gestion midi (qui va se superposer à osc, a revoir)
 function onMIDISuccess(midiAccess) {
   for (let input of midiAccess.inputs.values()) {
@@ -404,6 +417,7 @@ function onMIDISuccess(midiAccess) {
   console.log("✅ MIDI ready");
 }
 
+//*****INUTILISÉ POUR L'INSTANT */
 function handleMIDIMessage(message) {
   const [status, data1, data2] = message.data;
 
@@ -427,7 +441,7 @@ function onMIDIFailure() {
   console.error("❌ Échec accès MIDI");
 }
 
-// Connexion socket.io avec le reseau, Max/MSP et iphone connecté
+// Connexion socket.io avec le reseau, Max/MSP et IPHONE connecté
 let socket;
 fetch("/api/ip")
   .then(response => response.json())
@@ -487,7 +501,7 @@ function mapOSCToFaust(address, args) {
   if (!faustNode || !address || !Array.isArray(args)) return;
 
   const oscToFaustMap = {
-  "/effectPos": ["multi_Ef/g", "/multi_Ef/feedback"]
+  "/effectPos": ["multi_Ef/g", "/multi_Ef/feedback"] // POUR L'INSTANT MAP UNIQUEMENT G ET FEEDBACK, SANS UTILISER LA REGRESSION 
   };
 
   const param = oscToFaustMap[address];

@@ -1,3 +1,5 @@
+# calcul d'une regression de deux vers 4 paramètres
+
 from sklearn.neural_network import MLPRegressor
 import numpy as np
 import json

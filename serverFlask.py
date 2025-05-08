@@ -1,5 +1,5 @@
-# === Serveur Flask avec Socket.IO pour la communication entre navigateur et Max/MSP ===
-# Ce serveur gère des messages OSC bidirectionnels et enregistre les données reçues côté navigateur.
+# === Serveur Flask avec Socket.IO pour la communication entre un navigateur, un iphone et Max/MSP ===
+# Ce serveur gère des messages OSC bidirectionnels, sert différents fichiers (son, coordonnées des points à dessiner) et enregistre les données reçues côté navigateur.
 
 #table de routage osc
 TABLE_ROUTING = {
@@ -109,13 +109,15 @@ def handle_browser_message(data):
     log_browser_data(data) #on enregistre les données dans un fichier pour éventuel analyse de geste
     socketio.emit('to_max', data, namespace='/max')  # on renvoie les infos vers max
 
+
+# ****** pour l'instant un socket message et un socket osc, probablement à clarifier
 @socketio.on('osc', namespace='/browser')
 def handle_browser_osc(data):
     print('Received OSC from browser: ' + json.dumps(data, indent=2))
     log_browser_data(data, is_osc=True) #on enregistre les données osc recues
     route_osc(data)
 
-# === Communication côté Max/MSP ===
+# Communication côté Max/MSP
 # Réception de messages texte ou OSC depuis Max,
 # et transmission au navigateur
 @socketio.on('message', namespace='/max')
