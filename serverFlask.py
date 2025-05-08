@@ -1,6 +1,13 @@
 # === Serveur Flask avec Socket.IO pour la communication entre navigateur et Max/MSP ===
 # Ce serveur gère des messages OSC bidirectionnels et enregistre les données reçues côté navigateur.
 
+#table de routage osc
+TABLE_ROUTING = {
+    "/iphone/": "/browser",
+    "/ipad/": "/max",
+    "/max/": "/browser"
+}
+
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_socketio import SocketIO
 import json
@@ -106,7 +113,7 @@ def handle_browser_message(data):
 def handle_browser_osc(data):
     print('Received OSC from browser: ' + json.dumps(data, indent=2))
     log_browser_data(data, is_osc=True) #on enregistre les données osc recues
-    socketio.emit('to_max', data, namespace='/max')  # Forward to Max/MSP namespace
+    route_osc(data)
 
 # === Communication côté Max/MSP ===
 # Réception de messages texte ou OSC depuis Max,
@@ -122,7 +129,7 @@ def handle_max_message(data):
 @socketio.on('osc', namespace='/max')
 def handle_max_osc(data):
     print('Received OSC from Max/MSP: ' + json.dumps(data, indent=2))
-    socketio.emit('to_browser', data, namespace='/browser')  # Forward to browser namespace
+    route_osc(data)
 
 # Fonction pour enregistrer les données reçues du navigateur dans un fichier de log
 def log_browser_data(data, is_osc=False):
@@ -135,6 +142,16 @@ def log_browser_data(data, is_osc=False):
     with open(log_file, "a") as csvf:
         writer = csv.writer(csvf)
         writer.writerow([timestamp, data])
+
+#function qui prend les adresse osc pour et envoie les données avec le bon routing défini dans la table en tête du script
+def route_osc(data):
+    address = data.get("address", "")
+    for prefix, target_ns in TABLE_ROUTING.items():
+        if address.startswith(prefix):
+            socketio.emit('to_' + target_ns.strip('/'), data, namespace=target_ns)
+            return
+    # Par défaut
+    socketio.emit('to_browser', data, namespace='/browser')
 
 @app.route('/api/data', methods=['POST'])
 def receive_data():

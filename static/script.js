@@ -9,6 +9,7 @@ console.log("AudioContext state :", audioContext.state);
 
 let audioStarted = false;
 
+// un bouton pour débloquer l'audiocontext
 document.getElementById("audio-toggle").addEventListener("click", () => {
   if (!audioStarted && audioContext.state === "suspended") {
     audioContext.resume().then(() => {
@@ -25,7 +26,7 @@ document.getElementById("audio-toggle").addEventListener("click", () => {
   }
 });
 
-
+// les opérations interviennet après le chargement du DOM
 document.addEventListener('DOMContentLoaded', () => {
   const toggleleft = document.getElementById('toggle-left');
   const sidebarleft = document.getElementById('sidebarleft');
@@ -49,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    //parametres de l'effet audio faust
+    //parametres de base de l'effet audio faust
     faustNode.setParamValue("/multi_Ef/g", 0.8);
     faustNode.setParamValue("/multi_Ef/feedback", 0.9);
     faustNode.setParamValue("/multi_Ef/intdel", 3000);
@@ -58,17 +59,17 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log("Faust DSP multi_Ef chargé et connecté.");
   })();
 
-  //gestion des accés midi
+  //gestion des accés midi (pour un controle ultérieur par iphone en bt)
 if (navigator.requestMIDIAccess) {
   navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
 } else {
   console.warn("WebMidi non supporté");
 }
 
-  //charge le modele MLP
+  //charge le modele MLP (pour traduire le 2d de l'iphone vers les 4 paramètres de l'effet faust)
   loadMLPModel();
 
-  // charge le fichier son
+  // charge le fichier son enregistré, et servi par max via le serveur flask
 fetch('/audio/enr.wav')
   .then(response => response.arrayBuffer())
   .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
@@ -78,7 +79,7 @@ fetch('/audio/enr.wav')
   })
   .catch(e => console.error("erreur dans le chargement du fichier audio en mémoire :", e));
 
-  // charge le modele de regression
+  // définition de la fonction qui charge le modele de regression
 async function loadMLPModel() {
   try {
     const res = await fetch("/mlp_model");
@@ -99,7 +100,7 @@ async function loadMLPModel() {
     }
   });
 
-  // bouton Delete log
+  // bouton Delete log (je log tous les évènements du browser et de l'ipad)
   document.getElementById("delete-log").addEventListener("click", () => {
     fetch("/delete", { method: "POST" })
       .then(response => {
@@ -127,7 +128,7 @@ async function loadMLPModel() {
   });
 
 
-  // bouton barres latérales
+  // bouton apparition/disparition des barres latérales (à remplacer par un mouvement des doigts)
   toggleleft.addEventListener('click', () => {
     sidebarleft.classList.toggle('hidden');
     body.classList.toggle('sidebarleft-hidden');
@@ -137,7 +138,7 @@ async function loadMLPModel() {
     body.classList.toggle('sidebright-hidden');
   });
 
-  // NexusUI Sliders
+  // NexusUI Sliders (pour l'instant inutilisés)
   let multisliderRight = new Nexus.Multislider('#multisliderRight', {
     'size': [200, 600],
     'numberOfSliders': 3,
@@ -237,7 +238,7 @@ function hslToHex(h, s, l) {
 
   return (f(0) << 16) + (f(1) << 8) + f(2);
 }
-// Convertit une couleur HSL en valeurs RGB
+// Convertit une couleur HSL en valeurs RGB (fournit des couleurs très proches de max)
 function hslToRgb(h, s, l) {
   let r, g, b;
 
@@ -395,7 +396,7 @@ function updatePixiPoints(app) {
   }
 }
 
-// ***** gestion midi ******
+//gestion midi (qui va se superposer à osc, a revoir)
 function onMIDISuccess(midiAccess) {
   for (let input of midiAccess.inputs.values()) {
     input.onmidimessage = handleMIDIMessage;
@@ -426,16 +427,23 @@ function onMIDIFailure() {
   console.error("❌ Échec accès MIDI");
 }
 
-// === Connexion socket.io avec Max/MSP ===
+// Connexion socket.io avec le reseau, Max/MSP et iphone connecté
 let socket;
 fetch("/api/ip")
   .then(response => response.json())
   .then(data => {
     socket = io(`http://${data.ip}:5001/browser`);//renvoie l'adresse ip
     window.socket = socket;
-
+//reception de données osc, mapping vers l'effet faust
     socket.on('connect', () => {
-      console.log("✅ Connecté à", data.ip);
+      console.log("Connecté à", data.ip);
+
+      socket.on('to_browser', (data) => {
+        const { address, args } = data;
+        console.log("osc recu: ", address, args);
+        mapOSCToFaust(address, args);
+      });
+
       loadPoints(); // Charger les points une fois connecté
     });
   });
@@ -470,5 +478,28 @@ async function loadPoints() {
     }
   } catch (error) {
     console.error("Erreur de chargement des points:", error);
+  }
+}
+
+
+// Mapping OSC → paramètres Faust
+function mapOSCToFaust(address, args) {
+  if (!faustNode || !address || !Array.isArray(args)) return;
+
+  const oscToFaustMap = {
+  "/effectPos": ["multi_Ef/g", "/multi_Ef/feedback"]
+  };
+
+  const param = oscToFaustMap[address];
+  if (Array.isArray(param)) {
+    param.forEach((p, i) => {
+      if (args[i] !== undefined) {
+        faustNode.setParamValue(p, args[i]);
+      }
+    });
+  } else if (typeof param === "string" && args[0] !== undefined) {
+    faustNode.setParamValue(param, args[0]);
+  } else {
+    console.warn("Adresse OSC non reconnue :", address);
   }
 }
