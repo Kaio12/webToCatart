@@ -343,6 +343,17 @@ app.stage.on("pointerup", () => {
    // freeDrawGraphics.closePath();
    // freeDrawGraphics.endFill();
     drawing = false;
+    
+     pixiPoints.forEach(point => {
+    // On crée un PIXI.Point aux coordonnées globales du point
+    const testPoint = new PIXI.Point(point.x, point.y);
+    // Si le Graphics freeDrawGraphics contient ce point...
+    if (freeDrawGraphics.containsPoint(testPoint)) {
+      point.tint = 0xFFFF00;  // on lève la teinte pour marquer la sélection
+    } else {
+      point.tint = 0xFFFFFF;  // on rétablit la teinte par défaut
+    }
+  });
   });
 
 
