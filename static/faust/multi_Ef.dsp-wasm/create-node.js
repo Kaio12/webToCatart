@@ -21,9 +21,9 @@
  */
 const createFaustNode = async (audioContext, dspName = "template", voices = 0, sp = false, bufferSize = 512) => {
     // Set to true if the DSP has an effect
-    const FAUST_DSP_HAS_EFFECT = true;
+    const FAUST_DSP_HAS_EFFECT = false;
 
-    // Import necessary Faust modules and data
+    // Import necessary Faust modules and data 
     const { FaustMonoDspGenerator, FaustPolyDspGenerator } = await import("./faustwasm/index.js");
 
     // Load DSP metadata from JSON

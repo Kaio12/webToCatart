@@ -168,8 +168,7 @@ var getFaustAudioWorkletProcessor = (dependencies, faustData, register = true) =
           this.propagateGyr(gyr);
         }
       }
-      this.fDSPCode.compute(inputs[0], outputs[0]);
-return true;
+      return this.fDSPCode.compute(inputs[0], outputs[0]);
     }
     handleMessageAux(e) {
       const msg = e.data;
@@ -2684,7 +2683,6 @@ var FaustMonoWebAudioDsp = class extends FaustBaseWebAudioDsp {
 };
 var FaustWebAudioDspVoice = class _FaustWebAudioDspVoice {
   constructor($dsp, api, inputItems, pathTable, sampleRate) {
-    // -90 db
     this.fFreqLabel = [];
     this.fGateLabel = [];
     this.fGainLabel = [];
@@ -2697,6 +2695,7 @@ var FaustWebAudioDspVoice = class _FaustWebAudioDspVoice {
     this.fNextVel = -1;
     this.fDate = 0;
     this.fLevel = 0;
+    this.fRelease = 0;
     this.fDSP = $dsp;
     this.fAPI = api;
     this.fAPI.init(this.fDSP, sampleRate);
@@ -2719,7 +2718,7 @@ var FaustWebAudioDspVoice = class _FaustWebAudioDspVoice {
     return -4;
   }
   static get VOICE_STOP_LEVEL() {
-    return 3162e-8;
+    return 5e-4;
   }
   static midiToFreq(note) {
     return 440 * 2 ** ((note - 69) / 12);
@@ -2761,6 +2760,7 @@ var FaustWebAudioDspVoice = class _FaustWebAudioDspVoice {
     if (hard) {
       this.fCurNote = _FaustWebAudioDspVoice.kFreeVoice;
     } else {
+      this.fRelease = this.fAPI.getSampleRate(this.fDSP) / 2;
       this.fCurNote = _FaustWebAudioDspVoice.kReleaseVoice;
     }
   }
@@ -2864,13 +2864,11 @@ var FaustPolyWebAudioDsp = class _FaustPolyWebAudioDsp extends FaustBaseWebAudio
   getPlayingVoice(pitch) {
     let voicePlaying = FaustWebAudioDspVoice.kNoVoice;
     let oldestDatePlaying = Number.MAX_VALUE;
-    for (let i = 0; i < this.fInstance.voices; i++) {
-      let curNote = this.fVoiceTable[i].fCurNote;
-      let nextNote = this.fVoiceTable[i].fNextNote;
-      if (curNote === pitch || curNote === FaustWebAudioDspVoice.kLegatoVoice && nextNote === pitch) {
-        if (this.fVoiceTable[i].fDate < oldestDatePlaying) {
-          oldestDatePlaying = this.fVoiceTable[i].fDate;
-          voicePlaying = i;
+    for (let voice = 0; voice < this.fInstance.voices; voice++) {
+      if (this.fVoiceTable[voice].fCurNote === pitch) {
+        if (this.fVoiceTable[voice].fDate < oldestDatePlaying) {
+          oldestDatePlaying = this.fVoiceTable[voice].fDate;
+          voicePlaying = voice;
         }
       }
     }
@@ -2940,7 +2938,8 @@ var FaustPolyWebAudioDsp = class _FaustPolyWebAudioDsp extends FaustBaseWebAudio
       } else if (voice.fCurNote !== FaustWebAudioDspVoice.kFreeVoice) {
         voice.compute(this.fBufferSize, this.fAudioInputs, this.fAudioMixing);
         voice.fLevel = this.fInstance.mixerAPI.mixCheckVoice(this.fBufferSize, this.getNumOutputs(), this.fAudioMixing, this.fAudioOutputs);
-        if (voice.fCurNote == FaustWebAudioDspVoice.kReleaseVoice && voice.fLevel < FaustWebAudioDspVoice.VOICE_STOP_LEVEL) {
+        voice.fRelease -= this.fBufferSize;
+        if (voice.fCurNote == FaustWebAudioDspVoice.kReleaseVoice && (voice.fLevel < FaustWebAudioDspVoice.VOICE_STOP_LEVEL && voice.fRelease < 0)) {
           voice.fCurNote = FaustWebAudioDspVoice.kFreeVoice;
         }
       }

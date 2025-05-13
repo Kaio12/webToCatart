@@ -1,16 +1,16 @@
 {
     "name": "multi_Ef",
     "filename": "multi_Ef.dsp",
-    "version": "2.80.4",
+    "version": "2.79.3",
     "compile_options": "-lang wasm-i -ct 1 -es 1 -mcd 16 -mdd 1024 -mdy 33 -single -ftz 2",
     "library_list": [
         "/usr/share/faust/stdfaust.lib",
+        "/usr/share/faust/misceffects.lib",
         "/usr/share/faust/filters.lib",
         "/usr/share/faust/signals.lib",
         "/usr/share/faust/maths.lib",
         "/usr/share/faust/platform.lib",
-        "/usr/share/faust/delays.lib",
-        "/usr/share/faust/misceffects.lib"
+        "/usr/share/faust/delays.lib"
     ],
     "include_pathnames": [
         "/share/faust",
@@ -18,7 +18,8 @@
         "/usr/share/faust",
         "."
     ],
-    "size": 1081416,
+    "size": 1081420,
+    "code": "yB/d",
     "inputs": 1,
     "outputs": 1,
     "meta": [
@@ -44,7 +45,7 @@
             "filters.lib/fbcombfilter:license": "MIT-style STK-4.3 license"
         },
         {
-            "filters.lib/lowpass0_highpass1": "Copyright (C) 2003-2019 by Julius O. Smith III <jos@ccrma.stanford.edu>"
+            "filters.lib/lowpass0_highpass1": "MIT-style STK-4.3 license"
         },
         {
             "filters.lib/name": "Faust Filters Library"
@@ -66,6 +67,9 @@
         },
         {
             "maths.lib/version": "2.8.1"
+        },
+        {
+            "misceffects.lib/dryWetMixer:author": "David Braun, revised by Stéphane Letz"
         },
         {
             "misceffects.lib/echo:author": "Romain Michon"
@@ -99,12 +103,24 @@
             "items": [
                 {
                     "type": "hslider",
+                    "label": "drywet",
+                    "varname": "fHslider0",
+                    "shortname": "drywet",
+                    "address": "/multi_Ef/drywet",
+                    "index": 0,
+                    "init": 0,
+                    "min": 0,
+                    "max": 1,
+                    "step": 0.01
+                },
+                {
+                    "type": "hslider",
                     "label": "duration",
-                    "varname": "fHslider3",
+                    "varname": "fHslider4",
                     "shortname": "duration",
                     "address": "/multi_Ef/duration",
-                    "index": 32828,
-                    "init": 50,
+                    "index": 32832,
+                    "init": 0,
                     "min": 0,
                     "max": 100,
                     "step": 0.001
@@ -112,11 +128,11 @@
                 {
                     "type": "hslider",
                     "label": "feedback",
-                    "varname": "fHslider2",
+                    "varname": "fHslider3",
                     "shortname": "feedback",
                     "address": "/multi_Ef/feedback",
-                    "index": 32820,
-                    "init": 0.5,
+                    "index": 32824,
+                    "init": 0,
                     "min": 0,
                     "max": 1,
                     "step": 0.01
@@ -124,11 +140,11 @@
                 {
                     "type": "hslider",
                     "label": "g",
-                    "varname": "fHslider0",
+                    "varname": "fHslider1",
                     "shortname": "g",
                     "address": "/multi_Ef/g",
-                    "index": 12,
-                    "init": 0.4,
+                    "index": 16,
+                    "init": 0,
                     "min": 0,
                     "max": 1,
                     "step": 0.001
@@ -136,10 +152,10 @@
                 {
                     "type": "hslider",
                     "label": "intdel",
-                    "varname": "fHslider1",
+                    "varname": "fHslider2",
                     "shortname": "intdel",
                     "address": "/multi_Ef/intdel",
-                    "index": 32800,
+                    "index": 32804,
                     "init": 0,
                     "min": 0,
                     "max": 4096,

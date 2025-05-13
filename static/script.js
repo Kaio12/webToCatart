@@ -1,3 +1,7 @@
+//****** script coté browser */
+
+
+
 //****** partie audio
 
 let faustNode = null; //node pour integrer l'effet audio codé en faust
@@ -58,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     faustNode.setParamValue("/multi_Ef/feedback", 0.9);
     faustNode.setParamValue("/multi_Ef/intdel", 3000);
     faustNode.setParamValue("/multi_Ef/duration", 90);
+    faustNode.setParamValue("/multi_Ef/drywet", 0);
 
     console.log("Faust DSP multi_Ef chargé et connecté.");
   })();
@@ -131,7 +136,7 @@ async function loadMLPModel() {
       });
   });
 
-
+  
   // bouton apparition/disparition des barres latérales (********* à remplacer par un mouvement des doigts)
   toggleleft.addEventListener('click', () => {
     sidebarleft.classList.toggle('hidden');
@@ -281,6 +286,9 @@ const baseWidth = 800;
 const baseHeight = 800;
 let data = [];
 
+let freeDrawGraphics; //layer pour le dessin libre
+let freeDrawPath = []; // pour le dessin à la main
+
 // Initialise et configure l'application Pixi.js pour le rendu interactif
 async function setupPixi() {
   const app = new PIXI.Application();
@@ -292,10 +300,59 @@ async function setupPixi() {
   if (container) container.appendChild(app.canvas);
   app.stage.interactive = true;
 
+  app.stage.hitArea = app.screen;
+
+  //dessin de forme libre pour la selection de grain
+  let drawing = false;
+  freeDrawGraphics = new PIXI.Graphics();
+  freeDrawPath = [];
+  app.stage.addChild(freeDrawGraphics);
+
+  app.stage.on("pointerdown", (e) => {
+    console.log("pointer down");
+    const {x, y} = e.data.global;
+    drawing = true;
+    freeDrawPath = [{x,y}];
+    freeDrawGraphics.clear();//efface si on recommence le geste
+  //freeDrawGraphics.lineStyle(2, 0xff0000);
+  //freeDrawGraphics.moveTo(x, y);
+  //freeDrawGraphics.lineTo(x,y);
+  //freeDrawGraphics.stroke({color: 0xff0000, pixelLine: true});
+});
+
+
   // position du pointeur (souris, doigt)
   app.stage.on("pointermove", (e) => {
     pointerPos = e.data.global;
+    if (!drawing) return;
+    const {x, y} = e.data.global;
+    //freeDrawGraphics.lineTo(x,y);
+    //freeDrawGraphics.stroke({color: 0xff0000, pixelLine: true});
+    freeDrawPath.push({ x, y });
+
+    freeDrawGraphics.clear();
+    freeDrawGraphics.drawPolygon(freeDrawPath.flatMap(p => [p.x, p.y]));
+    freeDrawGraphics.fill({ color: 0xffcccc, alpha: 0.3 });
+    freeDrawGraphics.stroke({ color: 0xff0000, pixelLine: true });
+
+
   });
+
+app.stage.on("pointerup", () => {
+   // freeDrawGraphics.beginFill(0xffcccc, .3);
+   // freeDrawGraphics.closePath();
+   // freeDrawGraphics.endFill();
+    drawing = false;
+  });
+
+
+app.stage.on("pointerupoutside", () => {
+  //freeDrawGraphics.beginFill(0xffcccc, .3);
+  //freeDrawGraphics.closePath();
+  //freeDrawGraphics.endFill();
+    drawing = false;
+});
+
   app.canvas.addEventListener("mouseleave", () => {
     pointerPos = { x: -9999, y: -9999 }; // position très éloignée
   });
@@ -333,9 +390,9 @@ function drawPixiPoints(pointsData, app) {
 
   pointsData.forEach((p, index) => {
     const g = new PIXI.Graphics();
-// radius (taille des points) suit loudness (donné par analyse CATART/Max)
+  // radius (taille des points) suit loudness (donné par analyse CATART/Max)
     const radius = mapRange(p.loudnessMax, bounds.lMin, bounds.lMax, 5, 20);
-// couleur du point suit energy (donné par analyse CATART/Max)
+  // couleur du point suit energy (donné par analyse CATART/Max)
     const hue = mapRange(p.energyMax, bounds.eMin, bounds.eMax, 240, 0);
     const [r, gVal, b] = hslToRgb(hue / 360, 1, 0.5);
     const color = (r * 255 << 16) + (gVal * 255 << 8) + (b * 255) | 0;
@@ -371,6 +428,10 @@ function drawPixiPoints(pointsData, app) {
     app.stage.addChild(g);
     pixiPoints.push(g);
   });
+
+  if (freeDrawGraphics) {
+    app.stage.addChild(freeDrawGraphics);
+  }
 }
 
 //*********FONCTION QUI JOUE LES GRAINS, ENVOIE LES INFOS OSC */
@@ -430,7 +491,7 @@ function handleMIDIMessage(message) {
 
     // Exemple : CC#1 -> gain, CC#2 -> delay
     if (cc === 1) {
-      faustNode.setParamValue("/multi_Ef/gain", val);
+      faustNode.setParamValue("/multi_Ef/drywet", val);
     } else if (cc === 2) {
       faustNode.setParamValue("/multi_Ef/delay", val);
     }
