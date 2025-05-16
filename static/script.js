@@ -1,7 +1,6 @@
 //****** script coté browser */
 
 
-
 //****** partie audio
 
 let faustNode = null; //node pour integrer l'effet audio codé en faust
@@ -163,12 +162,14 @@ async function loadMLPModel() {
   multisliderRight.colorize("fill", "#333");
   multisliderRight.on('change', function (v) {
     console.log(v);
-    sendOSC("/multisliderRight", v);
+    
+    //sendOSC("/multisliderRight", v);
+
   });
 
   let multisliderLeft = new Nexus.Multislider('#multisliderLeft', {
     'size': [200, 600],
-    'numberOfSliders': 3,
+    'numberOfSliders': 1,
     'min': 0,
     'max': 1,
     'step': 0,
@@ -181,7 +182,11 @@ async function loadMLPModel() {
   multisliderLeft.colorize("fill", "#333");
   multisliderLeft.on('change', function (v) {
     console.log(v);
-    sendOSC("/multisliderLeft", v);
+    //sendOSC("/multisliderLeft", v);
+        if (Array.isArray(v) && v.length > 0) {
+      zoomFactor = 0.5 + v[0] * 2.0; // maps slider value [0,1] to zoomFactor [0.5,2.5]
+      drawPixiPoints(data, window.pixiApp);
+    }
   });
 
   // initialisation du canvas Pixi utilisé pour afficher les points correspondant aux grains
@@ -380,6 +385,10 @@ app.stage.on("pointerupoutside", () => {
   window.pixiApp = app; // expose app if needed globally
 }
 
+
+let zoomFactor = 1.0 // facteur zoom affichage des points
+
+// ****** fonction principale pour dessiner les points ******
 function drawPixiPoints(pointsData, app) {
   if (!app) {console.error("pixi pas initialisée");
     return;}
@@ -389,6 +398,10 @@ function drawPixiPoints(pointsData, app) {
     }
   app.stage.removeChildren();
   pixiPoints.length = 0;
+
+  // centre de la fenêtre
+  const centerX = window.innerWidth / 2;
+  const centerY = window.innerHeight / 2; 
 
   const bounds = getBounds(pointsData);
   console.log("BOUNDS calculés :", bounds);
@@ -408,8 +421,8 @@ function drawPixiPoints(pointsData, app) {
     const [r, gVal, b] = hslToRgb(hue / 360, 1, 0.5);
     const color = (r * 255 << 16) + (gVal * 255 << 8) + (b * 255) | 0;
 
-    g.x = mapRange(p.x, bounds.xMin, bounds.xMax, 50, window.innerWidth - 50);
-    g.y = mapRange(p.y, bounds.yMin, bounds.yMax, window.innerHeight - 50, 50);
+    g.x = centerX + (mapRange(p.x, bounds.xMin, bounds.xMax, -baseWidth / 2, baseWidth / 2) * zoomFactor);
+    g.y = centerY + (mapRange(p.y, bounds.yMin, bounds.yMax, -baseHeight / 2, baseHeight / 2) * zoomFactor);
 
     g.baseRadius = radius;
     g.currentRadius = radius;
