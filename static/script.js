@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const sidebarright = document.getElementById('sidebarright');
   const body = document.body;
 
-//insere le node effet faust
+  //insere le node effet faust
   (async () => {
     const { createFaustNode } = await import("./faust/multi_Ef.dsp-wasm/create-node.js");
     const result = await createFaustNode(audioContext, "multi_Ef", 0);
@@ -180,12 +180,23 @@ async function loadMLPModel() {
   });
   multisliderLeft.colorize("accent", "#ff0");
   multisliderLeft.colorize("fill", "#333");
+
   multisliderLeft.on('change', function (v) {
     console.log(v);
     //sendOSC("/multisliderLeft", v);
         if (Array.isArray(v) && v.length > 0) {
       zoomFactor = 0.5 + v[0] * 2.0; // maps slider value [0,1] to zoomFactor [0.5,2.5]
+      // on redessine les points
       drawPixiPoints(data, window.pixiApp);
+
+      // on redessine la forme libre
+      if (formeLibre) {
+        formeLibre.scale.set(zoomFactor);
+        formeLibre.clear();
+        formeLibre.drawPolygon(freeDrawPath.flatMap(p => [p.x, p.y]));
+        formeLibre.fill({ color: 0xffcccc, alpha: 0.3 });
+        formeLibre.stroke({ color: 0xff0000, pixelLine: true });
+      }
     }
   });
 
@@ -194,14 +205,14 @@ async function loadMLPModel() {
 });
 
 //fonction pour jouer le grain correspondant au point PIXI sélectionné (survolé)
-function playGrain(startMs, durationMs) {
+function playGrain(startMs, durationMs, useEffect = true) {
   if(!audioBuffer) return;
 
   const source = audioContext.createBufferSource();
   source.buffer = audioBuffer;
 
-  //connexion au faustnode
-  if (grainBus) {
+  //connexion au faustnode. on verifie si le point est dans la forme libre
+  if (useEffect && grainBus) {
     source.connect(grainBus);
   } else {
     source.connect(audioContext.destination);
@@ -212,7 +223,7 @@ function playGrain(startMs, durationMs) {
   source.start(0, startSec, durationSec);
 }
 
-// NE DEVRAIT PLUS SERVIR, SAUF POUR LOG DES MOUVEMENTS
+// DEVRAIT POUR LOG DES MOUVEMENTS
 // Envoie messages OSC via socket.io ===
 let sendOSC = function (address, args) {
   if (socket && socket.connected) {
@@ -223,8 +234,7 @@ let sendOSC = function (address, args) {
   }
 };
 
-
-// Calcule les limites (min et max) des coordonnées et des valeurs pour un ensemble de points, permet d'adapter à la taille de la fenètre.
+// getBounds calcule les limites (min et max) des coordonnées et des valeurs pour un ensemble de points, permet d'adapter à la taille de la fenètre.
 function getBounds(data) {
   let xs = data.map(p => p.x);
   let ys = data.map(p => p.y);
@@ -291,8 +301,57 @@ const baseWidth = 800;
 const baseHeight = 800;
 let data = [];
 
-let freeDrawGraphics; //layer pour le dessin libre
+let formeLibre; //layer pour le dessin libre
 let freeDrawPath = []; // pour le dessin à la main
+
+
+  // ******** FORME LIBRRE ***********
+  //dessin de forme libre pour la selection de grain
+function setupFormeLibre (app) {
+
+  // centre et zoom accessibles depuis le contexte
+  const centerX = window.innerWidth / 2;
+  const centerY = window.innerHeight / 2;
+
+  let drawing = false;
+  formeLibre = new PIXI.Graphics();
+  formeLibre.scale.set(zoomFactor);
+  formeLibre.position.set(centerX, centerY);
+  freeDrawPath = [];
+  app.stage.addChild(formeLibre);
+
+  app.stage.on("pointerdown", (e) => {
+    console.log("pointer down");
+    const {x, y} = e.data.global;
+    drawing = true;
+    freeDrawPath = [{x: (x - centerX) / zoomFactor, y: (y - centerY) / zoomFactor}];
+    formeLibre.clear();//efface si on recommence le geste
+  });
+
+
+  // position du pointeur (souris, doigt)
+  app.stage.on("pointermove", (e) => {
+    pointerPos = e.data.global;
+    if (!drawing) return;
+    const {x, y} = e.data.global;
+    freeDrawPath.push({ x: (x - centerX) / zoomFactor, y: (y - centerY) / zoomFactor });
+
+    formeLibre.clear();
+    formeLibre.drawPolygon(freeDrawPath.flatMap(p => [p.x, p.y]));
+    formeLibre.fill({ color: 0xffcccc, alpha: 0.3 });
+    formeLibre.stroke({ color: 0xff0000, pixelLine: true });
+  });
+
+  app.stage.on("pointerup", () => {
+    drawing = false;
+  });
+
+app.stage.on("pointerupoutside", () => {
+    drawing = false;
+  });
+
+}
+
 
 // Initialise et configure l'application Pixi.js pour le rendu interactif
 async function setupPixi() {
@@ -303,72 +362,19 @@ async function setupPixi() {
   });
   const container = document.getElementById("pixi-container");
   if (container) container.appendChild(app.canvas);
+
+  // stage : The root display container that's rendered.
   app.stage.interactive = true;
 
   app.stage.hitArea = app.screen;
 
-  //dessin de forme libre pour la selection de grain
-  let drawing = false;
-  freeDrawGraphics = new PIXI.Graphics();
-  freeDrawPath = [];
-  app.stage.addChild(freeDrawGraphics);
 
-  app.stage.on("pointerdown", (e) => {
-    console.log("pointer down");
-    const {x, y} = e.data.global;
-    drawing = true;
-    freeDrawPath = [{x,y}];
-    freeDrawGraphics.clear();//efface si on recommence le geste
-  //freeDrawGraphics.lineStyle(2, 0xff0000);
-  //freeDrawGraphics.moveTo(x, y);
-  //freeDrawGraphics.lineTo(x,y);
-  //freeDrawGraphics.stroke({color: 0xff0000, pixelLine: true});
-});
+  setupFormeLibre(app);
 
-
-  // position du pointeur (souris, doigt)
-  app.stage.on("pointermove", (e) => {
-    pointerPos = e.data.global;
-    if (!drawing) return;
-    const {x, y} = e.data.global;
-    //freeDrawGraphics.lineTo(x,y);
-    //freeDrawGraphics.stroke({color: 0xff0000, pixelLine: true});
-    freeDrawPath.push({ x, y });
-
-    freeDrawGraphics.clear();
-    freeDrawGraphics.drawPolygon(freeDrawPath.flatMap(p => [p.x, p.y]));
-    freeDrawGraphics.fill({ color: 0xffcccc, alpha: 0.3 });
-    freeDrawGraphics.stroke({ color: 0xff0000, pixelLine: true });
-
-
-  });
-
-app.stage.on("pointerup", () => {
-   // freeDrawGraphics.beginFill(0xffcccc, .3);
-   // freeDrawGraphics.closePath();
-   // freeDrawGraphics.endFill();
-    drawing = false;
-    
-     pixiPoints.forEach(point => {
-    // On crée un PIXI.Point aux coordonnées globales du point
-    const testPoint = new PIXI.Point(point.x, point.y);
-    // Si le Graphics freeDrawGraphics contient ce point...
-    if (freeDrawGraphics.containsPoint(testPoint)) {
-      point.tint = 0xFFFF00;  // on lève la teinte pour marquer la sélection
-    } else {
-      point.tint = 0xFFFFFF;  // on rétablit la teinte par défaut
-    }
-  });
-  });
-
-
-app.stage.on("pointerupoutside", () => {
-  //freeDrawGraphics.beginFill(0xffcccc, .3);
-  //freeDrawGraphics.closePath();
-  //freeDrawGraphics.endFill();
-    drawing = false;
-});
-
+  // Variables for center and zoom, accessible in event listeners
+  let centerX = window.innerWidth / 2;
+  let centerY = window.innerHeight / 2;
+ 
   app.canvas.addEventListener("mouseleave", () => {
     pointerPos = { x: -9999, y: -9999 }; // position très éloignée
   });
@@ -377,11 +383,13 @@ app.stage.on("pointerupoutside", () => {
 // au cas ou la fenêtre change de taille, on redessine les points
   window.addEventListener('resize', () => {
     app.renderer.resize(window.innerWidth, window.innerHeight);
+    centerX = window.innerWidth / 2;
+    centerY = window.innerHeight / 2;
     drawPixiPoints(data, app);
   });
 
 // ticker : actualisation de l'app sur chaque frame
-  app.ticker.add(updatePixiPoints.bind(null, app));
+app.ticker.add(triggerGrainsOnProximity.bind(null, app));
   window.pixiApp = app; // expose app if needed globally
 }
 
@@ -390,13 +398,16 @@ let zoomFactor = 1.0 // facteur zoom affichage des points
 
 // ****** fonction principale pour dessiner les points ******
 function drawPixiPoints(pointsData, app) {
-  if (!app) {console.error("pixi pas initialisée");
+
+  // précautions d'usage
+  if (!app) {console.error("L'app pixi n'est pas initialisée");
     return;}
   if (!Array.isArray(pointsData) || pointsData.length === 0) {
       console.warn("Aucune donnée à afficher.");
       return;
     }
-  app.stage.removeChildren();
+
+  app.stage.removeChildren(); // Removes all children from this container
   pixiPoints.length = 0;
 
   // centre de la fenêtre
@@ -408,33 +419,39 @@ function drawPixiPoints(pointsData, app) {
 
   const scaleX = window.innerWidth / baseWidth;
   const scaleY = window.innerHeight / baseHeight;
-
+   
+  // mapRange désigne ici une fonction fléchée
   const mapRange = (val, inMin, inMax, outMin, outMax) =>
     ((val - inMin) / (inMax - inMin)) * (outMax - outMin) + outMin;
 
-  pointsData.forEach((p, index) => {
-    const g = new PIXI.Graphics();
-  // radius (taille des points) suit loudness (donné par analyse CATART/Max)
-    const radius = mapRange(p.loudnessMax, bounds.lMin, bounds.lMax, 5, 20);
-  // couleur du point suit energy (donné par analyse CATART/Max)
-    const hue = mapRange(p.energyMax, bounds.eMin, bounds.eMax, 240, 0);
+  // La méthode forEach() permet d'exécuter une fonction donnée sur chaque élément du tableau.
+  // The Graphics class contains methods used to draw primitive shapes such as lines, circles and rectangles to the display, and to color and fill them.
+  pointsData.forEach((pointData, index) => {
+
+    const pointGraphic = new PIXI.Graphics();
+
+    // radius (taille des points) suit loudness (donné par analyse CATART/Max)
+    const radius = mapRange(pointData.loudnessMax, bounds.lMin, bounds.lMax, 5, 20);
+
+    // couleur du point suit energy (donné par analyse CATART/Max)
+    const hue = mapRange(pointData.energyMax, bounds.eMin, bounds.eMax, 240, 0);
     const [r, gVal, b] = hslToRgb(hue / 360, 1, 0.5);
     const color = (r * 255 << 16) + (gVal * 255 << 8) + (b * 255) | 0;
 
-    g.x = centerX + (mapRange(p.x, bounds.xMin, bounds.xMax, -baseWidth / 2, baseWidth / 2) * zoomFactor);
-    g.y = centerY + (mapRange(p.y, bounds.yMin, bounds.yMax, -baseHeight / 2, baseHeight / 2) * zoomFactor);
+    pointGraphic.x = centerX + (mapRange(pointData.x, bounds.xMin, bounds.xMax, -baseWidth / 2, baseWidth / 2) * zoomFactor);
+    pointGraphic.y = centerY + (mapRange(pointData.y, bounds.yMin, bounds.yMax, -baseHeight / 2, baseHeight / 2) * zoomFactor);
 
-    g.baseRadius = radius;
-    g.currentRadius = radius;
-    g.targetRadius = radius;
-    g.lastTrigger = 0;
-    g.sampleId = p.sampleId;
-    g.color = color;
+    pointGraphic.baseRadius = radius;
+    pointGraphic.currentRadius = radius;
+    pointGraphic.targetRadius = radius;
+    pointGraphic.lastTrigger = 0;
+    pointGraphic.sampleId = pointData.sampleId;
+    pointGraphic.color = color;
 
-    g.startTime = p.time;
-    g.duration = p.duration;
+    pointGraphic.startTime = pointData.time;
+    pointGraphic.duration = pointData.duration;
 
-    g.drawSelf = function () {
+    pointGraphic.drawSelf = function () {
       this.clear();
       this.beginFill(this.color);
       this.drawCircle(0, 0, this.currentRadius);
@@ -442,24 +459,24 @@ function drawPixiPoints(pointsData, app) {
     };
 
     console.log(`Point ${index}:`, {
-      originalX: p.x,
-      originalY: p.y,
-      mappedX: g.x,
-      mappedY: g.y,
+      originalX: pointData.x,
+      originalY: pointData.y,
+      mappedX: pointGraphic.x,
+      mappedY: pointGraphic.y,
       radius: radius
     });
-    g.drawSelf();
-    app.stage.addChild(g);
-    pixiPoints.push(g);
+    pointGraphic.drawSelf();
+    app.stage.addChild(pointGraphic);
+    pixiPoints.push(pointGraphic);
   });
 
-  if (freeDrawGraphics) {
-    app.stage.addChild(freeDrawGraphics);
+  if (formeLibre) {
+    app.stage.addChild(formeLibre);
   }
 }
 
-//*********FONCTION QUI JOUE LES GRAINS, ENVOIE LES INFOS OSC */
-function updatePixiPoints(app) {
+//*********   FONCTION QUI JOUE LES GRAINS, ENVOIE LES INFOS OSC */
+function triggerGrainsOnProximity(app) {
   const now = performance.now(); //temps écoulé depuis le temps origine
 
 
@@ -469,17 +486,20 @@ function updatePixiPoints(app) {
     const wasInside = point.isInside || false;
     const isInside = dist < proximityThreshold;
     point.isInside = isInside;
-  
+
     if (dist < proximityThreshold) {
       point.targetRadius = point.baseRadius * 1.8; //on marque le point joué en augmentant sa taille.
 
       if (now - point.lastTrigger > cooldown) {
-        
+
         point.lastTrigger = now;
 
         //joue le grain
         if (isInside && !wasInside) {
-          playGrain(point.startTime, point.duration);
+        const isInForme = formeLibre && formeLibre.containsPoint(formeLibre.toLocal(new PIXI.Point(point.x, point.y)));          
+        console.log ('isinForme :', isInForme);
+          playGrain(point.startTime, point.duration, isInForme);
+
           sendOSC("/hover", point.sampleId);// point.sampleId
         }
 
@@ -493,6 +513,8 @@ function updatePixiPoints(app) {
     point.drawSelf();
   }
 }
+
+// ************* MIDI ********************
 //*******POUR L'INSTANT INUTILISÉ ********
 //gestion midi (qui va se superposer à osc, a revoir)
 function onMIDISuccess(midiAccess) {
@@ -526,6 +548,8 @@ function onMIDIFailure() {
   console.error("❌ Échec accès MIDI");
 }
 
+
+// ********** PARTIE RESEAU / RECUPERE LES DONNEES *************
 // Connexion socket.io avec le reseau, Max/MSP et IPHONE connecté
 let socket;
 fetch("/api/ip")
