@@ -1,7 +1,6 @@
 //****** script coté browser */
 
-
-//****** partie audio
+//****** partie audio *******
 
 let faustNode = null; //node pour integrer l'effet audio codé en faust
 let grainBus = null; // bus fixe pour router les grains vers l'effet
@@ -188,7 +187,7 @@ async function loadMLPModel() {
       zoomFactor = 0.5 + v[0] * 2.0; // maps slider value [0,1] to zoomFactor [0.5,2.5]
       // on redessine les points
       drawPixiPoints(data, window.pixiApp);
-
+      updateFormeLibreTransform();
       // on redessine la forme libre
       if (formeLibre) {
         formeLibre.scale.set(zoomFactor);
@@ -351,6 +350,14 @@ app.stage.on("pointerupoutside", () => {
   });
 
 }
+ // mise à jour de la position et du zoom
+function updateFormeLibreTransform() {
+  if (!formeLibre) return;
+  const centerX = window.innerWidth /2 ;
+  const centerY = window.innerHeight / 2 ;
+  formeLibre.scale.set(zoomFactor);
+  formeLibre.position.set(centerX, centerY);
+}
 
 
 // Initialise et configure l'application Pixi.js pour le rendu interactif
@@ -386,6 +393,7 @@ async function setupPixi() {
     centerX = window.innerWidth / 2;
     centerY = window.innerHeight / 2;
     drawPixiPoints(data, app);
+    updateFormeLibreTransform();
   });
 
 // ticker : actualisation de l'app sur chaque frame
@@ -472,6 +480,7 @@ function drawPixiPoints(pointsData, app) {
 
   if (formeLibre) {
     app.stage.addChild(formeLibre);
+     updateFormeLibreTransform();
   }
 }
 
