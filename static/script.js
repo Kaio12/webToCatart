@@ -1,15 +1,24 @@
 //****** script coté browser */
 
+import {
+
+  loadAudioBuffer,
+  playGrain,
+  audioContext,
+  initFaustEffect,
+  faustNode,
+} from "./audio.js";
+
+
 //****** partie audio *******
 
-let faustNode = null; //node pour integrer l'effet audio codé en faust
-let grainBus = null; // bus fixe pour router les grains vers l'effet
 
-let audioBuffer = null; //buffer pour intégrer le fichier son reçu de max
-let audioContext = new AudioContext();
 console.log("AudioContext state :", audioContext.state);
 
 let audioStarted = false;
+
+let entraindeZoomer = false; // pour éviter de jouer les sons quand on zoom
+loadAudioBuffer(); // charge le buffer audio au démarrage
 
 // un bouton pour débloquer l'audiocontext (necessaire par sécurité)
 document.getElementById("audio-toggle").addEventListener("click", () => {
@@ -38,32 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const sidebarright = document.getElementById('sidebarright');
   const body = document.body;
 
-  //insere le node effet faust
-  (async () => {
-    const { createFaustNode } = await import("./faust/multi_Ef.dsp-wasm/create-node.js");
-    const result = await createFaustNode(audioContext, "multi_Ef", 0);
-    faustNode = result.faustNode;
-
-    // crée un bus pour les grains
-    grainBus = audioContext.createGain();
-    // grain => faust => destination
-    grainBus.connect(faustNode);
-    faustNode.connect(audioContext.destination);
-
-    if (!faustNode) {
-      console.error("Erreur : faustNode non créé");
-      return;
-    }
-
-    //parametres de base de l'effet audio faust (manque un dry/wet??)
-    faustNode.setParamValue("/multi_Ef/g", 0.8);
-    faustNode.setParamValue("/multi_Ef/feedback", 0.9);
-    faustNode.setParamValue("/multi_Ef/intdel", 3000);
-    faustNode.setParamValue("/multi_Ef/duration", 90);
-    faustNode.setParamValue("/multi_Ef/drywet", 0);
-
-    console.log("Faust DSP multi_Ef chargé et connecté.");
-  })();
+// initialisation de l'effet audio faust
+initFaustEffect();
 
   //gestion des accés midi (pour un controle ultérieur par iphone en bt)
 if (navigator.requestMIDIAccess) {
@@ -76,16 +61,7 @@ if (navigator.requestMIDIAccess) {
   //charge le modele MLP (pour traduire le 2d de l'iphone vers les 4 paramètres de l'effet faust)
   loadMLPModel();
 
-  // charge le fichier son enregistré, et servi par max via le serveur flask
-fetch('/audio/enr.wav')
-  .then(response => response.arrayBuffer())
-  .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
-  .then(decoded => {
-    audioBuffer = decoded;
-    console.log("Audio chargé en mémoire");
-  })
-  .catch(e => console.error("erreur dans le chargement du fichier audio en mémoire :", e));
-
+  
   // définition de la fonction qui charge le modele de regression
 async function loadMLPModel() {
   try {
@@ -166,6 +142,7 @@ async function loadMLPModel() {
 
   });
 
+  // le multislider gauche
   let multisliderLeft = new Nexus.Multislider('#multisliderLeft', {
     'size': [200, 600],
     'numberOfSliders': 1,
@@ -180,22 +157,34 @@ async function loadMLPModel() {
   multisliderLeft.colorize("accent", "#ff0");
   multisliderLeft.colorize("fill", "#333");
 
+  
   multisliderLeft.on('change', function (v) {
     console.log(v);
+
     //sendOSC("/multisliderLeft", v);
-        if (Array.isArray(v) && v.length > 0) {
+
+      if (Array.isArray(v) && v.length > 0) {
+      
+      entraindeZoomer = true;
       zoomFactor = 0.5 + v[0] * 2.0; // maps slider value [0,1] to zoomFactor [0.5,2.5]
       // on redessine les points
       drawPixiPoints(data, window.pixiApp);
-      updateFormeLibreTransform();
+
+      //updateFormeLibreTransform();
+
       // on redessine la forme libre
       if (formeLibre) {
         formeLibre.scale.set(zoomFactor);
         formeLibre.clear();
-        formeLibre.drawPolygon(freeDrawPath.flatMap(p => [p.x, p.y]));
-        formeLibre.fill({ color: 0xffcccc, alpha: 0.3 });
-        formeLibre.stroke({ color: 0xff0000, pixelLine: true });
+
+        if (freeDrawPath.length > 2) {
+          formeLibre.drawPolygon(freeDrawPath.flatMap(p => [p.x, p.y]));
+          formeLibre.fill({ color: 0xffcccc, alpha: 0.3 });
+          formeLibre.stroke({ color: 0xff0000, pixelLine: true });
+        } 
+        
       }
+      entraindeZoomer = false;
     }
   });
 
@@ -203,24 +192,6 @@ async function loadMLPModel() {
   setupPixi();
 });
 
-//fonction pour jouer le grain correspondant au point PIXI sélectionné (survolé)
-function playGrain(startMs, durationMs, useEffect = true) {
-  if(!audioBuffer) return;
-
-  const source = audioContext.createBufferSource();
-  source.buffer = audioBuffer;
-
-  //connexion au faustnode. on verifie si le point est dans la forme libre
-  if (useEffect && grainBus) {
-    source.connect(grainBus);
-  } else {
-    source.connect(audioContext.destination);
-
-  }  const startSec = startMs / 1000; //conversion en s
-  const durationSec = durationMs / 1000;
-
-  source.start(0, startSec, durationSec);
-}
 
 // DEVRAIT POUR LOG DES MOUVEMENTS
 // Envoie messages OSC via socket.io ===
@@ -393,7 +364,7 @@ async function setupPixi() {
     centerX = window.innerWidth / 2;
     centerY = window.innerHeight / 2;
     drawPixiPoints(data, app);
-    updateFormeLibreTransform();
+    //updateFormeLibreTransform();
   });
 
 // ticker : actualisation de l'app sur chaque frame
@@ -480,16 +451,17 @@ function drawPixiPoints(pointsData, app) {
 
   if (formeLibre) {
     app.stage.addChild(formeLibre);
-     updateFormeLibreTransform();
+     //updateFormeLibreTransform();
   }
 }
 
 //*********   FONCTION QUI JOUE LES GRAINS, ENVOIE LES INFOS OSC */
 function triggerGrainsOnProximity(app) {
+  if (entraindeZoomer) return; // si on zoom, pas de son.
   const now = performance.now(); //temps écoulé depuis le temps origine
 
-
   for (const point of pixiPoints) {
+
     const dist = Math.hypot(point.x - pointerPos.x, point.y - pointerPos.y);
 
     const wasInside = point.isInside || false;
@@ -556,6 +528,7 @@ function handleMIDIMessage(message) {
 function onMIDIFailure() {
   console.error("❌ Échec accès MIDI");
 }
+
 
 
 // ********** PARTIE RESEAU / RECUPERE LES DONNEES *************
