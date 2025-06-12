@@ -1,7 +1,14 @@
 //****** script coté browser */
 
-import {
 
+// pour l'instant, pas de midi
+import {
+  onMIDISuccess,
+  onMIDIFailure,
+  handleMIDIMessage,
+} from "./midi.js";
+
+import {
   loadAudioBuffer,
   playGrain,
   audioContext,
@@ -9,16 +16,18 @@ import {
   faustNode,
 } from "./audio.js";
 
-
-//****** partie audio *******
+import { 
+  getBounds, 
+  hslToRgb, 
+  mapRange 
+} from "./utils.js";
 
 
 console.log("AudioContext state :", audioContext.state);
-
 let audioStarted = false;
+loadAudioBuffer(); // charge le buffer audio au démarrage
 
 let entraindeZoomer = false; // pour éviter de jouer les sons quand on zoom
-loadAudioBuffer(); // charge le buffer audio au démarrage
 
 // un bouton pour débloquer l'audiocontext (necessaire par sécurité)
 document.getElementById("audio-toggle").addEventListener("click", () => {
@@ -47,10 +56,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const sidebarright = document.getElementById('sidebarright');
   const body = document.body;
 
-// initialisation de l'effet audio faust
+  // initialisation de l'effet audio faust
 initFaustEffect();
 
-  //gestion des accés midi (pour un controle ultérieur par iphone en bt)
+//gestion des accés midi (pour un controle ultérieur par iphone en bt)
 if (navigator.requestMIDIAccess) {
   navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
 } else {
@@ -61,7 +70,6 @@ if (navigator.requestMIDIAccess) {
   //charge le modele MLP (pour traduire le 2d de l'iphone vers les 4 paramètres de l'effet faust)
   loadMLPModel();
 
-  
   // définition de la fonction qui charge le modele de regression
 async function loadMLPModel() {
   try {
@@ -204,60 +212,7 @@ let sendOSC = function (address, args) {
   }
 };
 
-// getBounds calcule les limites (min et max) des coordonnées et des valeurs pour un ensemble de points, permet d'adapter à la taille de la fenètre.
-function getBounds(data) {
-  let xs = data.map(p => p.x);
-  let ys = data.map(p => p.y);
-  let ls = data.map(p => p.loudnessMax);
-  let es = data.map(p => p.energyMax);
-  return {
-    xMin: Math.min(...xs),
-    xMax: Math.max(...xs),
-    yMin: Math.min(...ys),
-    yMax: Math.max(...ys),
-    lMin: Math.min(...ls),
-    lMax: Math.max(...ls),
-    eMin: Math.min(...es),
-    eMax: Math.max(...es)
-  };
-}
 
-// Convertit une couleur HSL en format hexadécimal
-function hslToHex(h, s, l) {
-  s /= 100;
-  l /= 100;
-  const k = n => (n + h / 30) % 12;
-  const a = s * Math.min(l, 1 - l);
-  const f = n =>
-    Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))));
-
-  return (f(0) << 16) + (f(1) << 8) + f(2);
-}
-// Convertit une couleur HSL en valeurs RGB (fournit des couleurs très proches de CATART dans Max)
-function hslToRgb(h, s, l) {
-  let r, g, b;
-
-  if (s === 0) {
-    r = g = b = l; // achromatic
-  } else {
-    const hue2rgb = (p, q, t) => {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1/6) return p + (q - p) * 6 * t;
-      if (t < 1/2) return q;
-      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-      return p;
-    };
-
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-    const p = 2 * l - q;
-    r = hue2rgb(p, q, h + 1/3);
-    g = hue2rgb(p, q, h);
-    b = hue2rgb(p, q, h - 1/3);
-  }
-
-  return [r, g, b];
-}
 
 // Configuration de Pixi.js pour le rendu graphique
 let pixiPoints = [];
@@ -399,9 +354,6 @@ function drawPixiPoints(pointsData, app) {
   const scaleX = window.innerWidth / baseWidth;
   const scaleY = window.innerHeight / baseHeight;
    
-  // mapRange désigne ici une fonction fléchée
-  const mapRange = (val, inMin, inMax, outMin, outMax) =>
-    ((val - inMin) / (inMax - inMin)) * (outMax - outMin) + outMin;
 
   // La méthode forEach() permet d'exécuter une fonction donnée sur chaque élément du tableau.
   // The Graphics class contains methods used to draw primitive shapes such as lines, circles and rectangles to the display, and to color and fill them.
@@ -493,40 +445,6 @@ function triggerGrainsOnProximity(app) {
     point.currentRadius += (point.targetRadius - point.currentRadius) * speed;
     point.drawSelf();
   }
-}
-
-// ************* MIDI ********************
-//*******POUR L'INSTANT INUTILISÉ ********
-//gestion midi (qui va se superposer à osc, a revoir)
-function onMIDISuccess(midiAccess) {
-  for (let input of midiAccess.inputs.values()) {
-    input.onmidimessage = handleMIDIMessage;
-  }
-  console.log("✅ MIDI ready");
-}
-
-//*****INUTILISÉ POUR L'INSTANT */
-function handleMIDIMessage(message) {
-  const [status, data1, data2] = message.data;
-
-  // Exemple : MIDI CC sur canal 1
-  if ((status & 0xF0) === 0xB0) {
-    const cc = data1;
-    const val = data2 / 127;
-
-    if (!faustNode) return;
-
-    // Exemple : CC#1 -> gain, CC#2 -> delay
-    if (cc === 1) {
-      faustNode.setParamValue("/multi_Ef/drywet", val);
-    } else if (cc === 2) {
-      faustNode.setParamValue("/multi_Ef/delay", val);
-    }
-  }
-}
-
-function onMIDIFailure() {
-  console.error("❌ Échec accès MIDI");
 }
 
 
