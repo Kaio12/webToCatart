@@ -1,26 +1,27 @@
+// Gestion du son, lecture des grains, effets Faust
+/*
+├── audioContext
+│   ├── faustNode
+│   ├── grainBus
+│   ├── playGrain(start, duration, useEffect)
+│   ├── loadAudioBuffer()
+│   ├── initFaustEffect()
+│   └── mapOSCToFaust(address, args) ???????
+*/
+
 let audioBuffer = null; //buffer pour intégrer le fichier son reçu de max
-export const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-
-export let faustNode = null; //node pour integrer l'effet audio codé en faust
-export let grainBus = null; // bus fixe pour router les grains vers l'effet
-
 
 // AudioContext pour gérer l'audio
-export async function loadAudioBuffer() {
-  try {
-    const response = await fetch('/audio/enr.wav');
-    const arrayBuffer = await response.arrayBuffer();
-    audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-    console.log("Audio chargé en mémoire");
-  } catch (e) {
-    console.error("Erreur de chargement audio :", e);
-  }
-}
+export const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
+// FaustNode
+export let faustNode = null; //node pour integrer l'effet audio codé en faust
 
-//fonction pour jouer le grain correspondant au point PIXI sélectionné (survolé)
-export function playGrain(startMs, durationMs, useEffect = true) {
+// GrainBus
+export let grainBus = null; // bus fixe pour router les grains vers l'effet
+
+//playgrain, pour jouer le grain correspondant au point PIXI sélectionné (survolé)
+export function playGrain(startMs, durationMs, useEffect = false) {
   if(!audioBuffer) return;
 
   const source = audioContext.createBufferSource();
@@ -38,7 +39,19 @@ export function playGrain(startMs, durationMs, useEffect = true) {
   source.start(0, startSec, durationSec);
 }
 
-//insere le node effet faust
+// loadAudioBuffer charge le fichier audio depuis le serveur et le décode dans un AudioBuffer
+export async function loadAudioBuffer() {
+  try {
+    const response = await fetch('/audio/enr.wav');
+    const arrayBuffer = await response.arrayBuffer();
+    audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    console.log("Audio chargé en mémoire");
+  } catch (e) {
+    console.error("Erreur de chargement audio :", e);
+  }
+}
+
+//init faust effect
 export async function initFaustEffect() {
   try{
     const { createFaustNode } = await import("./faust/multi_Ef.dsp-wasm/create-node.js");
@@ -56,7 +69,7 @@ export async function initFaustEffect() {
     faustNode.setParamValue("/multi_Ef/feedback", 0.9);
     faustNode.setParamValue("/multi_Ef/intdel", 3000);
     faustNode.setParamValue("/multi_Ef/duration", 90);
-    faustNode.setParamValue("/multi_Ef/drywet", 0);
+    faustNode.setParamValue("/multi_Ef/drywet", 1);
 
     console.log("Faust DSP multi_Ef chargé et connecté.");
   }catch (e) {
