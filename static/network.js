@@ -24,7 +24,6 @@ export function getIp() {
 
 export function initSocket(ip) {
   socket = io(`http://${ip}:5001/browser`);
-  //reception de données osc, mapping vers l'effet faust
   socket.on('connect', () => {
     console.log("Connecté à", ip);
   });    
@@ -32,24 +31,51 @@ export function initSocket(ip) {
 
 export function setupSocketAndHandlers(faustNode) {
   socket.on('to_browser', (data) => {
+    if (!data) {
+      console.warn("data to_browser vide ou non défini");}
+    console.log("data to_browser:", data);
+    
     const { address, args } = data;
+    if (address === "/hover") return;  
     console.log("osc recu: ", address, args);
     mapOSCToFaust(address, args, faustNode);
   });
 }
 
 // Mapping OSC → paramètres Faust
-export function mapOSCToFaust(address, args, faustNode) {
-  if (!faustNode || !address || !Array.isArray(args)) return;
+function mapOSCToFaust(address, args, faustNode) {
+  if (!faustNode ) {
+    console.warn("FaustNode non initialisé", faustNode);
+    return;
+  }
+ if (!address ) {
+    console.warn("adresse OSC invalide :", address);
+    return;
+  }
+
+  if (!args || typeof args !== "object" || !Array.isArray(args)) {
+    console.warn("Arguments OSC invalides :", args);
+    return;
+  }
+  if (args.length === 0) {
+    console.warn("Aucun argument fourni pour l'adresse OSC :", address);
+    return;
+  }
+
+
+
+
+
 
   const oscToFaustMap = {
-  "/effectPos": ["multi_Ef/g", "/multi_Ef/feedback"] // POUR L'INSTANT MAP UNIQUEMENT G ET FEEDBACK, SANS UTILISER LA REGRESSION 
+  "/effectPos": ["/multi_Ef/g", "/multi_Ef/feedback"] // POUR L'INSTANT MAP UNIQUEMENT G ET FEEDBACK, SANS UTILISER LA REGRESSION 
   };
 
   const param = oscToFaustMap[address];
   if (Array.isArray(param)) {
     param.forEach((p, i) => {
       if (args[i] !== undefined) {
+        console.log(`SetParam: ${p} = ${args[i]}`);
         faustNode.setParamValue(p, args[i]);
       }
     });

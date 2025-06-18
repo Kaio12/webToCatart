@@ -3,25 +3,29 @@
 
 // pour l'instant, pas de midi
 import { onMIDISuccess, onMIDIFailure, handleMIDIMessage, initMIDI,} from "./midi.js";
-import {audioContext, loadAudioBuffer, playGrain, initFaustEffect, faustNode,} from "./audio.js";
-import {  sendOSC, getIp, initSocket, loadPoints, mapOSCToFaust, setupSocketAndHandlers} from "./network.js";
+import {audioContext, loadAudioBuffer, playGrain, initFaustEffect} from "./audio.js";
+import {  sendOSC, getIp, initSocket, loadPoints, setupSocketAndHandlers} from "./network.js";
 import { loadMLPModel } from "./mlp.js";
 import { drawPixiPoints, updateFormeLibreTransform, setupFormeLibre } from "./graphics.js";
 
 
-// on initialise l'audioContext, on charge le buffer audio, on initialise l'effet audio faust
 let audioStarted = false;
-loadAudioBuffer(); // charge le buffer audio au démarrage
-initFaustEffect(); // initialisation de l'effet audio faust
-initMIDI(); // initialisation de la gestion MIDI (pour l'instant inutilisée, mais à garder pour le futur)
-getIp().then(ip => {
-  console.log("IP récupérée, initialisation du socket...");
-  initSocket(ip);
-  setupSocketAndHandlers(faustNode);
-}).catch(error => {
-  console.error("Erreur lors de la récupération de l'IP :", error);
-});
 
+loadAudioBuffer(); 
+initFaustEffect().then(result => {
+  const faustNode = result.faustNode;
+  console.log("FaustNode initialisé :", faustNode);
+
+  getIp().then(ip => {
+    console.log("IP récupérée, initialisation du socket...");
+    initSocket(ip);
+    setupSocketAndHandlers(faustNode);
+    }).catch(error => {
+      console.error("Erreur lors de la récupération de l'IP :", error);
+    });
+    })
+
+initMIDI(); 
 
 // un bouton pour débloquer l'audiocontext (necessaire par sécurité)
 document.getElementById("audio-toggle").addEventListener("click", () => {
@@ -38,7 +42,7 @@ document.getElementById("audio-toggle").addEventListener("click", () => {
       document.getElementById("audio-toggle").textContent = "Démarrer l'audio";
     });
   }
-});
+  });
  
 // inutilisé pour l'instant, mais à garder pour le futur
 loadMLPModel(); //charge le modele MLP (pour traduire le 2d de l'iphone vers les 4 parametres de l'effet Faust)
@@ -61,6 +65,7 @@ let zoomFactor = 1.0 // facteur zoom affichage des points
 // les opérations interviennent après le chargement du DOM
 document.addEventListener('DOMContentLoaded', () => {
 
+  console.log("DOM chargé, initialisation des éléments...");
   // les différents éléments de la page web récupérés
   const toggleleft = document.getElementById('toggle-left');
   const sidebarleft = document.getElementById('sidebarleft');
@@ -156,7 +161,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // initialisation du canvas Pixi utilisé pour afficher les points correspondant aux grains
     setupPixi().then(() => {
+      console.log("setupPixi terminé !");
       loadPoints().then(points => {
+        console.log("Points reçus :", points);
         if (!points || points.length === 0) {
           console.error("Aucun point chargé à setupPixi ou données invalides.");
           return;

@@ -3,7 +3,6 @@ export let formeLibre;
 const baseWidth = 800;  // largeur de la zone d'affichage des points
 const baseHeight = 800; // hauteur de la zone d'affichage des points
 
-
 // ****** fonction principale pour dessiner les points ******
 export function drawPixiPoints(pointsData, app, pixiPoints, zoomFactor = 1) {
 

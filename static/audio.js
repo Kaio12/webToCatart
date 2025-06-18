@@ -6,7 +6,6 @@
 │   ├── playGrain(start, duration, useEffect)
 │   ├── loadAudioBuffer()
 │   ├── initFaustEffect()
-│   └── mapOSCToFaust(address, args) ???????
 */
 
 let audioBuffer = null; //buffer pour intégrer le fichier son reçu de max
@@ -32,10 +31,9 @@ export function playGrain(startMs, durationMs, useEffect = false) {
     source.connect(grainBus);
   } else {
     source.connect(audioContext.destination);
-
-  }  const startSec = startMs / 1000; //conversion en s
+  }  
+  const startSec = startMs / 1000; //conversion en s
   const durationSec = durationMs / 1000;
-
   source.start(0, startSec, durationSec);
 }
 
@@ -54,11 +52,12 @@ export async function loadAudioBuffer() {
 //init faust effect
 export async function initFaustEffect() {
   try{
-    const { createFaustNode } = await import("./faust/multi_Ef.dsp-wasm/create-node.js");
+    const module = await import("./faust/multi_Ef.dsp-wasm/create-node.js");
+    const { createFaustNode } = module;
     const result = await createFaustNode(audioContext, "multi_Ef", 0);
     faustNode = result.faustNode;
 
-    // crée un bus pour les grains
+    // crée un bus pour router les grains vers l'effet Faust
     grainBus = audioContext.createGain();
     // grain => faust => destination
     grainBus.connect(faustNode);
@@ -72,8 +71,10 @@ export async function initFaustEffect() {
     faustNode.setParamValue("/multi_Ef/drywet", 1);
 
     console.log("Faust DSP multi_Ef chargé et connecté.");
+    return result; // retourne le faustNode pour l'utiliser ailleurs
   }catch (e) {
     console.error("Erreur lors de l'initialisation de l'effet Faust :", e);
+    return null;
   }
 }
 
