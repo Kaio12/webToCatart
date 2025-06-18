@@ -8,10 +8,10 @@ import {  sendOSC, getIp, initSocket, loadPoints, setupSocketAndHandlers} from "
 import { loadMLPModel } from "./mlp.js";
 import { drawPixiPoints, updateFormeLibreTransform, setupFormeLibre } from "./graphics.js";
 
-
 let audioStarted = false;
 
 loadAudioBuffer(); 
+
 initFaustEffect().then(result => {
   const faustNode = result.faustNode;
   console.log("FaustNode initialisé :", faustNode);
@@ -47,13 +47,10 @@ document.getElementById("audio-toggle").addEventListener("click", () => {
 // inutilisé pour l'instant, mais à garder pour le futur
 loadMLPModel(); //charge le modele MLP (pour traduire le 2d de l'iphone vers les 4 parametres de l'effet Faust)
 
-
 let entraindeZoomer = false; // pour éviter de jouer les sons quand on zoom
 // Configuration de Pixi.js pour le rendu graphique
 let pixiPoints = [];
-
 window.pointerPos = { x: -9999, y: -9999 };// propriété globale pour la position du pointeur
-
 const proximityThreshold = 80; // distance minimale pour déclencher un son
 const cooldown = 300; // temps minimal entre deux update pour le toucher des points
 
@@ -73,14 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const sidebarright = document.getElementById('sidebarright');
   const body = document.body;
 
-  // bouton Fullscreen
-  document.getElementById("fullscreen-btn").addEventListener("click", () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-    } else {
-      document.exitFullscreen();
-    }
-});
+
 
   // bouton Delete log (on log tous les évènements du browser et de l'ipad)
   document.getElementById("delete-log").addEventListener("click", () => {
@@ -103,6 +93,18 @@ document.addEventListener('DOMContentLoaded', () => {
     sidebarright.classList.toggle('hidden');
     body.classList.toggle('sidebright-hidden');
   });
+
+  // bouton Fullscreen
+  document.getElementById("fullscreen-btn").addEventListener("click", () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+      drawPixiPoints(data, window.pixiApp, pixiPoints, zoomFactor);// on redessine les points
+
+    } else {
+      document.exitFullscreen();
+    }
+  });
+
 
   // NexusUI Sliders (******** pour l'instant inutilisés ****** A ENLEVER PROBABLEMENT*****)*/
     let multisliderRight = new Nexus.Multislider('#multisliderRight', {
@@ -175,9 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-
-
-
 //*********   FONCTION QUI JOUE LES GRAINS, ENVOIE LES INFOS OSC */
 function triggerGrainsOnProximity(app) {
   if (entraindeZoomer) return; // si on zoom, pas de son.
@@ -243,7 +242,7 @@ async function setupPixi() {
     app.renderer.resize(window.innerWidth, window.innerHeight);
     centerX = window.innerWidth / 2;
     centerY = window.innerHeight / 2;
-    drawPixiPoints(data, app);
+    drawPixiPoints(data, window.pixiApp, pixiPoints, zoomFactor);// on redessine les points
     //updateFormeLibreTransform();
   });
 
