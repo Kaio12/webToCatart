@@ -61,7 +61,7 @@ export function drawPixiPoints(pointsData, app, pixiPoints, zoomFactor = 1) {
       this.drawCircle(0, 0, this.currentRadius);
       this.endFill();
     };
-
+/*
     console.log(`Point ${index}:`, {
       originalX: pointData.x,
       originalY: pointData.y,
@@ -69,6 +69,8 @@ export function drawPixiPoints(pointsData, app, pixiPoints, zoomFactor = 1) {
       mappedY: pointGraphic.y,
       radius: radius
     });
+    */
+
     pointGraphic.drawSelf();
     app.stage.addChild(pointGraphic);
     pixiPoints.push(pointGraphic);
@@ -129,7 +131,7 @@ export function setupFormeLibre (app, zoomFactor, freeDrawPath) {
 }
 
 // mise à jour de la position et du zoom
-export function updateFormeLibreTransform() {
+export function updateFormeLibreTransform(zoomFactor) {
   if (!formeLibre) return;
   const centerX = window.innerWidth /2 ;
   const centerY = window.innerHeight / 2 ;

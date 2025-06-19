@@ -2,7 +2,7 @@ export let socket;
 // Envoie messages OSC via socket.io ===
 export let sendOSC = function (address, args) {
   if (socket && socket.connected) {
-    console.log("Sending OSC:", address, args);
+    //console.log("Sending OSC:", address, args);
     socket.emit('osc', { address, args });
   } else {
     console.error("Socket not connected.");
@@ -33,7 +33,7 @@ export function setupSocketAndHandlers(faustNode) {
   socket.on('to_browser', (data) => {
     if (!data) {
       console.warn("data to_browser vide ou non défini");}
-    console.log("data to_browser:", data);
+    //console.log("data to_browser:", data);
     
     const { address, args } = data;
     if (address === "/hover") return;  

@@ -41,6 +41,19 @@ def get_local_ip():
     return IP
 local_ip = get_local_ip()
 
+# Route pour servir le fichier manifest.json et le service worker
+@app.route('/manifest.json')
+def manifest():
+    return send_from_directory('static', 'manifest.json')
+
+@app.route('/service-worker.js')
+def service_worker():
+    return send_from_directory('static', 'service-worker.js')
+
+@app.route('/icons/<path:filename>')
+def icons(filename):
+    return send_from_directory('static/icons', filename)
+
 # Route principale qui sert la page HTML avec l'interface utilisateur
 @app.route("/")
 def hello():

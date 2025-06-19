@@ -8,6 +8,20 @@ import {  sendOSC, getIp, initSocket, loadPoints, setupSocketAndHandlers} from "
 import { loadMLPModel } from "./mlp.js";
 import { drawPixiPoints, updateFormeLibreTransform, setupFormeLibre } from "./graphics.js";
 
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(registration => {
+        console.log('Service Worker enregistré avec succès :', registration);
+      })
+      .catch(error => {
+        console.error('Échec de l’enregistrement du Service Worker :', error);
+      });
+  });
+}
+
+
 let audioStarted = false;
 
 loadAudioBuffer(); 
@@ -69,8 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggleright = document.getElementById('toggle-right');
   const sidebarright = document.getElementById('sidebarright');
   const body = document.body;
-
-
 
   // bouton Delete log (on log tous les évènements du browser et de l'ipad)
   document.getElementById("delete-log").addEventListener("click", () => {
@@ -149,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // on redessine la forme libre
       if (formeLibre) {
-        formeLibre.scale.set(zoomFactor);
+        updateFormeLibreTransform(zoomFactor);
         formeLibre.clear();
         if (freeDrawPath.length > 2) {
           formeLibre.drawPolygon(freeDrawPath.flatMap(p => [p.x, p.y]));
@@ -165,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupPixi().then(() => {
       console.log("setupPixi terminé !");
       loadPoints().then(points => {
-        console.log("Points reçus :", points);
+        //console.log("Points reçus :", points);
         if (!points || points.length === 0) {
           console.error("Aucun point chargé à setupPixi ou données invalides.");
           return;
@@ -240,10 +252,8 @@ async function setupPixi() {
     // au cas ou la fenêtre change de taille, on redessine les points
   window.addEventListener('resize', () => {
     app.renderer.resize(window.innerWidth, window.innerHeight);
-    centerX = window.innerWidth / 2;
-    centerY = window.innerHeight / 2;
     drawPixiPoints(data, window.pixiApp, pixiPoints, zoomFactor);// on redessine les points
-    //updateFormeLibreTransform();
+    updateFormeLibreTransform(zoomFactor);
   });
 
   // ticker : actualisation de l'app sur chaque frame
