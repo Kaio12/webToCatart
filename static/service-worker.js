@@ -10,13 +10,14 @@ const URLS_TO_CACHE = [
   "/static/style.css",
   "/static/NexusUI.js",
   "/static/pixi.min.js",
-  "/static/static/faust/multi_Ef.dsp-wasm/faustwasm/index.js.map",
-  "/static/static/faust/multi_Ef.dsp-wasm/faustwasm/index.js",
-  "/static/static/faust/multi_Ef.dsp-wasm/create-node.js",
-  "/static/static/faust/multi_Ef.dsp-wasm/dsp-meta.json",
-  "/static/static/faust/multi_Ef.dsp-wasm/dsp-module.wasm",
+  "/static/faust/multi_Ef.dsp-wasm/faustwasm/index.js.map",
+  "/static/faust/multi_Ef.dsp-wasm/faustwasm/index.js",
+  "/static/faust/multi_Ef.dsp-wasm/create-node.js",
+  "/static/faust/multi_Ef.dsp-wasm/dsp-meta.json",
+  "/static/faust/multi_Ef.dsp-wasm/dsp-module.wasm",
   "/icons/icon-192.png",
-  "/icons/icon-512.png"
+  "/icons/icon-512.png",
+  "/uploads/enr.wav",
 ];
 
 self.addEventListener("install", event => {
@@ -25,6 +26,16 @@ self.addEventListener("install", event => {
       return cache.addAll(URLS_TO_CACHE);
     }).catch(error => {
       console.error("Erreur lors de l'ajout au cache :", error);
+        URLS_TO_CACHE.forEach(async file => {
+            try {
+              const response = await fetch(file);
+              if (!response.ok) {
+                console.error("Fichier introuvable ou inaccessible :", file, response.status);
+              }
+            } catch (e) {
+              console.error("Erreur fetch pour", file, e);
+            }
+          });
     })
   );
 });

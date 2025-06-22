@@ -175,14 +175,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // initialisation du canvas Pixi utilisé pour afficher les points correspondant aux grains
     setupPixi().then(() => {
       console.log("setupPixi terminé !");
+
       loadPoints().then(points => {
         console.log("Points reçus");
         if (!points || points.length === 0) {
           console.error("Aucun point chargé à setupPixi ou données invalides.");
           return;
-        }
+        } else if (points && points.length > 0) {
+          localStorage.setItem("points", JSON.stringify(points)); // on stocke les points dans le localStorage
+          console.log("Points stockés dans le localStorage");
       data = points;
       drawPixiPoints(data, window.pixiApp, pixiPoints);
+        } else {
+          const offlinePoints = localStorage.getItem("points");
+          if (offlinePoints) {
+            data = JSON.parse(offlinePoints);
+            console.log("Points chargés depuis le localStorage");
+            drawPixiPoints(data, window.pixiApp, pixiPoints);
+          }
+        }
       });
       formeLibre = setupFormeLibre(window.pixiApp, zoomFactor); // initialisation de la forme libre pour dessiner
     });
