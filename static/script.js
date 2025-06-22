@@ -6,8 +6,7 @@ import { onMIDISuccess, onMIDIFailure, handleMIDIMessage, initMIDI,} from "./mid
 import {audioContext, loadAudioBuffer, playGrain, initFaustEffect} from "./audio.js";
 import {  sendOSC, getIp, initSocket, loadPoints, setupSocketAndHandlers} from "./network.js";
 import { loadMLPModel } from "./mlp.js";
-import { drawPixiPoints, updateFormeLibreTransform, setupFormeLibre } from "./graphics.js";
-
+import { drawPixiPoints, updateFormeLibreTransform, setupFormeLibre, freeDrawPath } from "./graphics.js";
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -21,25 +20,30 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-
 let audioStarted = false;
 
-loadAudioBuffer(); 
-
-initFaustEffect().then(result => {
-  const faustNode = result.faustNode;
-  console.log("FaustNode initialisé :", faustNode);
-
-  getIp().then(ip => {
-    console.log("IP récupérée, initialisation du socket...");
-    initSocket(ip);
-    setupSocketAndHandlers(faustNode);
-    }).catch(error => {
+(async () => {
+  await loadAudioBuffer();
+  try {
+    const result = await initFaustEffect();
+    const faustNode = result.faustNode;
+    console.log("FaustNode initialisé :", faustNode);
+    try {
+      const ip = await getIp();
+      console.log("IP récupérée, initialisation du socket...");
+      initSocket(ip);
+      setupSocketAndHandlers(faustNode);
+    } catch (error) {
       console.error("Erreur lors de la récupération de l'IP :", error);
-    });
-    })
+    }
+  } catch (error) {
+    console.error("Erreur lors de l'initialisation de Faust :", error);
+  }
+})();
 
-initMIDI(); 
+//initMIDI();
+//loadMLPModel();
+
 
 // un bouton pour débloquer l'audiocontext (necessaire par sécurité)
 document.getElementById("audio-toggle").addEventListener("click", () => {
@@ -59,18 +63,16 @@ document.getElementById("audio-toggle").addEventListener("click", () => {
   });
  
 // inutilisé pour l'instant, mais à garder pour le futur
-loadMLPModel(); //charge le modele MLP (pour traduire le 2d de l'iphone vers les 4 parametres de l'effet Faust)
 
 let entraindeZoomer = false; // pour éviter de jouer les sons quand on zoom
-// Configuration de Pixi.js pour le rendu graphique
-let pixiPoints = [];
+let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
 window.pointerPos = { x: -9999, y: -9999 };// propriété globale pour la position du pointeur
 const proximityThreshold = 80; // distance minimale pour déclencher un son
 const cooldown = 300; // temps minimal entre deux update pour le toucher des points
 
 let data = [];  // les données des points à afficher, chargées depuis le serveur
 let formeLibre; //layer pour le dessin libre
-let freeDrawPath = []; // pour le dessin à la main
+
 let zoomFactor = 1.0 // facteur zoom affichage des points
 
 // les opérations interviennent après le chargement du DOM
@@ -94,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
           console.error("Erreur lors de la suppression.");
         }
       });
-  });
+    });
   
   // bouton apparition/disparition des barres latérales (********* à remplacer par un mouvement des doigts)
   toggleleft.addEventListener('click', () => {
@@ -111,7 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
       drawPixiPoints(data, window.pixiApp, pixiPoints, zoomFactor);// on redessine les points
-
     } else {
       document.exitFullscreen();
     }
@@ -144,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
       'max': 1,
       'step': 0,
       'candycane': 3,
-      'values': [0.9, 0.8, 0.7],
+      'values': [0.25], // valeur initiale du zoom
       'smoothing': 0,
       'mode': 'bar',
     });
@@ -156,13 +157,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (Array.isArray(v) && v.length > 0) {
       entraindeZoomer = true;
       zoomFactor = 0.5 + v[0] * 2.0; // maps slider value [0,1] to zoomFactor [0.5,2.5]
-      drawPixiPoints(data, window.pixiApp, pixiPoints, zoomFactor);// on redessine les points
 
+      drawPixiPoints(data, window.pixiApp, pixiPoints, zoomFactor);// on redessine les points
       
       // on redessine la forme libre
       if (formeLibre) {
         updateFormeLibreTransform(zoomFactor);
         formeLibre.clear();
+        console.log("freedrawPath : ", freeDrawPath, freeDrawPath.length);
         if (freeDrawPath.length > 2) {
           formeLibre.drawPolygon(freeDrawPath.flatMap(p => [p.x, p.y]));
           formeLibre.fill({ color: 0xffcccc, alpha: 0.3 });
@@ -177,15 +179,15 @@ document.addEventListener('DOMContentLoaded', () => {
     setupPixi().then(() => {
       console.log("setupPixi terminé !");
       loadPoints().then(points => {
-        //console.log("Points reçus :", points);
+        console.log("Points reçus");
         if (!points || points.length === 0) {
           console.error("Aucun point chargé à setupPixi ou données invalides.");
           return;
         }
-    data = points;
-    drawPixiPoints(data, window.pixiApp, pixiPoints);
-  });
-    formeLibre = setupFormeLibre(window.pixiApp, zoomFactor, freeDrawPath); // initialisation de la forme libre pour dessiner
+      data = points;
+      drawPixiPoints(data, window.pixiApp, pixiPoints);
+      });
+      formeLibre = setupFormeLibre(window.pixiApp, zoomFactor); // initialisation de la forme libre pour dessiner
     });
 });
 

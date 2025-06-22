@@ -1,4 +1,5 @@
 export let formeLibre;
+export let freeDrawPath = []; // pour le dessin à la main
 
 const baseWidth = 800;  // largeur de la zone d'affichage des points
 const baseHeight = 800; // hauteur de la zone d'affichage des points
@@ -84,7 +85,7 @@ export function drawPixiPoints(pointsData, app, pixiPoints, zoomFactor = 1) {
 
   // ******** FORME LIBRRE ***********
   //dessin de forme libre pour la selection de grain
-export function setupFormeLibre (app, zoomFactor, freeDrawPath) {
+export function setupFormeLibre (app, zoomFactor) {
 
   // centre et zoom accessibles depuis le contexte
   const centerX = window.innerWidth / 2;
@@ -94,7 +95,7 @@ export function setupFormeLibre (app, zoomFactor, freeDrawPath) {
   formeLibre = new PIXI.Graphics();
   formeLibre.scale.set(zoomFactor);
   formeLibre.position.set(centerX, centerY);
-  freeDrawPath = [];
+  //freeDrawPath = [];
   app.stage.addChild(formeLibre);
 
   app.stage.on("pointerdown", (e) => {
@@ -105,14 +106,12 @@ export function setupFormeLibre (app, zoomFactor, freeDrawPath) {
     formeLibre.clear();//efface si on recommence le geste
   });
 
-
-    // position du pointeur (souris, doigt)
-    app.stage.on("pointermove", (e) => {
+  // position du pointeur (souris, doigt)
+  app.stage.on("pointermove", (e) => {
     window.pointerPos = e.data.global;
     if (!drawing) return;
     const {x, y} = e.data.global;
     freeDrawPath.push({ x: (x - centerX) / zoomFactor, y: (y - centerY) / zoomFactor });
-
     formeLibre.clear();
     formeLibre.drawPolygon(freeDrawPath.flatMap(p => [p.x, p.y]));
     formeLibre.fill({ color: 0xffcccc, alpha: 0.3 });
@@ -132,7 +131,10 @@ export function setupFormeLibre (app, zoomFactor, freeDrawPath) {
 
 // mise à jour de la position et du zoom
 export function updateFormeLibreTransform(zoomFactor) {
-  if (!formeLibre) return;
+  if (!formeLibre) {
+    console.error("formeLibre n'est pas initialisée");
+    return;
+  }
   const centerX = window.innerWidth /2 ;
   const centerY = window.innerHeight / 2 ;
   formeLibre.scale.set(zoomFactor);
