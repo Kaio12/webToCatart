@@ -111,12 +111,7 @@ export async function loadPoints() {
       })).filter(p => !isNaN(p.x) && !isNaN(p.y));
       
       return parsed;
-      
-    } else if (rawData.type === "soundfile") {
-      console.log("Reçu un fichier son : ", rawData.filename);
-    } else {
-      console.warn("Type de données inconnu :", rawData);
-    }
+    }  
   } catch (error) {
     console.error("Erreur de chargement des points:", error);
   }

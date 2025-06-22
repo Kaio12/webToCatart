@@ -2,10 +2,10 @@
 // script.js - Gère l'interaction entre le navigateur, Pixi.js, l'audio et le MIDI
 
 // pour l'instant, pas de midi
-import { onMIDISuccess, onMIDIFailure, handleMIDIMessage, initMIDI,} from "./midi.js";
+//import { onMIDISuccess, onMIDIFailure, handleMIDIMessage, initMIDI,} from "./midi.js";
 import {audioContext, loadAudioBuffer, playGrain, initFaustEffect} from "./audio.js";
 import {  sendOSC, getIp, initSocket, loadPoints, setupSocketAndHandlers} from "./network.js";
-import { loadMLPModel } from "./mlp.js";
+//import { loadMLPModel } from "./mlp.js";
 import { drawPixiPoints, updateFormeLibreTransform, setupFormeLibre, freeDrawPath } from "./graphics.js";
 
 if ('serviceWorker' in navigator) {
@@ -44,7 +44,6 @@ let audioStarted = false;
 //initMIDI();
 //loadMLPModel();
 
-
 // un bouton pour débloquer l'audiocontext (necessaire par sécurité)
 document.getElementById("audio-toggle").addEventListener("click", () => {
   if (!audioStarted && audioContext.state === "suspended") {
@@ -60,10 +59,8 @@ document.getElementById("audio-toggle").addEventListener("click", () => {
       document.getElementById("audio-toggle").textContent = "Démarrer l'audio";
     });
   }
-  });
+});
  
-// inutilisé pour l'instant, mais à garder pour le futur
-
 let entraindeZoomer = false; // pour éviter de jouer les sons quand on zoom
 let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
 window.pointerPos = { x: -9999, y: -9999 };// propriété globale pour la position du pointeur
@@ -79,7 +76,7 @@ let zoomFactor = 1.0 // facteur zoom affichage des points
 document.addEventListener('DOMContentLoaded', () => {
 
   console.log("DOM chargé, initialisation des éléments...");
-  // les différents éléments de la page web récupérés
+
   const toggleleft = document.getElementById('toggle-left');
   const sidebarleft = document.getElementById('sidebarleft');
   const toggleright = document.getElementById('toggle-right');
@@ -91,12 +88,12 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch("/delete", { method: "POST" })
       .then(response => {
         if (response.ok) {
-          console.log("Fichier supprimé !");
+          console.log("Fichier log supprimé");
         } else {
           console.error("Erreur lors de la suppression.");
         }
-      });
     });
+  });
   
   // bouton apparition/disparition des barres latérales (********* à remplacer par un mouvement des doigts)
   toggleleft.addEventListener('click', () => {
@@ -197,10 +194,9 @@ function triggerGrainsOnProximity(app) {
   const now = performance.now(); //temps écoulé depuis le temps origine
 
   for (const point of pixiPoints) {
-
     const dist = Math.hypot(point.x - window.pointerPos.x, point.y - window.pointerPos.y);
     const wasInside = point.isInside || false;
-    const isInside = dist < proximityThreshold;
+    const isInside = dist < (proximityThreshold); // on adapte le seuil de proximité au zoomFactor
     point.isInside = isInside;
 
     if (dist < proximityThreshold) {

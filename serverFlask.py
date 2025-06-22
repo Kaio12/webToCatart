@@ -170,16 +170,11 @@ def route_osc(data):
 
 @app.route('/api/data', methods=['POST'])
 def receive_data():
-    global catched_points, catched_audio
+    global catched_points
     data = request.get_json()
     if data:
         print('Reçu données via HTTP POST:', json.dumps(data, indent=2))
-        if data.get('type') == 'audio':
-            catched_audio = json.dumps(data)
-            print("audio recu")
-        else:
-            catched_points = json.dumps(data)
-            print("pas de type audio")
+        catched_points = json.dumps(data)
         return {"status": "ok", "message": "Données reçues et stockées"}, 200
     else:
         return {"status": "error", "message": "Aucune donnée reçue"}, 400
