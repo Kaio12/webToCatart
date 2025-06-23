@@ -6,7 +6,6 @@ body {
     overflow: hidden  ;
 }
 
-
 #toggle-left{
     position: absolute;
     top: 10px;
@@ -76,7 +75,6 @@ body {
 
 .main-content {
     flex-grow: 1;
-    padding: 20px;
     transition: margin-left 0.5s ease;
     position: relative;
     z-index: 0;
@@ -117,6 +115,9 @@ body.sidebarright-hidden .main-content {
     }
 
 #pixi-container {
-        width: 100%;
-        height: 100%;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    overflow: hidden;
     }

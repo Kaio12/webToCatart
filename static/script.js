@@ -8,6 +8,17 @@ import {  sendOSC, getIp, initSocket, loadPoints, setupSocketAndHandlers} from "
 //import { loadMLPModel } from "./mlp.js";
 import { drawPixiPoints, updateFormeLibreTransform, setupFormeLibre, freeDrawPath } from "./graphics.js";
 
+let data = [];  // les données des points à afficher, chargées depuis le serveur
+let formeLibre; //layer pour le dessin libre
+let zoomFactor = 1.0 // facteur zoom affichage des points
+let audioStarted = false;
+let entraindeZoomer = false; // pour éviter de jouer les sons quand on zoom
+let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
+window.pointerPos = { x: -9999, y: -9999 };// propriété globale pour la position du pointeur
+const proximityThreshold = 80; // distance minimale pour déclencher un son
+const cooldown = 300; // temps minimal entre deux update pour le toucher des points
+
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js')
@@ -20,8 +31,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-let audioStarted = false;
-
+// Fonction pour initialiser le contexte audio et charger le buffer audio
 (async () => {
   await loadAudioBuffer();
   try {
@@ -61,17 +71,6 @@ document.getElementById("audio-toggle").addEventListener("click", () => {
   }
 });
  
-let entraindeZoomer = false; // pour éviter de jouer les sons quand on zoom
-let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
-window.pointerPos = { x: -9999, y: -9999 };// propriété globale pour la position du pointeur
-const proximityThreshold = 80; // distance minimale pour déclencher un son
-const cooldown = 300; // temps minimal entre deux update pour le toucher des points
-
-let data = [];  // les données des points à afficher, chargées depuis le serveur
-let formeLibre; //layer pour le dessin libre
-
-let zoomFactor = 1.0 // facteur zoom affichage des points
-
 // les opérations interviennent après le chargement du DOM
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -82,9 +81,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggleright = document.getElementById('toggle-right');
   const sidebarright = document.getElementById('sidebarright');
   const body = document.body;
+  const deleteLogButton = document.getElementById("delete-log");
 
-  // bouton Delete log (on log tous les évènements du browser et de l'ipad)
-  document.getElementById("delete-log").addEventListener("click", () => {
+// Empêche le zoom natif du navigateur (pinch sur trackpad)
+  window.addEventListener('wheel', function(e) {
+    if (e.ctrlKey) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+
+
+// bouton pour supprimer le fichier log
+  deleteLogButton.addEventListener("click", () => {
     fetch("/delete", { method: "POST" })
       .then(response => {
         if (response.ok) {
@@ -95,17 +104,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   
-  // bouton apparition/disparition des barres latérales (********* à remplacer par un mouvement des doigts)
+// bouton apparition/disparition des barres latérales (********* à remplacer par un mouvement des doigts)
   toggleleft.addEventListener('click', () => {
     sidebarleft.classList.toggle('hidden');
     body.classList.toggle('sidebarleft-hidden');
   });
+
   toggleright.addEventListener('click', () => {
     sidebarright.classList.toggle('hidden');
     body.classList.toggle('sidebright-hidden');
   });
 
-  // bouton Fullscreen
+// bouton Fullscreen
   document.getElementById("fullscreen-btn").addEventListener("click", () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
@@ -116,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 
-  // NexusUI Sliders (******** pour l'instant inutilisés ****** A ENLEVER PROBABLEMENT*****)*/
+// NexusUI Sliders (******** pour l'instant inutilisés ****** A ENLEVER PROBABLEMENT*****)*/
     let multisliderRight = new Nexus.Multislider('#multisliderRight', {
     'size': [200, 600],
     'numberOfSliders': 3,

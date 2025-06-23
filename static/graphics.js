@@ -35,16 +35,24 @@ export function drawPixiPoints(pointsData, app, pixiPoints, zoomFactor = 1) {
 
     const pointGraphic = new PIXI.Graphics();
 
-    // radius (taille des points) suit loudness (donné par analyse CATART/Max)
+// radius (taille des points) suit loudness (donné par analyse CATART/Max)
     const radius = mapRange(pointData.loudnessMax, bounds.lMin, bounds.lMax, 5, 20);
 
-    // couleur du point suit energy (donné par analyse CATART/Max)
+// couleur du point suit energy (donné par analyse CATART/Max)
     const hue = mapRange(pointData.energyMax, bounds.eMin, bounds.eMax, 240, 0);
     const [r, gVal, b] = hslToRgb(hue / 360, 1, 0.5);
     const color = (r * 255 << 16) + (gVal * 255 << 8) + (b * 255) | 0;
 
-    pointGraphic.x = centerX + (mapRange(pointData.x, bounds.xMin, bounds.xMax, -baseWidth / 2, baseWidth / 2) * zoomFactor);
-    pointGraphic.y = centerY + (mapRange(pointData.y, bounds.yMin, bounds.yMax, -baseHeight / 2, baseHeight / 2) * zoomFactor);
+// Calcule la position centrée AVANT zoom
+    const x0 = mapRange(pointData.x, bounds.xMin, bounds.xMax, radius, window.innerWidth -  2 * radius);
+    const y0 = mapRange(pointData.y, bounds.yMin, bounds.yMax, radius, window.innerHeight - 2 * radius);
+
+// Décale par rapport au centre, applique le zoom, puis recentre
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+
+    pointGraphic.x = centerX + (x0 - centerX) * zoomFactor;
+    pointGraphic.y = centerY + (y0 - centerY) * zoomFactor;
 
     pointGraphic.baseRadius = radius;
     pointGraphic.currentRadius = radius;
