@@ -1,13 +1,20 @@
 export let formeLibre;
 export let freeDrawPath = []; // pour le dessin à la main
+export let drawing = false; // état du dessin à la main
 
-const baseWidth = 800;  // largeur de la zone d'affichage des points
-const baseHeight = 800; // hauteur de la zone d'affichage des points
+let pointsContainer; // conteneur Pixi pour les points
+export let centerX = window.innerWidth / 2;
+export let centerY = window.innerHeight / 2;
 
-// ****** fonction principale pour dessiner les points ******
+// Fonction pour mettre à jour le centre lors du resize
+export function updateCenter() {
+  centerX = window.innerWidth / 2;
+  centerY = window.innerHeight / 2;
+}
+
+
 export function drawPixiPoints(pointsData, app, pixiPoints, zoomFactor = 1) {
 
-  // précautions d'usage
   if (!app) {console.error("L'app pixi n'est pas initialisée");
     return;}
   if (!Array.isArray(pointsData) || pointsData.length === 0) {
@@ -15,23 +22,19 @@ export function drawPixiPoints(pointsData, app, pixiPoints, zoomFactor = 1) {
       return;
     }
 
-  app.stage.removeChildren(); // Removes all children from this container
-  pixiPoints.length = 0;
+  if (!pointsContainer) {
+    pointsContainer = new PIXI.Container();
+    app.stage.addChild(pointsContainer);
+  }
 
-  // centre de la fenêtre
-  const centerX = window.innerWidth / 2;
-  const centerY = window.innerHeight / 2; 
+  pointsContainer.removeChildren(); // Efface les anciens points
+  pixiPoints.length = 0;
 
   const bounds = getBounds(pointsData);
   console.log("BOUNDS calculés :", bounds);
-
-  const scaleX = window.innerWidth / baseWidth;
-  const scaleY = window.innerHeight / baseHeight;
    
 
-  // La méthode forEach() permet d'exécuter une fonction donnée sur chaque élément du tableau.
-  // The Graphics class contains methods used to draw primitive shapes such as lines, circles and rectangles to the display, and to color and fill them.
-  pointsData.forEach((pointData, index) => {
+  pointsData.forEach((pointData) => {
 
     const pointGraphic = new PIXI.Graphics();
 
@@ -48,8 +51,6 @@ export function drawPixiPoints(pointsData, app, pixiPoints, zoomFactor = 1) {
     const y0 = mapRange(pointData.y, bounds.yMin, bounds.yMax, radius, window.innerHeight - 2 * radius);
 
 // Décale par rapport au centre, applique le zoom, puis recentre
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
 
     pointGraphic.x = centerX + (x0 - centerX) * zoomFactor;
     pointGraphic.y = centerY + (y0 - centerY) * zoomFactor;
@@ -70,60 +71,60 @@ export function drawPixiPoints(pointsData, app, pixiPoints, zoomFactor = 1) {
       this.drawCircle(0, 0, this.currentRadius);
       this.endFill();
     };
-/*
-    console.log(`Point ${index}:`, {
-      originalX: pointData.x,
-      originalY: pointData.y,
-      mappedX: pointGraphic.x,
-      mappedY: pointGraphic.y,
-      radius: radius
-    });
-    */
 
     pointGraphic.drawSelf();
-    app.stage.addChild(pointGraphic);
+
+    pointsContainer.addChild(pointGraphic); // Ajoute au container dédié
     pixiPoints.push(pointGraphic);
   });
-
-  if (formeLibre) {
-    app.stage.addChild(formeLibre);
-     //updateFormeLibreTransform();
-  }
 }
 
-  // ******** FORME LIBRRE ***********
+
   //dessin de forme libre pour la selection de grain
 export function setupFormeLibre (app, zoomFactor) {
 
-  // centre et zoom accessibles depuis le contexte
-  const centerX = window.innerWidth / 2;
-  const centerY = window.innerHeight / 2;
+  drawing = false;
 
-  let drawing = false;
   formeLibre = new PIXI.Graphics();
-  formeLibre.scale.set(zoomFactor);
   formeLibre.position.set(centerX, centerY);
-  //freeDrawPath = [];
   app.stage.addChild(formeLibre);
+  app.stage.setChildIndex(formeLibre, app.stage.children.length - 1);
+
+  // Supprime les anciens événements pour éviter les doublons
+  app.stage.removeAllListeners('pointerdown');
+  app.stage.removeAllListeners('pointermove');
+  app.stage.removeAllListeners('pointerup');
+  app.stage.removeAllListeners('pointerupoutside');
 
   app.stage.on("pointerdown", (e) => {
-    console.log("pointer down");
+    window.pointerPos = e.data.global; 
     const {x, y} = e.data.global;
     drawing = true;
-    freeDrawPath = [{x: (x - centerX) / zoomFactor, y: (y - centerY) / zoomFactor}];
+    freeDrawPath = [{x: (x - centerX), y: (y - centerY) }];
     formeLibre.clear();//efface si on recommence le geste
   });
 
   // position du pointeur (souris, doigt)
   app.stage.on("pointermove", (e) => {
     window.pointerPos = e.data.global;
-    if (!drawing) return;
+if (!drawing) return; 
     const {x, y} = e.data.global;
-    freeDrawPath.push({ x: (x - centerX) / zoomFactor, y: (y - centerY) / zoomFactor });
+    const newPoint = { x: (x - centerX) , y: (y - centerY) };
+    const lastPoint = freeDrawPath[freeDrawPath.length - 1];
+    if (lastPoint) {
+      const distance = Math.hypot(newPoint.x - lastPoint.x, newPoint.y - lastPoint.y);
+      if (distance < 2) return; // Ignore les micro-mouvements
+    }
+    freeDrawPath.push(newPoint);
+
     formeLibre.clear();
+    
+    if (freeDrawPath.length > 1) {
+    formeLibre.beginFill(0xffcccc, 0.3);
+    formeLibre.lineStyle(2, 0xff0000, 1);
     formeLibre.drawPolygon(freeDrawPath.flatMap(p => [p.x, p.y]));
-    formeLibre.fill({ color: 0xffcccc, alpha: 0.3 });
-    formeLibre.stroke({ color: 0xff0000, pixelLine: true });
+    formeLibre.endFill();
+  }
   });
 
   app.stage.on("pointerup", () => {
@@ -139,12 +140,7 @@ export function setupFormeLibre (app, zoomFactor) {
 
 // mise à jour de la position et du zoom
 export function updateFormeLibreTransform(zoomFactor) {
-  if (!formeLibre) {
-    console.error("formeLibre n'est pas initialisée");
-    return;
-  }
-  const centerX = window.innerWidth /2 ;
-  const centerY = window.innerHeight / 2 ;
+  if (!formeLibre) return;
   formeLibre.scale.set(zoomFactor);
   formeLibre.position.set(centerX, centerY);
 }

@@ -4,12 +4,13 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#ffffff">
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>interface to catart, map grains</title>
      <link rel="icon" href="/static/icons/icon-512.png" type="image/x-icon">
     <script src="/static/socket.io.min.js"></script>
     <script src="/static/NexusUI.js"></script>
     <script src="/static/pixi.min.js"></script>
+    <script src="/static/swipe.min.js"></script>
   
     <link rel="stylesheet" href="/static/style.css">
    
@@ -19,24 +20,27 @@
 
 <div class="sidebarleft" id="sidebarleft">
     <button id="fullscreen-btn">Full screen</button>
-    <button id="delete-log">Supprimer le fichier log</button>
-    <button id="audio-toggle">Démarrer l'audio</button>
+    <button id="delete-log">Del log file</button>
+    <button id="audio-toggle">Start audio</button>
 
+    <!--
+    <button id="toggle-left">toggle-left</button>
+-->
     <p>ZOOM:</p>
     <div id="multisliderLeft"></div>
 </div>
 
-<div class="sidebarright" id="sidebarright">
-    <p>Effect settings:</p>
-    <div id="multisliderRight"></div>
-</div>
 
-<div class="main-content">
-    <button id="toggle-left">toggle-left</button>
-    <button id="toggle-right">toggle-right</button>
-    <div id="pixi-container"></div> 
-</div>
 
+   
+<div id="pixi-container"></div> 
+
+
+<div id="swipe-container">
+  <div class="page" id="page-points1"> </div>
+  <div class="page" id="page-points2"> </div>
+  <div class="page" id="page-settings"> </div>
+</div>
 
 <script type="module" src = "/static/script.js"></script>
   </body>

@@ -6,7 +6,7 @@
 import {audioContext, loadAudioBuffer, playGrain, initFaustEffect} from "./audio.js";
 import {  sendOSC, getIp, initSocket, loadPoints, setupSocketAndHandlers} from "./network.js";
 //import { loadMLPModel } from "./mlp.js";
-import { drawPixiPoints, updateFormeLibreTransform, setupFormeLibre, freeDrawPath } from "./graphics.js";
+import { drawPixiPoints, updateFormeLibreTransform, setupFormeLibre, freeDrawPath, updateCenter, drawing, centerX, centerY } from "./graphics.js";
 
 let data = [];  // les données des points à afficher, chargées depuis le serveur
 let formeLibre; //layer pour le dessin libre
@@ -76,20 +76,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   console.log("DOM chargé, initialisation des éléments...");
 
-  const toggleleft = document.getElementById('toggle-left');
+// Empêche le zoom natif du navigateur (pinch sur trackpad)
+window.addEventListener('wheel', function(e) {
+  if (e.ctrlKey) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
   const sidebarleft = document.getElementById('sidebarleft');
-  const toggleright = document.getElementById('toggle-right');
-  const sidebarright = document.getElementById('sidebarright');
+
   const body = document.body;
   const deleteLogButton = document.getElementById("delete-log");
 
-// Empêche le zoom natif du navigateur (pinch sur trackpad)
-  window.addEventListener('wheel', function(e) {
-    if (e.ctrlKey) {
-      e.preventDefault();
-    }
-  }, { passive: false });
-
+  const pages = Array.from(document.querySelectorAll('#swipe-container .page'));
 
 
 // bouton pour supprimer le fichier log
@@ -103,22 +102,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
   });
-  
-// bouton apparition/disparition des barres latérales (********* à remplacer par un mouvement des doigts)
-  toggleleft.addEventListener('click', () => {
-    sidebarleft.classList.toggle('hidden');
-    body.classList.toggle('sidebarleft-hidden');
-  });
 
-  toggleright.addEventListener('click', () => {
-    sidebarright.classList.toggle('hidden');
-    body.classList.toggle('sidebright-hidden');
-  });
 
 // bouton Fullscreen
   document.getElementById("fullscreen-btn").addEventListener("click", () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
+      updateCenter(); // met à jour le centre de la vue
       drawPixiPoints(data, window.pixiApp, pixiPoints, zoomFactor);// on redessine les points
     } else {
       document.exitFullscreen();
@@ -126,27 +116,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 
-// NexusUI Sliders (******** pour l'instant inutilisés ****** A ENLEVER PROBABLEMENT*****)*/
-    let multisliderRight = new Nexus.Multislider('#multisliderRight', {
-    'size': [200, 600],
-    'numberOfSliders': 3,
-    'min': 0,
-    'max': 1,
-    'step': 0,
-    'candycane': 3,
-    'values': [0.9, 0.8, 0.7],
-    'smoothing': 0,
-    'mode': 'bar',
-    });
-    multisliderRight.colorize("accent", "#ff0");
-    multisliderRight.colorize("fill", "#333");
-    multisliderRight.on('change', function (v) {
-      console.log(v);
-    });
-
   // le multislider gauche
     let multisliderLeft = new Nexus.Multislider('#multisliderLeft', {
-      'size': [200, 600],
+      'size': [50, 300],
       'numberOfSliders': 1,
       'min': 0,
       'max': 1,
@@ -165,6 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
       entraindeZoomer = true;
       zoomFactor = 0.5 + v[0] * 2.0; // maps slider value [0,1] to zoomFactor [0.5,2.5]
 
+      updateCenter(); // met à jour le centre de la vue
       drawPixiPoints(data, window.pixiApp, pixiPoints, zoomFactor);// on redessine les points
       
       // on redessine la forme libre
@@ -173,9 +146,10 @@ document.addEventListener('DOMContentLoaded', () => {
         formeLibre.clear();
         console.log("freedrawPath : ", freeDrawPath, freeDrawPath.length);
         if (freeDrawPath.length > 2) {
+          formeLibre.beginFill(0xffcccc, 0.3);
+          formeLibre.lineStyle(2, 0xff0000, 1);
           formeLibre.drawPolygon(freeDrawPath.flatMap(p => [p.x, p.y]));
-          formeLibre.fill({ color: 0xffcccc, alpha: 0.3 });
-          formeLibre.stroke({ color: 0xff0000, pixelLine: true });
+          formeLibre.endFill();
         }  
       }
       entraindeZoomer = false;
@@ -185,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // initialisation du canvas Pixi utilisé pour afficher les points correspondant aux grains
     setupPixi().then(() => {
       console.log("setupPixi terminé !");
+      formeLibre = setupFormeLibre(window.pixiApp, zoomFactor); // initialisation de la forme libre pour dessiner
 
       loadPoints().then(points => {
         console.log("Points reçus");
@@ -195,23 +170,22 @@ document.addEventListener('DOMContentLoaded', () => {
           localStorage.setItem("points", JSON.stringify(points)); // on stocke les points dans le localStorage
           console.log("Points stockés dans le localStorage");
       data = points;
-      drawPixiPoints(data, window.pixiApp, pixiPoints);
+      drawPixiPoints(data, window.pixiApp, pixiPoints, zoomFactor);
         } else {
           const offlinePoints = localStorage.getItem("points");
           if (offlinePoints) {
             data = JSON.parse(offlinePoints);
             console.log("Points chargés depuis le localStorage");
-            drawPixiPoints(data, window.pixiApp, pixiPoints);
+            drawPixiPoints(data, window.pixiApp, pixiPoints, zoomFactor);
           }
         }
       });
-      formeLibre = setupFormeLibre(window.pixiApp, zoomFactor); // initialisation de la forme libre pour dessiner
     });
 });
 
 //*********   FONCTION QUI JOUE LES GRAINS, ENVOIE LES INFOS OSC */
 function triggerGrainsOnProximity(app) {
-  if (entraindeZoomer) return; // si on zoom, pas de son.
+  if (entraindeZoomer || drawing) return; // si on zoom, pas de son.
   const now = performance.now(); //temps écoulé depuis le temps origine
 
   for (const point of pixiPoints) {
@@ -257,12 +231,13 @@ async function setupPixi() {
 
   // stage : The root display container that's rendered.
   app.stage.interactive = true;
-  app.stage.hitArea = app.screen;
+  app.stage.hitArea = new PIXI.Rectangle(0, 0, window.innerWidth, window.innerHeight);
 
+// Force le canvas à être interactif
+  const canvas = app.view;
+  canvas.style.pointerEvents = 'auto';
+  canvas.style.touchAction = 'none';
 
-  // Variables for center and zoom, accessible in event listeners
-  let centerX = window.innerWidth / 2;
-  let centerY = window.innerHeight / 2;
  
   app.canvas.addEventListener("mouseleave", () => {
     window.pointerPos = { x: -9999, y: -9999 }; // position très éloignée
@@ -271,6 +246,7 @@ async function setupPixi() {
     // au cas ou la fenêtre change de taille, on redessine les points
   window.addEventListener('resize', () => {
     app.renderer.resize(window.innerWidth, window.innerHeight);
+    updateCenter();
     drawPixiPoints(data, window.pixiApp, pixiPoints, zoomFactor);// on redessine les points
     updateFormeLibreTransform(zoomFactor);
   });

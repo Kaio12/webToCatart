@@ -10,6 +10,7 @@ const URLS_TO_CACHE = [
   "/static/style.css",
   "/static/NexusUI.js",
   "/static/pixi.min.js",
+  "/static/swipe.min.js",
   "/static/faust/multi_Ef.dsp-wasm/faustwasm/index.js.map",
   "/static/faust/multi_Ef.dsp-wasm/faustwasm/index.js",
   "/static/faust/multi_Ef.dsp-wasm/create-node.js",
