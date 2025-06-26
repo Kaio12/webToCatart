@@ -6,7 +6,8 @@
 import {audioContext, loadAudioBuffer, playGrain, initFaustEffect} from "./audio.js";
 import {  sendOSC, getIp, initSocket, loadPoints, setupSocketAndHandlers} from "./network.js";
 //import { loadMLPModel } from "./mlp.js";
-import { drawPixiPoints, updateFormeLibreTransform, setupFormeLibre, freeDrawPath, updateCenter, drawing, centerX, centerY } from "./graphics.js";
+import { drawPixiPoints, updateFormeLibreTransform, setupFormeLibre, freeDrawPath, updateCenter, drawing, centerX, centerY, drawingEnabled } from "./graphics.js";
+import { ongoingTouches, startTouch } from "./gestion-touch.js";
 
 let data = [];  // les données des points à afficher, chargées depuis le serveur
 let formeLibre; //layer pour le dessin libre
@@ -76,6 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   console.log("DOM chargé, initialisation des éléments...");
 
+
 // Empêche le zoom natif du navigateur (pinch sur trackpad)
 window.addEventListener('wheel', function(e) {
   if (e.ctrlKey) {
@@ -87,7 +89,7 @@ window.addEventListener('wheel', function(e) {
 
   const body = document.body;
   const deleteLogButton = document.getElementById("delete-log");
-
+  const drawToggleButton = document.getElementById("draw-toggle");
   const pages = Array.from(document.querySelectorAll('#swipe-container .page'));
 
 
@@ -103,6 +105,16 @@ window.addEventListener('wheel', function(e) {
     });
   });
 
+drawToggleButton.addEventListener("click", () => {
+  drawingEnabled = !drawingEnabled;
+  if (drawingEnabled) {
+    drawToggleButton.textContent = "Désactiver le dessin";
+    drawToggleButton.style.backgroundColor = "#f00"; // rouge
+  } else {
+    drawToggleButton.textContent = "Activer le dessin";
+    drawToggleButton.style.backgroundColor = "#0f0"; // vert
+    }
+  });
 
 // bouton Fullscreen
   document.getElementById("fullscreen-btn").addEventListener("click", () => {
@@ -161,6 +173,9 @@ window.addEventListener('wheel', function(e) {
       console.log("setupPixi terminé !");
       formeLibre = setupFormeLibre(window.pixiApp, zoomFactor); // initialisation de la forme libre pour dessiner
 
+      startTouch(window.pixiApp)// on initialise le touch pour les mobiles
+
+
       loadPoints().then(points => {
         console.log("Points reçus");
         if (!points || points.length === 0) {
@@ -185,11 +200,31 @@ window.addEventListener('wheel', function(e) {
 
 //*********   FONCTION QUI JOUE LES GRAINS, ENVOIE LES INFOS OSC */
 function triggerGrainsOnProximity(app) {
-  if (entraindeZoomer || drawing) return; // si on zoom, pas de son.
+
+  if (entraindeZoomer) {
+    console.log("En train de zoomer, pas de triggerGrainsOnProximity");
+    return; // si on est en train de zoomer, on ne joue pas les grains
+  }
+  if (drawing) {
+    console.log("En train de dessiner, pas de triggerGrainsOnProximity");
+    return; // si on dessine, pas de son.
+  }
+
+  if (window.pointerPos.x === -9999 && window.pointerPos.y === -9999) {
+    return; // Ne fait rien si aucun mouvement tactile n'est détecté
+    console.log("Aucun mouvement tactile détecté, pas de triggerGrainsOnProximity");
+  }
+
+  console.log("triggerGrainsOnProximity appelé"); 
+
   const now = performance.now(); //temps écoulé depuis le temps origine
 
   for (const point of pixiPoints) {
     const dist = Math.hypot(point.x - window.pointerPos.x, point.y - window.pointerPos.y);
+
+
+    //console.log(`Distance au point ${point.sampleId}: ${dist}`); 
+
     const wasInside = point.isInside || false;
     const isInside = dist < (proximityThreshold); // on adapte le seuil de proximité au zoomFactor
     point.isInside = isInside;
@@ -232,16 +267,6 @@ async function setupPixi() {
   // stage : The root display container that's rendered.
   app.stage.interactive = true;
   app.stage.hitArea = new PIXI.Rectangle(0, 0, window.innerWidth, window.innerHeight);
-
-// Force le canvas à être interactif
-  const canvas = app.view;
-  canvas.style.pointerEvents = 'auto';
-  canvas.style.touchAction = 'none';
-
- 
-  app.canvas.addEventListener("mouseleave", () => {
-    window.pointerPos = { x: -9999, y: -9999 }; // position très éloignée
-  });
 
     // au cas ou la fenêtre change de taille, on redessine les points
   window.addEventListener('resize', () => {

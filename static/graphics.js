@@ -1,6 +1,7 @@
 export let formeLibre;
 export let freeDrawPath = []; // pour le dessin à la main
 export let drawing = false; // état du dessin à la main
+export let drawingEnabled = false; // pour savoir si on dessine ou pas
 
 let pointsContainer; // conteneur Pixi pour les points
 export let centerX = window.innerWidth / 2;
@@ -31,8 +32,7 @@ export function drawPixiPoints(pointsData, app, pixiPoints, zoomFactor = 1) {
   pixiPoints.length = 0;
 
   const bounds = getBounds(pointsData);
-  console.log("BOUNDS calculés :", bounds);
-   
+  //console.log("BOUNDS calculés :", bounds);
 
   pointsData.forEach((pointData) => {
 
@@ -79,7 +79,6 @@ export function drawPixiPoints(pointsData, app, pixiPoints, zoomFactor = 1) {
   });
 }
 
-
   //dessin de forme libre pour la selection de grain
 export function setupFormeLibre (app, zoomFactor) {
 
@@ -99,15 +98,18 @@ export function setupFormeLibre (app, zoomFactor) {
   app.stage.on("pointerdown", (e) => {
     window.pointerPos = e.data.global; 
     const {x, y} = e.data.global;
+    if (drawingEnabled) {
     drawing = true;
     freeDrawPath = [{x: (x - centerX), y: (y - centerY) }];
     formeLibre.clear();//efface si on recommence le geste
+    }
   });
 
   // position du pointeur (souris, doigt)
   app.stage.on("pointermove", (e) => {
     window.pointerPos = e.data.global;
-if (!drawing) return; 
+    if (!drawing) return; 
+    if (!drawingEnabled) return; // si le dessin est désactivé, on ne fait rien
     const {x, y} = e.data.global;
     const newPoint = { x: (x - centerX) , y: (y - centerY) };
     const lastPoint = freeDrawPath[freeDrawPath.length - 1];
@@ -124,7 +126,7 @@ if (!drawing) return;
     formeLibre.lineStyle(2, 0xff0000, 1);
     formeLibre.drawPolygon(freeDrawPath.flatMap(p => [p.x, p.y]));
     formeLibre.endFill();
-  }
+    }
   });
 
   app.stage.on("pointerup", () => {
