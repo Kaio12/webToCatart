@@ -4,7 +4,8 @@
 // pour l'instant, pas de midi
 //import { onMIDISuccess, onMIDIFailure, handleMIDIMessage, initMIDI,} from "./midi.js";
 import {audioContext, loadAudioBuffer, playGrain, initFaustEffect} from "./audio.js";
-import {  sendOSC, getIp, initSocket, loadPoints, setupSocketAndHandlers} from "./network.js";
+//import {  sendOSC, getIp, initSocket, loadPoints, setupSocketAndHandlers} from "./network.js";
+import {  sendOSC, initSocket, loadPoints, setupSocketAndHandlers} from "./network.js";
 //import { loadMLPModel } from "./mlp.js";
 import { drawPixiPoints, updateFormeLibreTransform, setupFormeLibre, freeDrawPath, updateCenter, DessinFormeLibre } from "./graphics.js";
 import { ongoingTouches, startTouch } from "./gestion-touch.js";
@@ -41,9 +42,11 @@ if ('serviceWorker' in navigator) {
     const faustNode = result.faustNode;
     console.log("FaustNode initialisé :", faustNode);
     try {
-      const ip = await getIp();
-      console.log("IP récupérée, initialisation du socket...");
-      initSocket(ip);
+      //const ip = await getIp();
+      //console.log("IP récupérée, initialisation du socket...");
+      //initSocket(ip);
+        initSocket();
+
       setupSocketAndHandlers(faustNode);
     } catch (error) {
       console.error("Erreur lors de la récupération de l'IP :", error);

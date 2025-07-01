@@ -19,11 +19,11 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Désactive la vérification d
 let socket;
 
 // 1. Récupération dynamique de l'IP locale du serveur
-axios.get("https://localhost:5001/api/ip")
+axios.get("http://localhost:5001/api/ip")
     .then(response => {
         // Extraction de l'adresse IP depuis la réponse du serveur
         const ip = response.data.ip;
-        const url = `https://${ip}:5001/max`;  // Création de l'URL du namespace Socket.IO côté Max
+        const url = `http://${ip}:5001/max`;  // Création de l'URL du namespace Socket.IO côté Max
         console.log("Connexion au socket :", url);
 
         // 2. Connexion WebSocket au serveur Flask sur le namespace /max
@@ -63,7 +63,7 @@ axios.get("https://localhost:5001/api/ip")
 // 7. Envoi de messages depuis Max/MSP
 Max.addHandler("data", (msg) => {
     console.log("Message from Max:", msg);
-    axios.post("https://localhost:5001/api/data", msg, {
+    axios.post("http://localhost:5001/api/data", msg, {
         headers: {
             'Content-Type': 'application/json'
         }
@@ -85,12 +85,12 @@ Max.addHandler("exportSound", async () => {
   
         const form = new FormData();
         form.append('file', fs.createReadStream(pathFile));
-  
-        const response = await axios.post("https://localhost:5001/api/upload", form, {
-        headers: form.getHeaders()
-      });
-  
-      console.log("Fichier envoyé au serveur Flask :", response.data);
+
+        const response = await axios.post("http://localhost:5001/api/upload", form, {
+            headers: form.getHeaders()
+        });
+
+        console.log("Fichier envoyé au serveur Flask :", response.data);
     } catch (err) {
       console.error("Erreur exportSound :", err.message);
     }
@@ -98,5 +98,5 @@ Max.addHandler("exportSound", async () => {
 
 
 
-  Max.addHandler("exportPoints", (msg) => {
-    fs)
+//  Max.addHandler("exportPoints", (msg) => {
+//    fs)

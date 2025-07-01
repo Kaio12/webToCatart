@@ -9,7 +9,7 @@ export let sendOSC = function (address, args) {
     console.error("Socket not connected.");
   }
 };
-
+/*
 export function getIp() {
   return fetch("/api/ip")
     .then(response => response.json())
@@ -22,8 +22,10 @@ export function getIp() {
     throw error;
   });
 }
+*/
 
 export function initSocket(ip) {
+  /*
   // Utilise toujours le même protocole que la page actuelle
   const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
   const url = `${protocol}//${ip}:5001`;
@@ -32,6 +34,22 @@ export function initSocket(ip) {
     secure: protocol === 'https:',  // Active le mode sécurisé pour HTTPS
     rejectUnauthorized: false       // Accepte les certificats auto-signés
   });
+
+  // Améliore la gestion des erreurs de connexion
+  socket.on('connect', () => {
+    console.log("Socket.IO connecté avec succès!");
+  });
+
+  socket.on('connect_error', (error) => {
+    console.error("Erreur de connexion Socket.IO:", error.message);
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.log("Socket.IO déconnecté:", reason);
+  });
+  */
+
+  socket = io();
 
   // Améliore la gestion des erreurs de connexion
   socket.on('connect', () => {
