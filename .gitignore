@@ -1,0 +1,14 @@
+# Fichiers de secrets et certificats
+/secrets/
+key.pem
+cert.pem
+
+# Fichiers de log
+/logs/
+
+
+# Fichiers uploadés
+/uploads/
+
+# Fichiers système macOS
+.DS_Store
