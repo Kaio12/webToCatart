@@ -1,26 +1,28 @@
 // Script Node4Max : interface entre Max/MSP et le serveur Flask via WebSocket + HTTP
 
 // Modules nécessaires
-const path = require('path');              // Gère les chemins de fichiers (pas utilisé ici mais souvent utile)
+
+//const path = require('path');              // Gère les chemins de fichiers (pas utilisé ici mais souvent utile)
 const Max = require('max-api');            // API pour communiquer avec Max/MSP
 const io = require('socket.io-client');    // Client WebSocket compatible avec Socket.IO
 const axios = require('axios');            // Pour faire des requêtes HTTP (ici, pour récupérer l'IP du serveur)
-const WavEncoder = require('wav-encoder'); // Afin d'encoder des données brutes en WAV
+//const WavEncoder = require('wav-encoder'); // Afin d'encoder des données brutes en WAV
 const { constants } = require('fs');
 const fs = require('fs');
 const fsp = require('fs/promises');
 const FormData = require('form-data');
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Désactive la vérification des certificats
 
 // Variable pour stocker le socket une fois connecté
 let socket;
 
 // 1. Récupération dynamique de l'IP locale du serveur Flask
-axios.get("http://localhost:5001/api/ip")
+axios.get("https://localhost:5001/api/ip")
     .then(response => {
         // Extraction de l'adresse IP depuis la réponse du serveur
         const ip = response.data.ip;
-        const url = `http://${ip}:5001/max`;  // Création de l'URL du namespace Socket.IO côté Max
+        const url = `https://${ip}:5001/max`;  // Création de l'URL du namespace Socket.IO côté Max
         console.log("Connexion au socket :", url);
 
         // 2. Connexion WebSocket au serveur Flask sur le namespace /max
@@ -60,7 +62,7 @@ axios.get("http://localhost:5001/api/ip")
 // 7. Envoi de messages depuis Max/MSP
 Max.addHandler("data", (msg) => {
     console.log("Message from Max:", msg);
-    axios.post("http://localhost:5001/api/data", msg, {
+    axios.post("https://localhost:5001/api/data", msg, {
         headers: {
             'Content-Type': 'application/json'
         }
@@ -83,7 +85,7 @@ Max.addHandler("exportSound", async () => {
         const form = new FormData();
         form.append('file', fs.createReadStream(pathFile));
   
-        const response = await axios.post("http://localhost:5001/api/upload", form, {
+        const response = await axios.post("https://localhost:5001/api/upload", form, {
         headers: form.getHeaders()
       });
   

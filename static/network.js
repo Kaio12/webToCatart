@@ -23,10 +23,30 @@ export function getIp() {
 }
 
 export function initSocket(ip) {
-  socket = io(`http://${ip}:5001/browser`);
+  // Utilise toujours le même protocole que la page actuelle
+  const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+  const url = `${protocol}//${ip}:5001`;
+  console.log("Connexion Socket.IO à:", url);
+  
+  socket = io(url, {
+    secure: protocol === 'https:',  // Active le mode sécurisé pour HTTPS
+    rejectUnauthorized: false       // Accepte les certificats auto-signés
+  });
+
+  // Améliore la gestion des erreurs de connexion
   socket.on('connect', () => {
-    console.log("Connecté à", ip);
-  });    
+    console.log("Socket.IO connecté avec succès!");
+  });
+
+  socket.on('connect_error', (error) => {
+    console.error("Erreur de connexion Socket.IO:", error.message);
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.log("Socket.IO déconnecté:", reason);
+  });
+
+  // Le reste de ton code...
 }
 
 export function setupSocketAndHandlers(faustNode) {

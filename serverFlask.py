@@ -1,4 +1,7 @@
 # === Serveur Flask avec Socket.IO pour la communication entre un navigateur, un iphone et Max/MSP ===
+# Patch: eventlet monkey patching inserted at the very top
+import eventlet
+eventlet.monkey_patch()
 # Ce serveur gère des messages OSC bidirectionnels, sert différents fichiers (son, coordonnées des points à dessiner) et enregistre les données reçues côté navigateur.
 
 #table de routage osc
@@ -136,6 +139,9 @@ def handle_browser_osc(data):
 @socketio.on('message', namespace='/max')
 def handle_max_message(data):
     global catched_points
+# Débogue les données reçues
+    print('Données brutes reçues de Max/MSP:', repr(data))
+    
     catched_points = data
     print('Received message from Max/MSP: ' + catched_points)
     socketio.emit('to_browser', catched_points, namespace='/browser')  # Forward to browser namespace
@@ -180,5 +186,81 @@ def receive_data():
         return {"status": "error", "message": "Aucune donnée reçue"}, 400
 
 # Lancement du serveur sur toutes les interfaces réseau, sur le port 5001
+# Patch: Replace main block with eventlet.wsgi.server SSL version
+import eventlet
+import eventlet.wsgi
+import ssl
+
+# Ajout de ngrok pour exposer le serveur publiquement avec un certificat SSL valide
+
+def start_ngrok(port):
+    from pyngrok import ngrok
+    
+    # Configure ngrok
+    ngrok_tunnel = ngrok.connect(port, "http")
+    print(f"Ngrok tunnel disponible à: {ngrok_tunnel.public_url}")
+    
+    # Extrait et retourne l'URL publique
+    public_url = ngrok_tunnel.public_url
+    return public_url
+
+# Ajoute cette fonction pour générer des certificats valides localement
+
+def setup_local_certificates():
+    """Génère des certificats localement approuvés avec mkcert si disponible"""
+    try:
+        import subprocess
+        
+        # Vérifie si mkcert est installé
+        try:
+            subprocess.check_call(['which', 'mkcert'], stdout=subprocess.DEVNULL)
+        except subprocess.CalledProcessError:
+            print("mkcert n'est pas installé. Pour l'installer: brew install mkcert")
+            return False
+        
+        # Installe l'autorité de certification racine locale
+        subprocess.check_call(['mkcert', '-install'])
+        
+        # Génère des certificats pour localhost et l'IP locale
+        cert_file = f"localhost+{local_ip}.pem"
+        key_file = f"localhost+{local_ip}-key.pem"
+        
+        subprocess.check_call(['mkcert', 'localhost', '127.0.0.1', local_ip])
+        
+        # Copie les fichiers générés vers cert.pem et key.pem
+        import shutil
+        shutil.copy(cert_file, 'cert.pem')
+        shutil.copy(key_file, 'key.pem')
+        
+        print("Certificats localement approuvés créés avec succès!")
+        return True
+    except Exception as e:
+        print(f"Erreur lors de la génération des certificats: {e}")
+        return False
+
 if __name__ == '__main__':
-     socketio.run(app, host='0.0.0.0', port=5001)
+    try:
+        # Essaie de configurer des certificats valides localement
+        if not os.path.exists('cert.pem') or not os.path.exists('key.pem'):
+            print("Certificats non trouvés. Tentative de génération...")
+            setup_local_certificates()
+        
+        print("Pour utiliser ngrok, ouvrez un terminal séparé et exécutez:")
+        print(f"  ngrok http https://localhost:5001")
+        
+        # Démarrage du serveur HTTPS
+        ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+        ssl_context.load_cert_chain(certfile='cert.pem', keyfile='key.pem')
+        print(f"Démarrage du serveur HTTPS sur https://{local_ip}:5001")
+        
+        eventlet.wsgi.server(
+            eventlet.wrap_ssl(
+                eventlet.listen(('0.0.0.0', 5001)),
+                certfile='cert.pem',
+                keyfile='key.pem',
+                server_side=True
+            ),
+            app
+        )
+    except Exception as e:
+        print(f"Erreur lors du démarrage du serveur: {e}")

@@ -16,7 +16,7 @@ function handleStart(evt) {
   const touches = evt.changedTouches;
 
   for (let i = 0; i < touches.length; i++) {
-    console.log(`touchstart: ${i}.`);
+    //console.log(`touchstart: ${i}.`);
     ongoingTouches.push(copyTouch(touches[i]));
     window.pointerPos = { x: touches[i].clientX, y: touches[i].clientY };
   }
@@ -25,27 +25,27 @@ function handleStart(evt) {
 function handleMove(evt) {
   evt.preventDefault();
 
-  console.log("touchmove");
+  //console.log("touchmove");
   const touches = evt.changedTouches;
 
   for (let i = 0; i < touches.length; i++) {
     const idx = ongoingTouchIndexById(touches[i].identifier);
-console.log(`Index du point de contact : ${idx}`);
+    //console.log(`Index du point de contact : ${idx}`);
     if (idx >= 0) {
       
       ongoingTouches.splice(idx, 1, copyTouch(touches[i])); // on met à jour le point de contact
       window.pointerPos = { x: touches[i].clientX, y: touches[i].clientY };
-      console.log(`position du pointeur: ${window.pointerPos.x}, ${window.pointerPos.y}`);
+      //console.log(`position du pointeur: ${window.pointerPos.x}, ${window.pointerPos.y}`);
       
     } else {
-      console.log(`impossible de déterminer le point de contact à faire avancer`);
+      //console.log(`impossible de déterminer le point de contact à faire avancer`);
     }
   }
 }
 
 function handleEnd(evt) {
   evt.preventDefault();
-  console.log("touchend");
+  //console.log("touchend");
   
   const touches = evt.changedTouches;
 
@@ -55,20 +55,20 @@ function handleEnd(evt) {
       
       ongoingTouches.splice(idx, 1); // on le retire du tableau de suivi
     } else {
-      console.log(`impossible de déterminer le point de contact à terminer`);
+      //console.log(`impossible de déterminer le point de contact à terminer`);
     }
   }
    // Réinitialise la position du pointeur
   if (ongoingTouches.length === 0) {
     window.pointerPos = { x: -9999, y: -9999 }; // Position invalide
-    console.log("window.pointerPos", window.pointerPos);
-    console.log("Aucun contact actif, réinitialisation de pointerPos");
+    //console.log("window.pointerPos", window.pointerPos);
+    //console.log("Aucun contact actif, réinitialisation de pointerPos");
   }
 }
 
   function handleCancel(evt) {
   evt.preventDefault();
-  console.log("touchcancel.");
+  //console.log("touchcancel.");
   const touches = evt.changedTouches;
 
   for (let i = 0; i < touches.length; i++) {

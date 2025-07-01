@@ -6,6 +6,7 @@ const URLS_TO_CACHE = [
   "/static/midi.js",
   "/static/network.js",
   "/static/graphics.js",
+  "/static/gestion-touch.js",
   "/static/mlp.js",
   "/static/style.css",
   "/static/NexusUI.js",

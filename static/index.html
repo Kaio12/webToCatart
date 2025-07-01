@@ -2,17 +2,21 @@
 <html lang="fr">
   <head>
     <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Geste">
+    <link rel="apple-touch-icon" href="/icon-192.png">
     <meta name="theme-color" content="#ffffff">
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>interface to catart, map grains</title>
-     <link rel="icon" href="/static/icons/icon-512.png" type="image/x-icon">
-    <script src="/static/socket.io.min.js"></script>
-    <script src="/static/NexusUI.js"></script>
-    <script src="/static/pixi.min.js"></script>
-    <script src="/static/swipe.min.js"></script>
+     <link rel="icon" href="/icons/icon-512.png" type="image/x-icon">
+    <script src="/socket.io.min.js"></script>
+    <script src="/NexusUI.js"></script>
+    <script src="/pixi.min.js"></script>
+    <script src="/swipe.min.js"></script>
   
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/style.css">
    
   </head>
 
@@ -24,14 +28,10 @@
     <button id="audio-toggle">Start audio</button>
     <button id="draw-toggle">Forme effet</button>
 
-    <!--
-    <button id="toggle-left">toggle-left</button>
--->
+
     <p>ZOOM:</p>
     <div id="multisliderLeft"></div>
 </div>
-
-
 
    
 <div id="pixi-container"></div> 
@@ -43,6 +43,6 @@
   <div class="page" id="page-settings"> </div>
 </div>
 
-<script type="module" src = "/static/script.js"></script>
+<script type="module" src = "/script.js"></script>
   </body>
 </html>

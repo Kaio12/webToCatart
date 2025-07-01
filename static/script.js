@@ -6,11 +6,12 @@
 import {audioContext, loadAudioBuffer, playGrain, initFaustEffect} from "./audio.js";
 import {  sendOSC, getIp, initSocket, loadPoints, setupSocketAndHandlers} from "./network.js";
 //import { loadMLPModel } from "./mlp.js";
-import { drawPixiPoints, updateFormeLibreTransform, setupFormeLibre, freeDrawPath, updateCenter, drawing, centerX, centerY, drawingEnabled } from "./graphics.js";
+import { drawPixiPoints, updateFormeLibreTransform, setupFormeLibre, freeDrawPath, updateCenter, DessinFormeLibre } from "./graphics.js";
 import { ongoingTouches, startTouch } from "./gestion-touch.js";
 
 let data = [];  // les données des points à afficher, chargées depuis le serveur
 let formeLibre; //layer pour le dessin libre
+let drawingEnabled = false; // pour activer/désactiver le dessin libre
 let zoomFactor = 1.0 // facteur zoom affichage des points
 let audioStarted = false;
 let entraindeZoomer = false; // pour éviter de jouer les sons quand on zoom
@@ -86,12 +87,10 @@ window.addEventListener('wheel', function(e) {
 }, { passive: false });
 
   const sidebarleft = document.getElementById('sidebarleft');
-
   const body = document.body;
   const deleteLogButton = document.getElementById("delete-log");
   const drawToggleButton = document.getElementById("draw-toggle");
   const pages = Array.from(document.querySelectorAll('#swipe-container .page'));
-
 
 // bouton pour supprimer le fichier log
   deleteLogButton.addEventListener("click", () => {
@@ -105,11 +104,19 @@ window.addEventListener('wheel', function(e) {
     });
   });
 
+// pour dessiner la forme libre
 drawToggleButton.addEventListener("click", () => {
   drawingEnabled = !drawingEnabled;
   if (drawingEnabled) {
     drawToggleButton.textContent = "Désactiver le dessin";
     drawToggleButton.style.backgroundColor = "#f00"; // rouge
+    DessinFormeLibre(window.pixiApp, drawingEnabled);
+
+    if (formeLibre) {
+      formeLibre.visible = true; // rend la forme libre visible
+    }
+    console.log("Dessin activé");
+
   } else {
     drawToggleButton.textContent = "Activer le dessin";
     drawToggleButton.style.backgroundColor = "#0f0"; // vert
@@ -171,10 +178,10 @@ drawToggleButton.addEventListener("click", () => {
     // initialisation du canvas Pixi utilisé pour afficher les points correspondant aux grains
     setupPixi().then(() => {
       console.log("setupPixi terminé !");
-      formeLibre = setupFormeLibre(window.pixiApp, zoomFactor); // initialisation de la forme libre pour dessiner
+      formeLibre = setupFormeLibre(window.pixiApp); // initialisation de la forme libre pour dessiner
+
 
       startTouch(window.pixiApp)// on initialise le touch pour les mobiles
-
 
       loadPoints().then(points => {
         console.log("Points reçus");
@@ -202,20 +209,19 @@ drawToggleButton.addEventListener("click", () => {
 function triggerGrainsOnProximity(app) {
 
   if (entraindeZoomer) {
-    console.log("En train de zoomer, pas de triggerGrainsOnProximity");
+    //console.log("En train de zoomer, pas de triggerGrainsOnProximity");
     return; // si on est en train de zoomer, on ne joue pas les grains
   }
-  if (drawing) {
-    console.log("En train de dessiner, pas de triggerGrainsOnProximity");
+  if (drawingEnabled) {
+   // console.log("En train de dessiner, pas de triggerGrainsOnProximity");
     return; // si on dessine, pas de son.
   }
 
   if (window.pointerPos.x === -9999 && window.pointerPos.y === -9999) {
     return; // Ne fait rien si aucun mouvement tactile n'est détecté
-    console.log("Aucun mouvement tactile détecté, pas de triggerGrainsOnProximity");
   }
 
-  console.log("triggerGrainsOnProximity appelé"); 
+  //console.log("triggerGrainsOnProximity appelé"); 
 
   const now = performance.now(); //temps écoulé depuis le temps origine
 

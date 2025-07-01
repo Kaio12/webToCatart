@@ -1,7 +1,6 @@
 export let formeLibre;
 export let freeDrawPath = []; // pour le dessin à la main
 export let drawing = false; // état du dessin à la main
-export let drawingEnabled = false; // pour savoir si on dessine ou pas
 
 let pointsContainer; // conteneur Pixi pour les points
 export let centerX = window.innerWidth / 2;
@@ -79,16 +78,20 @@ export function drawPixiPoints(pointsData, app, pixiPoints, zoomFactor = 1) {
   });
 }
 
-  //dessin de forme libre pour la selection de grain
-export function setupFormeLibre (app, zoomFactor) {
-
-  drawing = false;
-
+  
+export function setupFormeLibre (app) {
+// Initialise le dessin à main levée
   formeLibre = new PIXI.Graphics();
   formeLibre.position.set(centerX, centerY);
+
   app.stage.addChild(formeLibre);
   app.stage.setChildIndex(formeLibre, app.stage.children.length - 1);
+  console.log("formeLibre ajouté au stage", formeLibre);
+  return formeLibre;
+}
+      
 
+export function DessinFormeLibre(app, drawingEnabled) {
   // Supprime les anciens événements pour éviter les doublons
   app.stage.removeAllListeners('pointerdown');
   app.stage.removeAllListeners('pointermove');
@@ -107,21 +110,19 @@ export function setupFormeLibre (app, zoomFactor) {
 
   // position du pointeur (souris, doigt)
   app.stage.on("pointermove", (e) => {
+    console.log("drawing", drawing, "drawingEnabled", drawingEnabled);
     window.pointerPos = e.data.global;
     if (!drawing) return; 
     if (!drawingEnabled) return; // si le dessin est désactivé, on ne fait rien
     const {x, y} = e.data.global;
     const newPoint = { x: (x - centerX) , y: (y - centerY) };
-    const lastPoint = freeDrawPath[freeDrawPath.length - 1];
-    if (lastPoint) {
-      const distance = Math.hypot(newPoint.x - lastPoint.x, newPoint.y - lastPoint.y);
-      if (distance < 2) return; // Ignore les micro-mouvements
-    }
+    console.log("DessinFormeLibre: newPoint", newPoint);
     freeDrawPath.push(newPoint);
-
+    console.log("freeDrawPath:", freeDrawPath);
     formeLibre.clear();
     
     if (freeDrawPath.length > 1) {
+      console.log("DessinFormeLibre: Dessin en cours", freeDrawPath);
     formeLibre.beginFill(0xffcccc, 0.3);
     formeLibre.lineStyle(2, 0xff0000, 1);
     formeLibre.drawPolygon(freeDrawPath.flatMap(p => [p.x, p.y]));
@@ -131,13 +132,14 @@ export function setupFormeLibre (app, zoomFactor) {
 
   app.stage.on("pointerup", () => {
     drawing = false;
+    drawingEnabled = false; // désactive le dessin après le relâchement
   });
 
   app.stage.on("pointerupoutside", () => {
     drawing = false;
+    drawingEnabled = false; // désactive le dessin après le relâchement
   });
 
-  return formeLibre;
 }
 
 // mise à jour de la position et du zoom

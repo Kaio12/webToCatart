@@ -9,6 +9,7 @@
 */
 
 let audioBuffer = null; //buffer pour intégrer le fichier son reçu de max
+let activeAudioSources = []; // tableau pour stocker les sources audio actives
 
 // AudioContext pour gérer l'audio
 export const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -26,6 +27,24 @@ export function playGrain(startMs, durationMs, useEffect = false) {
   const source = audioContext.createBufferSource();
   source.buffer = audioBuffer;
 
+  activeAudioSources.push(source); // ajoute la source pour éviter qu'elle soit garbage collectée
+  
+  source.onended = () => {
+    
+    
+    if (!useEffect) {
+      source.disconnect(); // déconnecte la source une fois terminée
+      activeAudioSources = activeAudioSources.filter(s => s !== source); // retire la source du tableau
+    } else {
+      const delayTailDuration = 5000; // durée de la queue de l'effet Faust
+      setTimeout(() => {
+        console.log("Queue de l'effet Faust terminée, source déconnectée");
+        source.disconnect(); // déconnecte la source après la queue
+        activeAudioSources = activeAudioSources.filter(s => s !== source); // retire la source du tableau après la queue
+      }, delayTailDuration);
+    }
+  };
+  
   //connexion au faustnode. on verifie si le point est dans la forme libre
   if (useEffect && grainBus) {
     source.connect(grainBus);
@@ -52,9 +71,11 @@ export async function loadAudioBuffer() {
 //init faust effect
 export async function initFaustEffect() {
   try{
-    const module = await import("./faust/multi_Ef.dsp-wasm/create-node.js");
+    const module = await import("./faust/multi_Ef_dsp_wasm/create-node.js");
+    console.log("module importé (initFaustEffect)");
     const { createFaustNode } = module;
     const result = await createFaustNode(audioContext, "multi_Ef", 0);
+    console.log("createFaustNode effectué");
     faustNode = result.faustNode;
 
     // crée un bus pour router les grains vers l'effet Faust
