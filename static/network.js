@@ -1,4 +1,5 @@
 export let socket;
+
 // Envoie messages OSC via socket.io ===
 export let sendOSC = function (address, args) {
   if (socket && socket.connected) {
@@ -27,7 +28,6 @@ export function initSocket(ip) {
   const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
   const url = `${protocol}//${ip}:5001`;
   console.log("Connexion Socket.IO à:", url);
-  
   socket = io(url, {
     secure: protocol === 'https:',  // Active le mode sécurisé pour HTTPS
     rejectUnauthorized: false       // Accepte les certificats auto-signés
@@ -45,8 +45,6 @@ export function initSocket(ip) {
   socket.on('disconnect', (reason) => {
     console.log("Socket.IO déconnecté:", reason);
   });
-
-  // Le reste de ton code...
 }
 
 export function setupSocketAndHandlers(faustNode) {
@@ -81,11 +79,6 @@ function mapOSCToFaust(address, args, faustNode) {
     console.warn("Aucun argument fourni pour l'adresse OSC :", address);
     return;
   }
-
-
-
-
-
 
   const oscToFaustMap = {
   "/effectPos": ["/multi_Ef/g", "/multi_Ef/feedback"] // POUR L'INSTANT MAP UNIQUEMENT G ET FEEDBACK, SANS UTILISER LA REGRESSION 

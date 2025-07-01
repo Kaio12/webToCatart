@@ -11,13 +11,14 @@ const { constants } = require('fs');
 const fs = require('fs');
 const fsp = require('fs/promises');
 const FormData = require('form-data');
+const pathPoints = "/Users/philippecaillot/Documents/programmation/geste/static/points.json"; // Chemin vers le fichier JSON des points
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Désactive la vérification des certificats
 
 // Variable pour stocker le socket une fois connecté
 let socket;
 
-// 1. Récupération dynamique de l'IP locale du serveur Flask
+// 1. Récupération dynamique de l'IP locale du serveur
 axios.get("https://localhost:5001/api/ip")
     .then(response => {
         // Extraction de l'adresse IP depuis la réponse du serveur
@@ -94,3 +95,8 @@ Max.addHandler("exportSound", async () => {
       console.error("Erreur exportSound :", err.message);
     }
   });
+
+
+
+  Max.addHandler("exportPoints", (msg) => {
+    fs)
