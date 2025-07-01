@@ -12,3 +12,7 @@ cert.pem
 
 # Fichiers système macOS
 .DS_Store
+
+
+# Dépendances Node.js
+/node_modules/
