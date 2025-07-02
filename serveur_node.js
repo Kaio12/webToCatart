@@ -1,6 +1,5 @@
 const express = require('express');
 const http = require('http');
-const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
@@ -8,6 +7,7 @@ const socketIo = require('socket.io');
 const cors = require('cors');
 const axios = require('axios');
 const qrcode = require('qrcode');
+const ngrok = require('ngrok');
 
 // === CONFIGURATION ===
 const UPLOAD_FOLDER = path.join(__dirname, 'uploads');
@@ -15,14 +15,7 @@ const LOG_FOLDER = path.join(__dirname, 'logs');
 const STATIC_FOLDER = path.join(__dirname, 'static');
 const SECRET_KEY = 'philippe';
 const PORT = 5001;
-/*
-// SSL (utilise tes cert.pem et key.pem générés avec mkcert)
-const sslOptions = {
-  key: fs.readFileSync(path.join(__dirname, 'key.pem')),
-  cert: fs.readFileSync(path.join(__dirname, 'cert.pem'))
-};
-*/
-// === APP SETUP ===
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -163,12 +156,14 @@ app.get('/qr', async (req, res) => { // <-- 1. AJOUTER async ici
 const server = http.createServer(app);
 const io = socketIo(server, { cors: { origin: "*" } });
 
+
 // Table de routage OSC
 const TABLE_ROUTING = {
   "/iphone/": "/browser",
   "/ipad/": "/max",
   "/max/": "/browser"
 };
+
 
 // Logging
 function log_browser_data(data, is_osc = false) {
@@ -222,6 +217,17 @@ max.on('connection', (socket) => {
 });
 
 // === SERVER START ===
-server.listen(PORT, () => {
-  console.log(`Serveur HTTP Node.js lancé sur http://${local_ip}:${PORT}`);
+async function startServer() {
+  server.listen(PORT, async () => {
+    console.log(`Serveur HTTP local lancé sur http://localhost:${PORT}`);
+    console.log(`Accédez à http://localhost:${PORT}/qr pour voir le QR code de l'adresse externe.`);
+try {
+  const url = await ngrok.connect(PORT);
+  console.log(`Ngrok tunnel ouvert à l'adresse : ${url}`);
+} catch (error) {
+  console.error("Erreur lors de l'ouverture du tunnel Ngrok :", error);
+}
 });
+}
+
+startServer();
