@@ -9,45 +9,10 @@ export let sendOSC = function (address, args) {
     console.error("Socket not connected.");
   }
 };
-/*
-export function getIp() {
-  return fetch("/api/ip")
-    .then(response => response.json())
-    .then(data => {
-      console.log("IP récupérée :", data.ip);
-      return data.ip;
-  })
-  .catch(error => {
-    console.error("Erreur lors de la récupération de l'IP :", error);
-    throw error;
-  });
-}
-*/
+
 
 export function initSocket(ip) {
-  /*
-  // Utilise toujours le même protocole que la page actuelle
-  const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-  const url = `${protocol}//${ip}:5001`;
-  console.log("Connexion Socket.IO à:", url);
-  socket = io(url, {
-    secure: protocol === 'https:',  // Active le mode sécurisé pour HTTPS
-    rejectUnauthorized: false       // Accepte les certificats auto-signés
-  });
 
-  // Améliore la gestion des erreurs de connexion
-  socket.on('connect', () => {
-    console.log("Socket.IO connecté avec succès!");
-  });
-
-  socket.on('connect_error', (error) => {
-    console.error("Erreur de connexion Socket.IO:", error.message);
-  });
-
-  socket.on('disconnect', (reason) => {
-    console.log("Socket.IO déconnecté:", reason);
-  });
-  */
 
   socket = io();
 
@@ -120,8 +85,12 @@ function mapOSCToFaust(address, args, faustNode) {
 // fonction pour charger les points via HTTP
 export async function loadPoints() {
   try {
-    const response = await fetch("/catched_points");
+    const response = await fetch("/api/points");
     if (!response.ok) {
+      if (response.status === 404) {
+        console.warn("Le fichier points.json n'existe pas encore.");
+        return []; // Retourne un tableau vide si le fichier n'est pas trouvé
+      }
       console.error("Erreur HTTP:", response.status);
       return;
     }

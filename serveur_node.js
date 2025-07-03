@@ -11,19 +11,28 @@ const ngrok = require('ngrok');
 
 // === CONFIGURATION ===
 const UPLOAD_FOLDER = path.join(__dirname, 'uploads');
+const PUBLIC_FOLDER = path.join(__dirname, 'public');
 const LOG_FOLDER = path.join(__dirname, 'logs');
 const STATIC_FOLDER = path.join(__dirname, 'static');
-const SECRET_KEY = 'philippe';
 const PORT = 5001;
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.static(STATIC_FOLDER));
-const upload = multer({ dest: UPLOAD_FOLDER });
+app.use('/public', express.static(PUBLIC_FOLDER));
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, PUBLIC_FOLDER);
+  }
+});
+
+const upload = multer({ storage: storage });
 
 if (!fs.existsSync(UPLOAD_FOLDER)) fs.mkdirSync(UPLOAD_FOLDER);
 if (!fs.existsSync(LOG_FOLDER)) fs.mkdirSync(LOG_FOLDER);
+if (!fs.existsSync(PUBLIC_FOLDER)) fs.mkdirSync(PUBLIC_FOLDER);
 
 // === UTILS ===
 function getLocalIp() {
@@ -66,6 +75,7 @@ app.post('/delete', (req, res) => {
   res.sendFile(path.join(STATIC_FOLDER, 'index.html'));
 });
 
+/*
 // API: Points
 let catched_points = null;
 app.get('/catched_points', (req, res) => {
@@ -79,6 +89,7 @@ app.get('/catched_points', (req, res) => {
     res.status(204).json({ status: "empty", message: "No points available" });
   }
 });
+*/
 
 // API: Upload
 app.post('/api/upload', upload.single('file'), (req, res) => {
@@ -91,6 +102,22 @@ app.post('/api/upload', upload.single('file'), (req, res) => {
 // API: Serve audio
 app.get('/audio/:filename', (req, res) => {
   res.sendFile(path.join(UPLOAD_FOLDER, req.params.filename));
+});
+
+app.get('/api/points', (req, res) => {
+  const pointsPath = path.join(PUBLIC_FOLDER, 'points.json');
+  fs.readFile(pointsPath, 'utf8', (err, data) => {
+    if (err) {
+      console.error('Erreur de lecture du fichier points.json:', err);
+      return res.status(404).json({ error: 'Fichier points.json non trouvé' });
+    }
+    try {
+      res.status(200).json(JSON.parse(data));
+    } catch (parseError) {
+      console.error('Erreur de parsing du fichier points.json:', parseError);
+      res.status(500).json({ error: 'Erreur de parsing du fichier points.json' });
+    }
+  });
 });
 
 // API: Serve mlp_model

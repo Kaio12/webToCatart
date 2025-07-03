@@ -59,7 +59,7 @@ export function playGrain(startMs, durationMs, useEffect = false) {
 // loadAudioBuffer charge le fichier audio depuis le serveur et le décode dans un AudioBuffer
 export async function loadAudioBuffer() {
   try {
-    const response = await fetch('/audio/enr.wav');
+    const response = await fetch('/public/enr.wav');
     const arrayBuffer = await response.arrayBuffer();
     audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
     console.log("Audio chargé en mémoire");

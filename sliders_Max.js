@@ -1,4 +1,4 @@
-// Script Node4Max : interface entre Max/MSP et le serveur Flask via WebSocket + HTTP
+// Script Node4Max : interface entre Max/MSP et le serveur NODE via WebSocket 
 
 // Modules nécessaires
 
@@ -11,7 +11,8 @@ const { constants } = require('fs');
 const fs = require('fs');
 const fsp = require('fs/promises');
 const FormData = require('form-data');
-const pathPoints = "/Users/philippecaillot/Documents/programmation/geste/static/points.json"; // Chemin vers le fichier JSON des points
+const pathPoints = "/Users/philippecaillot/Documents/programmation/geste/public/points.json"; // Chemin vers le fichier JSON des points
+const pathAudioFile = "/Users/philippecaillot/Documents/programmation/geste/public/enr.wav"
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Désactive la vérification des certificats
 
@@ -32,7 +33,6 @@ axios.get("http://localhost:5001/api/ip")
         // 3. Quand la connexion est établie
         socket.on('connect', () => {
             console.log("WebSocket is open now.");
-            socket.emit("Hello Server!");  // Message test (non nécessaire)
         });
 
         // 4. Gestion des erreurs WebSocket
@@ -45,7 +45,7 @@ axios.get("http://localhost:5001/api/ip")
             console.log("WebSocket connection closed.");
         });
 
-        // 6. Réception des données envoyées par le navigateur via Flask (namespace /max → Max)
+        // 6. Réception des données envoyées par le navigateur via server node (namespace /max → Max)
         socket.on('to_max', (data) => {
             // Transformation JSON pour éviter d’avoir des objets complexes
             let json = JSON.stringify(data);
@@ -56,13 +56,13 @@ axios.get("http://localhost:5001/api/ip")
 
     })
     .catch(error => {
-        console.error("Impossible de récupérer l'IP depuis le serveur Flask :", error);
+        console.error("Impossible de récupérer l'IP depuis le serveur Node :", error);
     });
 
-
+/*
 // 7. Envoi de messages depuis Max/MSP
 Max.addHandler("data", (msg) => {
-    console.log("Message from Max:", msg);
+    //console.log("Message from Max:", msg);
     axios.post("http://localhost:5001/api/data", msg, {
         headers: {
             'Content-Type': 'application/json'
@@ -74,29 +74,5 @@ Max.addHandler("data", (msg) => {
         .catch(error => {
             console.error("Erreur lors de l'envoi HTTP vers le serveur:", error);
         });
-});
-
-var pathFile = "/Users/philippecaillot/Documents/programmation/geste/audiofiles/enr.wav"
-
-Max.addHandler("exportSound", async () => {
-    try {
-        await fsp.access(pathFile, constants.F_OK);//vérifie que le fichier son existe
-        console.log("le fichier son existe");
-  
-        const form = new FormData();
-        form.append('file', fs.createReadStream(pathFile));
-
-        const response = await axios.post("http://localhost:5001/api/upload", form, {
-            headers: form.getHeaders()
-        });
-
-        console.log("Fichier envoyé au serveur Flask :", response.data);
-    } catch (err) {
-      console.error("Erreur exportSound :", err.message);
-    }
-  });
-
-
-
-//  Max.addHandler("exportPoints", (msg) => {
-//    fs)
+})
+*/
