@@ -6,20 +6,13 @@
 const Max = require('max-api');            // API pour communiquer avec Max/MSP
 const io = require('socket.io-client');    // Client WebSocket compatible avec Socket.IO
 const axios = require('axios');            // Pour faire des requêtes HTTP (ici, pour récupérer l'IP du serveur)
-//const WavEncoder = require('wav-encoder'); // Afin d'encoder des données brutes en WAV
-const { constants } = require('fs');
-const fs = require('fs');
-const fsp = require('fs/promises');
-const FormData = require('form-data');
-const pathPoints = "/Users/philippecaillot/Documents/programmation/geste/public/points.json"; // Chemin vers le fichier JSON des points
-const pathAudioFile = "/Users/philippecaillot/Documents/programmation/geste/public/enr.wav"
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Désactive la vérification des certificats
 
 // Variable pour stocker le socket une fois connecté
 let socket;
 
-// 1. Récupération dynamique de l'IP locale du serveur
+// Récupération dynamique de l'IP locale du serveur
 axios.get("http://localhost:5001/api/ip")
     .then(response => {
         // Extraction de l'adresse IP depuis la réponse du serveur
@@ -59,20 +52,3 @@ axios.get("http://localhost:5001/api/ip")
         console.error("Impossible de récupérer l'IP depuis le serveur Node :", error);
     });
 
-/*
-// 7. Envoi de messages depuis Max/MSP
-Max.addHandler("data", (msg) => {
-    //console.log("Message from Max:", msg);
-    axios.post("http://localhost:5001/api/data", msg, {
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    })
-        .then(response => {
-            console.log("Données envoyées au serveur via HTTP:", response.data);
-        })
-        .catch(error => {
-            console.error("Erreur lors de l'envoi HTTP vers le serveur:", error);
-        });
-})
-*/

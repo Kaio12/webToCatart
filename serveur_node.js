@@ -2,12 +2,12 @@ const express = require('express');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const multer = require('multer');
 const socketIo = require('socket.io');
 const cors = require('cors');
-const axios = require('axios');
 const qrcode = require('qrcode');
 const ngrok = require('ngrok');
+
+require('dotenv').config(); // Charge les variables d'environnement depuis .env
 
 // === CONFIGURATION ===
 const UPLOAD_FOLDER = path.join(__dirname, 'uploads');
@@ -22,13 +22,6 @@ app.use(express.json());
 app.use(express.static(STATIC_FOLDER));
 app.use('/public', express.static(PUBLIC_FOLDER));
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, PUBLIC_FOLDER);
-  }
-});
-
-const upload = multer({ storage: storage });
 
 if (!fs.existsSync(UPLOAD_FOLDER)) fs.mkdirSync(UPLOAD_FOLDER);
 if (!fs.existsSync(LOG_FOLDER)) fs.mkdirSync(LOG_FOLDER);
@@ -48,16 +41,8 @@ function getLocalIp() {
   return '127.0.0.1';
 }
 const local_ip = getLocalIp();
+let ngrokUrl = ''; 
 
-// === ROUTES ===
-
-// Manifest & Service Worker
-app.get('/manifest.json', (req, res) => res.sendFile(path.join(STATIC_FOLDER, 'manifest.json')));
-app.get('/service-worker.js', (req, res) => res.sendFile(path.join(STATIC_FOLDER, 'service-worker.js')));
-app.get('/icons/:filename', (req, res) => res.sendFile(path.join(STATIC_FOLDER, 'icons', req.params.filename)));
-
-// Main pages
-app.get('/', (req, res) => res.sendFile(path.join(STATIC_FOLDER, 'index.html')));
 app.get('/effect', (req, res) => res.sendFile(path.join(STATIC_FOLDER, 'gestion_effet.html')));
 
 // API: IP
@@ -73,30 +58,6 @@ app.post('/delete', (req, res) => {
     console.log('Fichier log non trouvé');
   }
   res.sendFile(path.join(STATIC_FOLDER, 'index.html'));
-});
-
-/*
-// API: Points
-let catched_points = null;
-app.get('/catched_points', (req, res) => {
-  if (catched_points) {
-    try {
-      res.status(200).json(JSON.parse(catched_points));
-    } catch {
-      res.status(200).json(catched_points);
-    }
-  } else {
-    res.status(204).json({ status: "empty", message: "No points available" });
-  }
-});
-*/
-
-// API: Upload
-app.post('/api/upload', upload.single('file'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "No file part" });
-  if (!req.file.originalname) return res.status(400).json({ error: "No selected file" });
-  // Optionally rename/move file here
-  res.json({ status: "ok", filename: req.file.originalname });
 });
 
 // API: Serve audio
@@ -125,31 +86,14 @@ app.get('/mlp_model', (req, res) => {
   res.sendFile(path.join(UPLOAD_FOLDER, 'mlp_model.json'));
 });
 
-// API: Receive data (POST)
-app.post('/api/data', (req, res) => {
-  catched_points = JSON.stringify(req.body);
-  if (catched_points) {
-    console.log('Reçu données via HTTP POST:', catched_points);
-    res.status(200).json({ status: "ok", message: "Données reçues et stockées" });
-  } else {
-    res.status(400).json({ status: "error", message: "Aucune donnée reçue" });
-  }
-});
-
-
 // génère et affiche le QR code
-app.get('/qr', async (req, res) => { // <-- 1. AJOUTER async ici
-  try {
-    // 2. AJOUTER await ici
-    const ngrokApiResponse = await axios.get(`http://localhost:4040/api/tunnels`);
-    const httpsTunnel = ngrokApiResponse.data.tunnels.find(tunnel => tunnel.proto === 'https');
-    
-    // 3. CORRIGER la condition ici (supprimer le '!')
-    if (httpsTunnel) {
-      const publicUrl = httpsTunnel.public_url;
-      const qrCodeDataUrl = await qrcode.toDataURL(publicUrl);
+app.get('/qr', async (req, res) => {
+  // 2. UTILISEZ directement la variable ngrokUrl
+  if (ngrokUrl) {
+    try {
+      const qrCodeDataUrl = await qrcode.toDataURL(ngrokUrl);
       res.send(`
-            <!DOCTYPE html>
+        <!DOCTYPE html>
         <html lang="fr">
         <head>
           <meta charset="UTF-8">
@@ -165,31 +109,21 @@ app.get('/qr', async (req, res) => { // <-- 1. AJOUTER async ici
         <body>
           <h1>Scannez pour vous connecter</h1>
           <img src="${qrCodeDataUrl}" alt="QR Code">
-          <p>URL : <a href="${publicUrl}" target="_blank">${publicUrl}</a></p>
+          <p>URL : <a href="${ngrokUrl}" target="_blank">${ngrokUrl}</a></p>
         </body>
         </html>
       `);
-
+    } catch (error) {
+      res.status(500).send("<h1>Erreur lors de la génération du QR Code.</h1>");
+    }
   } else {
-          res.status(404).send("<h1>Erreur : Tunnel ngrok HTTPS non trouvé.</h1><p>Assurez-vous que ngrok est bien lancé avec la commande `ngrok http 5001`.</p>");
-
-  }
-
-  } catch (error) {
-    res.status(500).send("<h1>Erreur : Impossible de contacter ngrok.</h1><p>Assurez-vous que ngrok est bien lancé avant d'accéder à cette page.</p>");
+    res.status(404).send("<h1>Erreur : Tunnel ngrok non encore initialisé.</h1><p>Veuillez patienter quelques secondes et rafraîchir la page.</p>");
   }
 });
+
 // === SOCKET.IO ===
 const server = http.createServer(app);
-const io = socketIo(server, { cors: { origin: "*" } });
-
-
-// Table de routage OSC
-const TABLE_ROUTING = {
-  "/iphone/": "/browser",
-  "/ipad/": "/max",
-  "/max/": "/browser"
-};
+const io = socketIo(server, { cors: { origin: "*" }});
 
 
 // Logging
@@ -200,16 +134,15 @@ function log_browser_data(data, is_osc = false) {
   fs.appendFileSync(logFile, `${timestamp},${entry_type},${JSON.stringify(data)}\n`);
 }
 
-// OSC Routing
+// OSC Routing (version simplifiée et logique)
 function route_osc(data) {
   const address = data.address || "";
-  for (const prefix in TABLE_ROUTING) {
-    if (address.startsWith(prefix)) {
-      io.of(TABLE_ROUTING[prefix]).emit('to_' + TABLE_ROUTING[prefix].replace('/', ''), data);
-      return;
-    }
+  if (!address) {
+    console.warn("Message OSC reçu sans adresse.");
+    return;
   }
-  io.of('/browser').emit('to_browser', data);
+  console.log(`Routage OSC: ${address} -> /max`);
+  io.of('/max').emit('to_max', data);
 }
 
 // Namespaces
@@ -218,11 +151,6 @@ const max = io.of('/max');
 
 // Communication côté navigateur
 browser.on('connection', (socket) => {
-  socket.on('message', (data) => {
-    console.log('Received message from browser:', data);
-    log_browser_data(data);
-    max.emit('to_max', data);
-  });
   socket.on('osc', (data) => {
     console.log('Received OSC from browser:', JSON.stringify(data, null, 2));
     log_browser_data(data, true);
@@ -230,31 +158,48 @@ browser.on('connection', (socket) => {
   });
 });
 
-// Communication côté Max/MSP
-max.on('connection', (socket) => {
-  socket.on('message', (data) => {
-    catched_points = typeof data === 'string' ? data : JSON.stringify(data);
-    console.log('Données brutes reçues de Max/MSP:', data);
-    browser.emit('to_browser', catched_points);
-  });
-  socket.on('osc', (data) => {
-    console.log('Received OSC from Max/MSP:', JSON.stringify(data, null, 2));
-    route_osc(data);
-  });
-});
 
 // === SERVER START ===
-async function startServer() {
-  server.listen(PORT, async () => {
+function startServer() {
+  server.listen(PORT, () => {
     console.log(`Serveur HTTP local lancé sur http://localhost:${PORT}`);
-    console.log(`Accédez à http://localhost:${PORT}/qr pour voir le QR code de l'adresse externe.`);
-try {
-  const url = await ngrok.connect(PORT);
-  console.log(`Ngrok tunnel ouvert à l'adresse : ${url}`);
-} catch (error) {
-  console.error("Erreur lors de l'ouverture du tunnel Ngrok :", error);
+    
+    // On vérifie d'abord si une URL externe est fournie
+    if (process.env.NGROK_URL) {
+      ngrokUrl = process.env.NGROK_URL;
+      console.log(`URL Ngrok externe définie : ${ngrokUrl}`);
+      console.log(`Accédez à http://localhost:${PORT}/qr pour voir le QR code.`);
+    } else {
+      // Sinon, on essaie le mode automatique (votre code actuel)
+      console.log("Tentative de lancement automatique de Ngrok...");
+      startNgrokTunnel();
+    }
+  });
 }
-});
+
+// Fonction séparée pour le lancement automatique de Ngrok
+async function startNgrokTunnel() {
+  try {
+    console.log("--- Début du débogage Ngrok ---");
+    console.log(`Valeur de NGROK_AUTHTOKEN: ${process.env.NGROK_AUTHTOKEN}`);
+    console.log(`Valeur de NGROK_STATIC_DOMAIN: ${process.env.NGROK_STATIC_DOMAIN}`);
+    console.log("--- Fin du débogage Ngrok ---");
+
+    const url = await ngrok.connect({
+      proto: 'http',
+      addr: PORT,
+      authtoken: process.env.NGROK_AUTHTOKEN,
+      domain: process.env.NGROK_STATIC_DOMAIN
+    });
+    ngrokUrl = url;
+    console.log(`Tunnel Ngrok automatique ouvert : ${ngrokUrl}`);
+    console.log(`Accédez à http://localhost:${PORT}/qr pour voir le QR code.`);
+  } catch (error) {
+    console.error("Erreur lors de l'ouverture automatique du tunnel Ngrok :", error);
+    console.error("Vous pouvez utiliser le mode manuel :");
+    console.error("1. Lancez 'ngrok http 5001 --domain prawn-model-mostly.ngrok-free.app' dans un autre terminal");
+    console.error("2. Relancez le serveur avec : NGROK_URL='https://prawn-model-mostly.ngrok-free.app' node serveur_node.js");
+  }
 }
 
 startServer();

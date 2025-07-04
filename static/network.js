@@ -3,7 +3,7 @@ export let socket;
 // Envoie messages OSC via socket.io ===
 export let sendOSC = function (address, args) {
   if (socket && socket.connected) {
-    //console.log("Sending OSC:", address, args);
+    console.log("Sending OSC:", address, args);
     socket.emit('osc', { address, args });
   } else {
     console.error("Socket not connected.");
@@ -13,10 +13,7 @@ export let sendOSC = function (address, args) {
 
 export function initSocket(ip) {
 
-
-  socket = io();
-
-  // Améliore la gestion des erreurs de connexion
+  socket = io('/browser'); // Connexion au namespace '/browser' 
   socket.on('connect', () => {
     console.log("Socket.IO connecté avec succès!");
   });

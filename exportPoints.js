@@ -54,7 +54,8 @@ function exportPoints()
         }
     }
 
-    function exportSound()
+// exporte le son enregistré dans mubu vers un fichier wav
+function exportSound()
     {
        var mubu = new MubuJS("echantillons");
         mubu.refer("echantillons");

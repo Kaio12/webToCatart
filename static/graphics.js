@@ -122,11 +122,11 @@ export function DessinFormeLibre(app, drawingEnabled) {
     formeLibre.clear();
     
     if (freeDrawPath.length > 1) {
-      console.log("DessinFormeLibre: Dessin en cours", freeDrawPath);
-    formeLibre.beginFill(0xffcccc, 0.3);
-    formeLibre.lineStyle(2, 0xff0000, 1);
-    formeLibre.drawPolygon(freeDrawPath.flatMap(p => [p.x, p.y]));
-    formeLibre.endFill();
+      console.log("DessinFormeLibre: Dessin en cours");
+      formeLibre.beginFill(0xffcccc, 0.3);
+      formeLibre.lineStyle(2, 0xff0000, 1);
+      formeLibre.drawPolygon(freeDrawPath.flatMap(p => [p.x, p.y]));
+      formeLibre.endFill();
     }
   });
 

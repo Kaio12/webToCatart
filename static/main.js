@@ -8,19 +8,22 @@ import {audioContext, loadAudioBuffer, playGrain, initFaustEffect} from "./audio
 import {  sendOSC, initSocket, loadPoints, setupSocketAndHandlers} from "./network.js";
 //import { loadMLPModel } from "./mlp.js";
 import { drawPixiPoints, updateFormeLibreTransform, setupFormeLibre, freeDrawPath, updateCenter, DessinFormeLibre } from "./graphics.js";
-import { ongoingTouches, startTouch } from "./gestion-touch.js";
+import { startTouch } from "./gestion-touch.js";
 
-let data = [];  // les données des points à afficher, chargées depuis le serveur
+let pointsData = [];  // les données des points à afficher, chargées depuis le serveur
 let formeLibre; //layer pour le dessin libre
 let drawingEnabled = false; // pour activer/désactiver le dessin libre
 let zoomFactor = 1.0 // facteur zoom affichage des points
-let audioStarted = false;
+
 let entraindeZoomer = false; // pour éviter de jouer les sons quand on zoom
 let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
+
 window.pointerPos = { x: -9999, y: -9999 };// propriété globale pour la position du pointeur
+
 const proximityThreshold = 80; // distance minimale pour déclencher un son
 const cooldown = 300; // temps minimal entre deux update pour le toucher des points
 
+let audioStarted = false;
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -42,11 +45,7 @@ if ('serviceWorker' in navigator) {
     const faustNode = result.faustNode;
     console.log("FaustNode initialisé :", faustNode);
     try {
-      //const ip = await getIp();
-      //console.log("IP récupérée, initialisation du socket...");
-      //initSocket(ip);
-        initSocket();
-
+      initSocket();
       setupSocketAndHandlers(faustNode);
     } catch (error) {
       console.error("Erreur lors de la récupération de l'IP :", error);
@@ -80,7 +79,6 @@ document.getElementById("audio-toggle").addEventListener("click", () => {
 document.addEventListener('DOMContentLoaded', () => {
 
   console.log("DOM chargé, initialisation des éléments...");
-
 
 // Empêche le zoom natif du navigateur (pinch sur trackpad)
 window.addEventListener('wheel', function(e) {
@@ -131,14 +129,14 @@ drawToggleButton.addEventListener("click", () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
       updateCenter(); // met à jour le centre de la vue
-      drawPixiPoints(data, window.pixiApp, pixiPoints, zoomFactor);// on redessine les points
+      drawPixiPoints(pointsData, window.pixiApp, pixiPoints, zoomFactor);// on redessine les points
     } else {
       document.exitFullscreen();
     }
   });
 
 
-  // le multislider gauche
+    // le multislider gauche
     let multisliderLeft = new Nexus.Multislider('#multisliderLeft', {
       'size': [50, 300],
       'numberOfSliders': 1,
@@ -160,13 +158,12 @@ drawToggleButton.addEventListener("click", () => {
       zoomFactor = 0.5 + v[0] * 2.0; // maps slider value [0,1] to zoomFactor [0.5,2.5]
 
       updateCenter(); // met à jour le centre de la vue
-      drawPixiPoints(data, window.pixiApp, pixiPoints, zoomFactor);// on redessine les points
-      
+      drawPixiPoints(pointsData, window.pixiApp, pixiPoints, zoomFactor);// on redessine les points
+
       // on redessine la forme libre
       if (formeLibre) {
         updateFormeLibreTransform(zoomFactor);
         formeLibre.clear();
-        console.log("freedrawPath : ", freeDrawPath, freeDrawPath.length);
         if (freeDrawPath.length > 2) {
           formeLibre.beginFill(0xffcccc, 0.3);
           formeLibre.lineStyle(2, 0xff0000, 1);
@@ -178,62 +175,70 @@ drawToggleButton.addEventListener("click", () => {
       }
     });
 
-    // initialisation du canvas Pixi utilisé pour afficher les points correspondant aux grains
-    setupPixi().then(() => {
+    // Séquence d'initialisation principale
+    async function initializeApplication() {
+      await setupPixi();
       console.log("setupPixi terminé !");
-      formeLibre = setupFormeLibre(window.pixiApp); // initialisation de la forme libre pour dessiner
 
+      formeLibre = setupFormeLibre(window.pixiApp);
+      startTouch(window.pixiApp);
 
-      startTouch(window.pixiApp)// on initialise le touch pour les mobiles
+      const points = await loadPointsWithFallback();
+      if (points && points.length > 0) {
+        pointsData = points;
+        drawPixiPoints(pointsData, window.pixiApp, pixiPoints, zoomFactor);
+      } else {
+        console.error("Échec du chargement des points depuis le réseau et le cache.");
+      }
+    }
 
-      loadPoints().then(points => {
-        console.log("Points reçus");
-        if (!points || points.length === 0) {
-          console.error("Aucun point chargé à setupPixi ou données invalides.");
-          return;
-        } else if (points && points.length > 0) {
-          localStorage.setItem("points", JSON.stringify(points)); // on stocke les points dans le localStorage
-          console.log("Points stockés dans le localStorage");
-      data = points;
-      drawPixiPoints(data, window.pixiApp, pixiPoints, zoomFactor);
-        } else {
-          const offlinePoints = localStorage.getItem("points");
-          if (offlinePoints) {
-            data = JSON.parse(offlinePoints);
-            console.log("Points chargés depuis le localStorage");
-            drawPixiPoints(data, window.pixiApp, pixiPoints, zoomFactor);
-          }
+    // Fonction dédiée pour charger les points
+    async function loadPointsWithFallback() {
+      try {
+        // 1. Essayer de charger depuis le réseau
+        const networkPoints = await loadPoints();
+        if (networkPoints && networkPoints.length > 0) {
+          console.log("Points chargés depuis le réseau.");
+          localStorage.setItem("points", JSON.stringify(networkPoints));
+          console.log("Points mis à jour dans le localStorage.");
+          return networkPoints;
         }
-      });
-    });
+      } catch (error) {
+        console.warn("Échec du chargement des points depuis le réseau, tentative depuis le cache.", error);
+      }
+
+      // 2. Si le réseau échoue, essayer de charger depuis le localStorage
+      const offlinePoints = localStorage.getItem("points");
+      if (offlinePoints) {
+        console.log("Points chargés depuis le localStorage (mode hors-ligne).");
+        return JSON.parse(offlinePoints);
+      }
+
+      // 3. Si tout échoue, retourner null
+      return null;
+    }
+
+    // Lancer l'initialisation
+    initializeApplication();
 });
 
 //*********   FONCTION QUI JOUE LES GRAINS, ENVOIE LES INFOS OSC */
 function triggerGrainsOnProximity(app) {
 
   if (entraindeZoomer) {
-    //console.log("En train de zoomer, pas de triggerGrainsOnProximity");
     return; // si on est en train de zoomer, on ne joue pas les grains
   }
   if (drawingEnabled) {
-   // console.log("En train de dessiner, pas de triggerGrainsOnProximity");
     return; // si on dessine, pas de son.
   }
-
   if (window.pointerPos.x === -9999 && window.pointerPos.y === -9999) {
     return; // Ne fait rien si aucun mouvement tactile n'est détecté
   }
-
-  //console.log("triggerGrainsOnProximity appelé"); 
 
   const now = performance.now(); //temps écoulé depuis le temps origine
 
   for (const point of pixiPoints) {
     const dist = Math.hypot(point.x - window.pointerPos.x, point.y - window.pointerPos.y);
-
-
-    //console.log(`Distance au point ${point.sampleId}: ${dist}`); 
-
     const wasInside = point.isInside || false;
     const isInside = dist < (proximityThreshold); // on adapte le seuil de proximité au zoomFactor
     point.isInside = isInside;
@@ -247,8 +252,7 @@ function triggerGrainsOnProximity(app) {
 
         //joue le grain
         if (isInside && !wasInside) {
-          const isInForme = formeLibre && formeLibre.containsPoint(formeLibre.toLocal(new PIXI.Point(point.x, point.y)));          
-          console.log ('isinForme :', isInForme);
+          const isInForme = formeLibre && formeLibre.containsPoint(formeLibre.toLocal(new PIXI.Point(point.x, point.y)));
           playGrain(point.startTime, point.duration, isInForme);
           sendOSC("/hover", point.sampleId);// point.sampleId
         }
@@ -281,7 +285,7 @@ async function setupPixi() {
   window.addEventListener('resize', () => {
     app.renderer.resize(window.innerWidth, window.innerHeight);
     updateCenter();
-    drawPixiPoints(data, window.pixiApp, pixiPoints, zoomFactor);// on redessine les points
+    drawPixiPoints(pointsData, window.pixiApp, pixiPoints, zoomFactor);// on redessine les points
     updateFormeLibreTransform(zoomFactor);
   });
 

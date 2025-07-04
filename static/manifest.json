@@ -1,6 +1,6 @@
 {
-  "name": "GrainGrain",
-  "short_name": "GG",
+  "name": "graingrain",
+  "short_name": "gg",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
