@@ -180,11 +180,7 @@ function startServer() {
 // Fonction séparée pour le lancement automatique de Ngrok
 async function startNgrokTunnel() {
   try {
-    console.log("--- Début du débogage Ngrok ---");
-    console.log(`Valeur de NGROK_AUTHTOKEN: ${process.env.NGROK_AUTHTOKEN}`);
-    console.log(`Valeur de NGROK_STATIC_DOMAIN: ${process.env.NGROK_STATIC_DOMAIN}`);
-    console.log("--- Fin du débogage Ngrok ---");
-
+    
     const url = await ngrok.connect({
       proto: 'http',
       addr: PORT,

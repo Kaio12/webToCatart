@@ -225,42 +225,43 @@ drawToggleButton.addEventListener("click", () => {
 //*********   FONCTION QUI JOUE LES GRAINS, ENVOIE LES INFOS OSC */
 function triggerGrainsOnProximity(app) {
 
-  if (entraindeZoomer) {
-    return; // si on est en train de zoomer, on ne joue pas les grains
-  }
-  if (drawingEnabled) {
-    return; // si on dessine, pas de son.
-  }
-  if (window.pointerPos.x === -9999 && window.pointerPos.y === -9999) {
-    return; // Ne fait rien si aucun mouvement tactile n'est détecté
+  if (entraindeZoomer || drawingEnabled || (window.pointerPos.x === -9999 && window.pointerPos.y === -9999)) {
+    return; // Ne rien faire si on zoome, dessine, ou si le pointeur n'est pas actif
   }
 
-  const now = performance.now(); //temps écoulé depuis le temps origine
+  const now = performance.now();
+
+  // Envoi de la position continue du pointeur (normalisée)
+  //const normalizedX = window.pointerPos.x / window.innerWidth;
+  //const normalizedY = window.pointerPos.y / window.innerHeight;
+  //sendOSC("/ipad/xy", [normalizedX, normalizedY]);
 
   for (const point of pixiPoints) {
     const dist = Math.hypot(point.x - window.pointerPos.x, point.y - window.pointerPos.y);
-    const wasInside = point.isInside || false;
-    const isInside = dist < (proximityThreshold); // on adapte le seuil de proximité au zoomFactor
-    point.isInside = isInside;
+    const wasInside = point.isInside || false; // L'état à la frame précédente
+    const isInside = dist < proximityThreshold; // Le nouvel état
+    
+    // 1. Détecter un changement d'état : quand le pointeur ENTRE dans la zone
+    if (isInside && !wasInside) {
+      // On est entré dans la zone, on déclenche le son et l'OSC
+      const isInForme = formeLibre && formeLibre.containsPoint(formeLibre.toLocal(new PIXI.Point(point.x, point.y)));
+      playGrain(point.startTime, point.duration, isInForme);
+      sendOSC("/hover", point.sampleId);
+    }
 
-    if (dist < proximityThreshold) {
-      point.targetRadius = point.baseRadius * 1.8; //on marque le point joué en augmentant sa taille.
-
-      if (now - point.lastTrigger > cooldown) {
-
-        point.lastTrigger = now;
-
-        //joue le grain
-        if (isInside && !wasInside) {
-          const isInForme = formeLibre && formeLibre.containsPoint(formeLibre.toLocal(new PIXI.Point(point.x, point.y)));
-          playGrain(point.startTime, point.duration, isInForme);
-          sendOSC("/hover", point.sampleId);// point.sampleId
-        }
-      }
+    // 2. Gérer la logique visuelle en continu
+    if (isInside) {
+      // Si on est à l'intérieur, on grossit le point
+      point.targetRadius = point.baseRadius * 1.8;
     } else {
+      // Si on est à l'extérieur, on le remet à sa taille normale
       point.targetRadius = point.baseRadius;
     }
 
+    // 3. Mettre à jour l'état pour la prochaine frame
+    point.isInside = isInside;
+
+    // 4. Animer le rayon et redessiner le point à chaque frame
     const speed = 0.2;
     point.currentRadius += (point.targetRadius - point.currentRadius) * speed;
     point.drawSelf();
