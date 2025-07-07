@@ -13,7 +13,7 @@ export function updateCenter() {
 }
 
 
-export function drawPixiPoints(pointsData, app, pixiPoints, zoomFactor = 1) {
+export function drawPixiPoints(pointsData, app, pixiPoints) {
 
   if (!app) {console.error("L'app pixi n'est pas initialisée");
     return;}
@@ -24,7 +24,10 @@ export function drawPixiPoints(pointsData, app, pixiPoints, zoomFactor = 1) {
 
   if (!pointsContainer) {
     pointsContainer = new PIXI.Container();
+    pointsContainer.pivot.set(centerX, centerY); // Centre le conteneur
+    pointsContainer.position.set(centerX, centerY); 
     app.stage.addChild(pointsContainer);
+    window.pointsContainer = pointsContainer; // Stocke le conteneur dans la fenêtre pour un accès global
   }
 
   pointsContainer.removeChildren(); // Efface les anciens points
@@ -51,8 +54,11 @@ export function drawPixiPoints(pointsData, app, pixiPoints, zoomFactor = 1) {
 
 // Décale par rapport au centre, applique le zoom, puis recentre
 
-    pointGraphic.x = centerX + (x0 - centerX) * zoomFactor;
-    pointGraphic.y = centerY + (y0 - centerY) * zoomFactor;
+ //   pointGraphic.x = centerX + (x0 - centerX) * zoomFactor;
+ //   pointGraphic.y = centerY + (y0 - centerY) * zoomFactor;
+
+    pointGraphic.x = x0;
+    pointGraphic.y = y0;
 
     pointGraphic.baseRadius = radius;
     pointGraphic.currentRadius = radius;

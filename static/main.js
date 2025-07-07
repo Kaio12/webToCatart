@@ -129,7 +129,7 @@ drawToggleButton.addEventListener("click", () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
       updateCenter(); // met à jour le centre de la vue
-      drawPixiPoints(pointsData, window.pixiApp, pixiPoints, zoomFactor);// on redessine les points
+      drawPixiPoints(pointsData, window.pixiApp, pixiPoints);// on redessine les points
     } else {
       document.exitFullscreen();
     }
@@ -154,9 +154,15 @@ drawToggleButton.addEventListener("click", () => {
 
     multisliderLeft.on('change', function (v) {
       if (Array.isArray(v) && v.length > 0) {
-      entraindeZoomer = true;
+     // entraindeZoomer = true;
       zoomFactor = 0.5 + v[0] * 2.0; // maps slider value [0,1] to zoomFactor [0.5,2.5]
-
+      if(window.pointsContainer) {
+          window.pointsContainer.scale.set(zoomFactor);
+      }
+      if(formeLibre) {
+        formeLibre.scale.set(zoomFactor);
+      }
+/*
       updateCenter(); // met à jour le centre de la vue
       drawPixiPoints(pointsData, window.pixiApp, pixiPoints, zoomFactor);// on redessine les points
 
@@ -173,6 +179,8 @@ drawToggleButton.addEventListener("click", () => {
       }
       entraindeZoomer = false;
       }
+      */
+      }
     });
 
     // Séquence d'initialisation principale
@@ -186,7 +194,7 @@ drawToggleButton.addEventListener("click", () => {
       const points = await loadPointsWithFallback();
       if (points && points.length > 0) {
         pointsData = points;
-        drawPixiPoints(pointsData, window.pixiApp, pixiPoints, zoomFactor);
+        drawPixiPoints(pointsData, window.pixiApp, pixiPoints);
       } else {
         console.error("Échec du chargement des points depuis le réseau et le cache.");
       }
@@ -286,7 +294,7 @@ async function setupPixi() {
   window.addEventListener('resize', () => {
     app.renderer.resize(window.innerWidth, window.innerHeight);
     updateCenter();
-    drawPixiPoints(pointsData, window.pixiApp, pixiPoints, zoomFactor);// on redessine les points
+    drawPixiPoints(pointsData, window.pixiApp, pixiPoints);// on redessine les points
     updateFormeLibreTransform(zoomFactor);
   });
 
