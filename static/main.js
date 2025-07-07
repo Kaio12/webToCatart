@@ -8,20 +8,18 @@ import {audioContext, loadAudioBuffer, playGrain, initFaustEffect} from "./audio
 import {  sendOSC, initSocket, loadPoints, setupSocketAndHandlers} from "./network.js";
 //import { loadMLPModel } from "./mlp.js";
 import { drawPixiPoints, updateFormeLibreTransform, setupFormeLibre, freeDrawPath, updateCenter, DessinFormeLibre } from "./graphics.js";
-import { startTouch } from "./gestion-touch.js";
 
 let pointsData = [];  // les données des points à afficher, chargées depuis le serveur
 let formeLibre; //layer pour le dessin libre
 let drawingEnabled = false; // pour activer/désactiver le dessin libre
 let zoomFactor = 1.0 // facteur zoom affichage des points
 
-let entraindeZoomer = false; // pour éviter de jouer les sons quand on zoom
 let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
 
 window.pointerPos = { x: -9999, y: -9999 };// propriété globale pour la position du pointeur
 
 const proximityThreshold = 80; // distance minimale pour déclencher un son
-const cooldown = 300; // temps minimal entre deux update pour le toucher des points
+//const cooldown = 300; // temps minimal entre deux update pour le toucher des points
 
 let audioStarted = false;
 
@@ -87,11 +85,11 @@ window.addEventListener('wheel', function(e) {
   }
 }, { passive: false });
 
-  const sidebarleft = document.getElementById('sidebarleft');
-  const body = document.body;
+  //const sidebarleft = document.getElementById('sidebarleft');
+  //const body = document.body;
   const deleteLogButton = document.getElementById("delete-log");
   const drawToggleButton = document.getElementById("draw-toggle");
-  const pages = Array.from(document.querySelectorAll('#swipe-container .page'));
+  //const pages = Array.from(document.querySelectorAll('#swipe-container .page'));
 
 // bouton pour supprimer le fichier log
   deleteLogButton.addEventListener("click", () => {
@@ -124,7 +122,7 @@ drawToggleButton.addEventListener("click", () => {
     }
   });
 
-// bouton Fullscreen
+  // bouton Fullscreen
   document.getElementById("fullscreen-btn").addEventListener("click", () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen();
@@ -135,61 +133,12 @@ drawToggleButton.addEventListener("click", () => {
     }
   });
 
-
-    // le multislider gauche
-    let multisliderLeft = new Nexus.Multislider('#multisliderLeft', {
-      'size': [50, 300],
-      'numberOfSliders': 1,
-      'min': 0,
-      'max': 1,
-      'step': 0,
-      'candycane': 3,
-      'values': [0.25], // valeur initiale du zoom
-      'smoothing': 0,
-      'mode': 'bar',
-    });
-
-    multisliderLeft.colorize("accent", "#ff0");
-    multisliderLeft.colorize("fill", "#333");
-
-    multisliderLeft.on('change', function (v) {
-      if (Array.isArray(v) && v.length > 0) {
-     // entraindeZoomer = true;
-      zoomFactor = 0.5 + v[0] * 2.0; // maps slider value [0,1] to zoomFactor [0.5,2.5]
-      if(window.pointsContainer) {
-          window.pointsContainer.scale.set(zoomFactor);
-      }
-      if(formeLibre) {
-        formeLibre.scale.set(zoomFactor);
-      }
-/*
-      updateCenter(); // met à jour le centre de la vue
-      drawPixiPoints(pointsData, window.pixiApp, pixiPoints, zoomFactor);// on redessine les points
-
-      // on redessine la forme libre
-      if (formeLibre) {
-        updateFormeLibreTransform(zoomFactor);
-        formeLibre.clear();
-        if (freeDrawPath.length > 2) {
-          formeLibre.beginFill(0xffcccc, 0.3);
-          formeLibre.lineStyle(2, 0xff0000, 1);
-          formeLibre.drawPolygon(freeDrawPath.flatMap(p => [p.x, p.y]));
-          formeLibre.endFill();
-        }  
-      }
-      entraindeZoomer = false;
-      }
-      */
-      }
-    });
-
     // Séquence d'initialisation principale
     async function initializeApplication() {
       await setupPixi();
       console.log("setupPixi terminé !");
 
       formeLibre = setupFormeLibre(window.pixiApp);
-      startTouch(window.pixiApp);
 
       const points = await loadPointsWithFallback();
       if (points && points.length > 0) {
@@ -231,21 +180,23 @@ drawToggleButton.addEventListener("click", () => {
 });
 
 //*********   FONCTION QUI JOUE LES GRAINS, ENVOIE LES INFOS OSC */
-function triggerGrainsOnProximity(app) {
+function triggerGrainsOnProximity() {
 
-  if (entraindeZoomer || drawingEnabled || (window.pointerPos.x === -9999 && window.pointerPos.y === -9999)) {
-    return; // Ne rien faire si on zoome, dessine, ou si le pointeur n'est pas actif
+   if (window.pointsContainer) {
+    window.pointsContainer.scale.set(zoomFactor);
+  }
+  if (formeLibre) {
+    formeLibre.scale.set(zoomFactor);
   }
 
-  const now = performance.now();
-
-  // Envoi de la position continue du pointeur (normalisée)
-  //const normalizedX = window.pointerPos.x / window.innerWidth;
-  //const normalizedY = window.pointerPos.y / window.innerHeight;
-  //sendOSC("/ipad/xy", [normalizedX, normalizedY]);
+  if (drawingEnabled || (window.pointerPos.x === -9999 && window.pointerPos.y === -9999)) {
+    return; // Ne rien faire si on dessine, ou si le pointeur n'est pas actif (pinch ou aucun doigt)
+  }
+  // On convertit la position globale du pointeur en coordonnées locales au conteneur des points.
+const localPointerPos = window.pointsContainer.toLocal(window.pointerPos);
 
   for (const point of pixiPoints) {
-    const dist = Math.hypot(point.x - window.pointerPos.x, point.y - window.pointerPos.y);
+    const dist = Math.hypot(point.x - localPointerPos.x, point.y - localPointerPos.y);
     const wasInside = point.isInside || false; // L'état à la frame précédente
     const isInside = dist < proximityThreshold; // Le nouvel état
     
@@ -286,9 +237,60 @@ async function setupPixi() {
   const container = document.getElementById("pixi-container");
   if (container) container.appendChild(app.canvas);
 
+// === BLOCAGE DES GESTES NATIFS ===
+  // Empêche le navigateur de gérer les gestes tactiles (scroll, zoom, multitâche) sur notre canvas
+  app.canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+  app.canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+  app.canvas.addEventListener('touchend', e => e.preventDefault(), { passive: false });
+  // On bloque aussi la molette pour éviter le zoom du navigateur sur les trackpads
+  app.canvas.addEventListener('wheel', e => e.preventDefault(), { passive: false });
+  // ===================================
+
   // stage : The root display container that's rendered.
-  app.stage.interactive = true;
-  app.stage.hitArea = new PIXI.Rectangle(0, 0, window.innerWidth, window.innerHeight);
+  app.stage.eventMode = 'static';
+  app.stage.hitArea = app.screen;
+
+  const activePointers = new Map();
+  let lastPinchDistance = null;
+
+  app.stage.on("pointerdown", (event) => {
+    activePointers.set(event.pointerId, event.global.clone());
+  });
+
+  app.stage.on("pointermove", (event) => {
+    if (!activePointers.has(event.pointerId)) return;
+
+    activePointers.set(event.pointerId, event.global.clone());
+    if (activePointers.size === 1) {
+      window.pointerPos = { x: event.global.x, y: event.global.y };
+    } else if (activePointers.size === 2) {
+      window.pointerPos = { x:-9999, y: -9999 }; // désactive le pointeur unique
+      const pointers = Array.from(activePointers.values());
+      const p1 = pointers[0];
+      const p2 = pointers[1];
+      const currentDistance = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+      if (lastPinchDistance !== null) {
+        const delta = currentDistance - lastPinchDistance;
+        const sensitivity = 0.005;
+        zoomFactor = Math.max(0.5, Math.min(2.5, zoomFactor + delta * sensitivity));
+      }
+      lastPinchDistance = currentDistance;
+    }
+  });
+
+  const onPointerUp = (event) => {
+    activePointers.delete(event.pointerId);
+    if (activePointers.size < 2) {
+      lastPinchDistance = null;
+    }
+    if (activePointers.size === 0) {
+      window.pointerPos = { x: -9999, y: -9999 };
+    }
+    };
+
+    app.stage.on("pointerup", onPointerUp);
+    app.stage.on("pointerupoutside", onPointerUp);
+
 
     // au cas ou la fenêtre change de taille, on redessine les points
   window.addEventListener('resize', () => {
@@ -299,6 +301,6 @@ async function setupPixi() {
   });
 
   // ticker : actualisation de l'app sur chaque frame
-  app.ticker.add(triggerGrainsOnProximity.bind(null, app));
+  app.ticker.add(triggerGrainsOnProximity);
   window.pixiApp = app; // expose app if needed globally
 }

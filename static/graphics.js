@@ -178,18 +178,6 @@ const mapRange = (val, inMin, inMax, outMin, outMax) =>
     ((val - inMin) / (inMax - inMin)) * (outMax - outMin) + outMin;
 
 
-// Convertit une couleur HSL en format hexadécimal
-function hslToHex(h, s, l) {
-  s /= 100;
-  l /= 100;
-  const k = n => (n + h / 30) % 12;
-  const a = s * Math.min(l, 1 - l);
-  const f = n =>
-    Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))));
-
-  return (f(0) << 16) + (f(1) << 8) + f(2);
-}
-
 // Convertit une couleur HSL en valeurs RGB (fournit des couleurs très proches de CATART dans Max)
 function hslToRgb(h, s, l) {
   let r, g, b;
