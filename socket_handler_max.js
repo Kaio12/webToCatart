@@ -5,7 +5,11 @@
 //const path = require('path');              // Gère les chemins de fichiers (pas utilisé ici mais souvent utile)
 const Max = require('max-api');            // API pour communiquer avec Max/MSP
 const io = require('socket.io-client');    // Client WebSocket compatible avec Socket.IO
-const axios = require('axios');            // Pour faire des requêtes HTTP (ici, pour récupérer l'IP du serveur)
+const axios = require('axios'); 
+const path = require('path');
+const fs = require('fs');
+           // Pour faire des requêtes HTTP (ici, pour récupérer l'IP du serveur)
+const LOG_FOLDER = path.join(__dirname, 'logs');
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Désactive la vérification des certificats
 
@@ -45,10 +49,44 @@ axios.get("http://localhost:5001/api/ip")
             console.log(json);  // Log console côté Node
             let obj = JSON.parse(json);
             Max.outlet(obj.address, obj.args);  // Envoie uniquement les arguments (ex: [x, y, z]) dans Max  obj.args
+            log_browser_data(data, true);
         });
 
     })
     .catch(error => {
         console.error("Impossible de récupérer l'IP depuis le serveur Node :", error);
     });
+
+// Écoute le message "clear_log" venant de l'inlet de l'objet node.script
+Max.addHandler("clear_log", () => {
+  const logFile = path.join(LOG_FOLDER, 'hover_data.csv');
+  try {
+    // Tente de supprimer le fichier
+    fs.unlinkSync(logFile);
+    const successMsg = "Fichier log effacé avec succès.";
+    console.log(successMsg);
+    Max.outlet("log_status", successMsg); // Envoie une confirmation à Max
+  } catch (e) {
+    // Gère les erreurs, notamment si le fichier n'existe pas
+    if (e.code === 'ENOENT') {
+      const notFoundMsg = "Fichier log déjà inexistant.";
+      console.log(notFoundMsg);
+      Max.outlet("log_status", notFoundMsg);
+    } else {
+      const errorMsg = `Erreur lors de la suppression du fichier log: ${e.message}`;
+      console.error(errorMsg);
+      Max.outlet("log_status", errorMsg);
+    }
+  }
+});
+
+
+    // Logging
+function log_browser_data(data, is_osc = false) {
+  const timestamp = new Date().toISOString();
+  const logFile = path.join(LOG_FOLDER, 'hover_data.csv');
+  const entry_type = is_osc ? "OSC" : "MSG";
+  fs.appendFileSync(logFile, `${timestamp},${entry_type},${JSON.stringify(data)}\n`);
+}
+
 

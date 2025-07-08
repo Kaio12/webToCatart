@@ -1,5 +1,6 @@
 export let formeLibre;
-export let freeDrawPath = []; // pour le dessin à la main
+let formeLibreContext;
+
 export let drawing = false; // état du dessin à la main
 
 let pointsContainer; // conteneur Pixi pour les points
@@ -40,22 +41,18 @@ export function drawPixiPoints(pointsData, app, pixiPoints) {
 
     const pointGraphic = new PIXI.Graphics();
 
-// radius (taille des points) suit loudness (donné par analyse CATART/Max)
+  // radius (taille des points) suit loudness (donné par analyse CATART/Max)
     const radius = mapRange(pointData.loudnessMax, bounds.lMin, bounds.lMax, 5, 20);
 
-// couleur du point suit energy (donné par analyse CATART/Max)
+  // couleur du point suit energy (donné par analyse CATART/Max)
     const hue = mapRange(pointData.energyMax, bounds.eMin, bounds.eMax, 240, 0);
     const [r, gVal, b] = hslToRgb(hue / 360, 1, 0.5);
     const color = (r * 255 << 16) + (gVal * 255 << 8) + (b * 255) | 0;
 
-// Calcule la position centrée AVANT zoom
+  // Calcule la position centrée AVANT zoom
     const x0 = mapRange(pointData.x, bounds.xMin, bounds.xMax, radius, window.innerWidth -  2 * radius);
     const y0 = mapRange(pointData.y, bounds.yMin, bounds.yMax, radius, window.innerHeight - 2 * radius);
 
-// Décale par rapport au centre, applique le zoom, puis recentre
-
- //   pointGraphic.x = centerX + (x0 - centerX) * zoomFactor;
- //   pointGraphic.y = centerY + (y0 - centerY) * zoomFactor;
 
     pointGraphic.x = x0;
     pointGraphic.y = y0;
@@ -86,73 +83,62 @@ export function drawPixiPoints(pointsData, app, pixiPoints) {
 
   
 export function setupFormeLibre (app) {
-// Initialise le dessin à main levée
-  formeLibre = new PIXI.Graphics();
-  formeLibre.position.set(centerX, centerY);
-
+  formeLibreContext = new PIXI.GraphicsContext();
+  formeLibre = new PIXI.Graphics(formeLibreContext);
   app.stage.addChild(formeLibre);
-  app.stage.setChildIndex(formeLibre, app.stage.children.length - 1);
-  console.log("formeLibre ajouté au stage", formeLibre);
   return formeLibre;
 }
       
+let onDrawStart, onDrawMove, onDrawEnd;
+let isCurrentlyDrawing = false; // Indique si le dessin est en cours
 
 export function DessinFormeLibre(app, drawingEnabled) {
-  // Supprime les anciens événements pour éviter les doublons
-  app.stage.removeAllListeners('pointerdown');
-  app.stage.removeAllListeners('pointermove');
-  app.stage.removeAllListeners('pointerup');
-  app.stage.removeAllListeners('pointerupoutside');
+  const stage = app.stage;
 
-  app.stage.on("pointerdown", (e) => {
-    window.pointerPos = e.data.global; 
-    const {x, y} = e.data.global;
-    if (drawingEnabled) {
-    drawing = true;
-    freeDrawPath = [{x: (x - centerX), y: (y - centerY) }];
-    formeLibre.clear();//efface si on recommence le geste
+  if(drawingEnabled) {
+
+    onDrawStart = (event) => {
+      isCurrentlyDrawing = true;
+      const startPoint = event.global;
+
+      formeLibreContext.clear()
+      formeLibreContext.moveTo(startPoint.x, startPoint.y);
+  };
+
+    onDrawMove = (event) => {
+      if (isCurrentlyDrawing) {
+        const movePoint = event.global;
+        formeLibreContext.lineTo(movePoint.x, movePoint.y);
+        formeLibreContext.stroke({ width: 4, color: 0xff0000, alpha: 1});
+        }
+      };
+
+    onDrawEnd = () => {
+      isCurrentlyDrawing = false;
+      formeLibreContext.stroke({ width: 4, color: 0xff0000, alpha: 1 });
+    };
+
+    stage.on("pointerdown", onDrawStart);
+    stage.on("pointermove", onDrawMove);
+    stage.on("pointerup", onDrawEnd);
+    stage.on("pointerupoutside", onDrawEnd);
+  } else {
+    // Si le dessin est désactivé, on nettoie les anciens écouteurs d'événements
+    if (onDrawStart) stage.off("pointerdown", onDrawStart);
+    if (onDrawMove) stage.off("pointermove", onDrawMove);
+    if (onDrawEnd) {
+      stage.off("pointerup", onDrawEnd);
+      stage.off("pointerupoutside", onDrawEnd);
     }
-  });
-
-  // position du pointeur (souris, doigt)
-  app.stage.on("pointermove", (e) => {
-    console.log("drawing", drawing, "drawingEnabled", drawingEnabled);
-    window.pointerPos = e.data.global;
-    if (!drawing) return; 
-    if (!drawingEnabled) return; // si le dessin est désactivé, on ne fait rien
-    const {x, y} = e.data.global;
-    const newPoint = { x: (x - centerX) , y: (y - centerY) };
-    console.log("DessinFormeLibre: newPoint", newPoint);
-    freeDrawPath.push(newPoint);
-    console.log("freeDrawPath:", freeDrawPath);
-    formeLibre.clear();
-    
-    if (freeDrawPath.length > 1) {
-      console.log("DessinFormeLibre: Dessin en cours");
-      formeLibre.beginFill(0xffcccc, 0.3);
-      formeLibre.lineStyle(2, 0xff0000, 1);
-      formeLibre.drawPolygon(freeDrawPath.flatMap(p => [p.x, p.y]));
-      formeLibre.endFill();
-    }
-  });
-
-  app.stage.on("pointerup", () => {
-    drawing = false;
-    drawingEnabled = false; // désactive le dessin après le relâchement
-  });
-
-  app.stage.on("pointerupoutside", () => {
-    drawing = false;
-    drawingEnabled = false; // désactive le dessin après le relâchement
-  });
-
+  }
 }
+
 
 // mise à jour de la position et du zoom
 export function updateFormeLibreTransform(zoomFactor) {
-  if (!formeLibre) return;
-  formeLibre.scale.set(zoomFactor);
-  formeLibre.position.set(centerX, centerY);
+ // if (!formeLibre) return;
+ // formeLibre.scale.set(zoomFactor);
+ // formeLibre.position.set(centerX, centerY);
 }
 
 // getBounds calcule les limites (min et max) des coordonnées et des valeurs pour un ensemble de points, permet d'adapter à la taille de la fenètre.
@@ -202,5 +188,18 @@ function hslToRgb(h, s, l) {
   }
 
   return [r, g, b];
+}
+
+
+
+export function createCursor(app) {
+  const cursor = new PIXI.Graphics();
+  cursor.lineStyle(2, 0x333333, 0.6);
+  cursor.drawCircle(0, 0, 25);
+  cursor.endFill();
+
+  cursor.visible = false; // Masqué par défaut
+  app.stage.addChild(cursor);
+  return cursor;
 }
 

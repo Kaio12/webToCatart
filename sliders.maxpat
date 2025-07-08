@@ -363,10 +363,22 @@
 						}
 ,
 						"classnamespace" : "box",
-						"rect" : [ 236.0, 176.0, 742.0, 772.0 ],
+						"rect" : [ 236.0, 176.0, 880.0, 772.0 ],
 						"gridsize" : [ 15.0, 15.0 ],
 						"visible" : 1,
 						"boxes" : [ 							{
+								"box" : 								{
+									"id" : "obj-9",
+									"maxclass" : "message",
+									"numinlets" : 2,
+									"numoutlets" : 1,
+									"outlettype" : [ "" ],
+									"patching_rect" : [ 78.0, 329.0, 57.0, 22.0 ],
+									"text" : "clear_log"
+								}
+
+							}
+, 							{
 								"box" : 								{
 									"id" : "obj-10",
 									"maxclass" : "newobj",
@@ -384,7 +396,7 @@
 									"numinlets" : 2,
 									"numoutlets" : 1,
 									"outlettype" : [ "" ],
-									"patching_rect" : [ 97.0, 44.0, 77.0, 22.0 ],
+									"patching_rect" : [ 99.0, 149.0, 77.0, 22.0 ],
 									"presentation" : 1,
 									"presentation_rect" : [ 97.0, 44.0, 77.0, 22.0 ],
 									"text" : "exportSound"
@@ -400,7 +412,7 @@
 									"numinlets" : 0,
 									"numoutlets" : 1,
 									"outlettype" : [ "" ],
-									"patching_rect" : [ 287.0, 11.0, 30.0, 30.0 ]
+									"patching_rect" : [ 21.0, 15.0, 30.0, 30.0 ]
 								}
 
 							}
@@ -411,7 +423,7 @@
 									"numinlets" : 0,
 									"numoutlets" : 1,
 									"outlettype" : [ "" ],
-									"patching_rect" : [ 12.0, 11.0, 55.0, 22.0 ],
+									"patching_rect" : [ 14.0, 116.0, 55.0, 22.0 ],
 									"text" : "r alldone"
 								}
 
@@ -419,13 +431,12 @@
 , 							{
 								"box" : 								{
 									"id" : "obj-58",
-									"linecount" : 2,
 									"maxclass" : "message",
 									"numinlets" : 2,
 									"numoutlets" : 1,
 									"outlettype" : [ "" ],
-									"patching_rect" : [ 147.0, 206.0, 134.0, 35.0 ],
-									"text" : "/ipad/xy dictionary u862001212"
+									"patching_rect" : [ 147.0, 206.0, 134.0, 22.0 ],
+									"text" : "/hover 70"
 								}
 
 							}
@@ -448,7 +459,7 @@
 									"numinlets" : 2,
 									"numoutlets" : 1,
 									"outlettype" : [ "" ],
-									"patching_rect" : [ 12.0, 44.0, 75.0, 22.0 ],
+									"patching_rect" : [ 14.0, 149.0, 75.0, 22.0 ],
 									"presentation" : 1,
 									"presentation_rect" : [ 10.0, 12.0, 75.0, 22.0 ],
 									"text" : "exportPoints"
@@ -463,7 +474,7 @@
 									"numinlets" : 1,
 									"numoutlets" : 2,
 									"outlettype" : [ "", "" ],
-									"patching_rect" : [ 12.0, 81.0, 91.0, 22.0 ],
+									"patching_rect" : [ 14.0, 186.0, 91.0, 22.0 ],
 									"saved_object_attributes" : 									{
 										"parameter_enable" : 0
 									}
@@ -584,6 +595,13 @@
 							}
 , 							{
 								"patchline" : 								{
+									"destination" : [ "obj-11", 0 ],
+									"source" : [ "obj-3", 0 ]
+								}
+
+							}
+, 							{
+								"patchline" : 								{
 									"destination" : [ "obj-6", 0 ],
 									"source" : [ "obj-4", 0 ]
 								}
@@ -646,6 +664,13 @@
 								"patchline" : 								{
 									"destination" : [ "obj-6", 0 ],
 									"source" : [ "obj-8", 0 ]
+								}
+
+							}
+, 							{
+								"patchline" : 								{
+									"destination" : [ "obj-6", 0 ],
+									"source" : [ "obj-9", 0 ]
 								}
 
 							}
@@ -1391,7 +1416,7 @@
 									"sourcecode" : "import(\"stdfaust.lib\");\n\nmaxduration = 1;\nduration = hslider(\"duration\", 0, 0, 100, 0.001)* 0.001:si.smoo;\nfb = hslider(\"feedback\", 0, 0, 1, 0.01);\n\nmaxdel = 4096;\nintdel = hslider(\"intdel\", 0, 0, maxdel, 1):si.smoo;\ng = hslider(\"g\", 0, 0, 1, 0.001):si.smoo;\n\nprocess= _ : fi.fbcombfilter(maxdel,intdel,g) : ef.echo(maxduration, duration, fb);",
 									"sourcecode_size" : 343,
 									"text" : "faustgen~ multiEf",
-									"varname" : "faustgen-5276910624",
+									"varname" : "faustgen-5012602864",
 									"version" : "1.73"
 								}
 
@@ -4132,7 +4157,7 @@
 					"useplaceholders" : 1,
 					"varname" : "imub",
 					"verbose" : 1,
-					"viewconfig" : [ "interface wave, mainautobounds 1, hidenotforemost 1, progress 0.999743", "interface sonogram, autobounds 1, hidenotforemost 1, colormode rainbow, progress 1, , paramdisplayrange , paramdisplayrange ", "interface traces, mainautobounds 1, hidenotforemost 1, colormode fgcolor, paramcols Frequency Amplitude -, , paramdisplayrange , , paramautodisplayrange , paramdisplayrange , shape steps", "interface scatterplot, mainautobounds 1, autobounds 1, hidenotforemost 1, allbuffersvisible 1, domainalign -, paramcols x y width height LoudnessMax LoudnessMax angle EnergyMax edgeopacity EnergyMax fillopacity type labeltext labelxoffset labelyoffset labelposition labelcolor labelopacity labelfontsize labelfontstyle connectionstyle connectioncolor connectionopacity connectionthickness connectionheadsize connectionweight, , paramdisplayrange fixedwidth 5 20 fixedheight 5 20 , paramdisplayrange fixedwidth 5 20 fixedheight 5 20 , selectioncolor 0 0 0 0.6", "interface matrix, bgcolor 255 255 255 1, fgcolor 0 0 0 1, bounds 0 1, visible 1, mainautobounds 1, autobounds 0, hidenotforemost 1, allbuffersvisible 0, domainalign time, displayOrder -1, colormode , thickness 1, pointdiam 5, highlight color 154 205 50 1, highlight mode index, progresscolor 64 70 72 1, progressmode bar, progress -1, shape , depth 0 0, fgcolorgradient 0, selectioncolor 173 216 230 0.2, linkedtrackid -261, header fgcolor 0 0 0 1, header bgcolor 255 255 255 1, grid color 240 240 240 1, header bordercolor 200 200 200 1, header visible all, header fontstyle italic, grid visible 1, scrollbars visible 1, fontsize 10, fontstyle 0, toolbar visible retractable, showmeans 0, layout , opacity 0, foremost 0, showcolnames 0, depth 0 0, stavecolor 0 0 0 1, inset 0, visiblesummarycolumns , columnorder ", "interface scatterplot, mainautobounds 1, autobounds 1, hidenotforemost 1, allbuffersvisible 1, domainalign -, paramcols x y width height LoudnessMax LoudnessMax angle EnergyMax edgeopacity EnergyMax fillopacity type labeltext labelxoffset labelyoffset labelposition labelcolor labelopacity labelfontsize labelfontstyle connectionstyle connectioncolor connectionopacity connectionthickness connectionheadsize connectionweight", "interface scatterplot, mainautobounds 1, autobounds 1, hidenotforemost 1, allbuffersvisible 1, domainalign -, paramcols x y width height LoudnessMax LoudnessMax angle EnergyMax edgeopacity EnergyMax fillopacity type labeltext labelxoffset labelyoffset labelposition labelcolor labelopacity labelfontsize labelfontstyle connectionstyle connectioncolor connectionopacity connectionthickness connectionheadsize connectionweight, , paramdisplayrange fixedwidth 5 20 fixedheight 5 20 , paramdisplayrange fixedwidth 5 20 fixedheight 5 20 , selectioncolor 0 0 0 0.6" ],
+					"viewconfig" : [ "interface wave, mainautobounds 1, hidenotforemost 1, progress 0.999743", "interface sonogram, autobounds 1, hidenotforemost 1, colormode rainbow, progress 1, , paramdisplayrange , paramdisplayrange ", "interface traces, mainautobounds 1, hidenotforemost 1, colormode fgcolor, paramcols Frequency Amplitude -, , paramdisplayrange , , paramautodisplayrange , paramdisplayrange , shape steps", "interface scatterplot, mainautobounds 1, autobounds 1, hidenotforemost 1, allbuffersvisible 1, domainalign -, paramcols x y width height LoudnessMax LoudnessMax angle EnergyMax edgeopacity EnergyMax fillopacity type labeltext labelxoffset labelyoffset labelposition labelcolor labelopacity labelfontsize labelfontstyle connectionstyle connectioncolor connectionopacity connectionthickness connectionheadsize connectionweight, , paramdisplayrange fixedwidth 5 20 fixedheight 5 20 , paramdisplayrange fixedwidth 5 20 fixedheight 5 20 , selectioncolor 0 0 0 0.6", "interface matrix, bgcolor 255 255 255 1, fgcolor 0 0 0 1, bounds 0 1, visible 1, mainautobounds 1, autobounds 0, hidenotforemost 1, allbuffersvisible 0, domainalign time, displayOrder -1, colormode , thickness 1, pointdiam 5, highlight color 154 205 50 1, highlight mode index, progresscolor 64 70 72 1, progressmode bar, progress -1, shape , depth 0 0, fgcolorgradient 0, selectioncolor 173 216 230 0.2, linkedtrackid -263, header fgcolor 0 0 0 1, header bgcolor 255 255 255 1, grid color 240 240 240 1, header bordercolor 200 200 200 1, header visible all, header fontstyle italic, grid visible 1, scrollbars visible 1, fontsize 10, fontstyle 0, toolbar visible retractable, showmeans 0, layout , opacity 0, foremost 0, showcolnames 0, depth 0 0, stavecolor 0 0 0 1, inset 0, visiblesummarycolumns , columnorder ", "interface scatterplot, mainautobounds 1, autobounds 1, hidenotforemost 1, allbuffersvisible 1, domainalign -, paramcols x y width height LoudnessMax LoudnessMax angle EnergyMax edgeopacity EnergyMax fillopacity type labeltext labelxoffset labelyoffset labelposition labelcolor labelopacity labelfontsize labelfontstyle connectionstyle connectioncolor connectionopacity connectionthickness connectionheadsize connectionweight", "interface scatterplot, mainautobounds 1, autobounds 1, hidenotforemost 1, allbuffersvisible 1, domainalign -, paramcols x y width height LoudnessMax LoudnessMax angle EnergyMax edgeopacity EnergyMax fillopacity type labeltext labelxoffset labelyoffset labelposition labelcolor labelopacity labelfontsize labelfontstyle connectionstyle connectioncolor connectionopacity connectionthickness connectionheadsize connectionweight, , paramdisplayrange fixedwidth 5 20 fixedheight 5 20 , paramdisplayrange fixedwidth 5 20 fixedheight 5 20 , selectioncolor 0 0 0 0.6" ],
 					"windresize" : 0
 				}
 

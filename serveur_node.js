@@ -12,7 +12,6 @@ require('dotenv').config(); // Charge les variables d'environnement depuis .env
 // === CONFIGURATION ===
 const UPLOAD_FOLDER = path.join(__dirname, 'uploads');
 const PUBLIC_FOLDER = path.join(__dirname, 'public');
-const LOG_FOLDER = path.join(__dirname, 'logs');
 const STATIC_FOLDER = path.join(__dirname, 'static');
 const PORT = 5001;
 
@@ -24,7 +23,7 @@ app.use('/public', express.static(PUBLIC_FOLDER));
 
 
 if (!fs.existsSync(UPLOAD_FOLDER)) fs.mkdirSync(UPLOAD_FOLDER);
-if (!fs.existsSync(LOG_FOLDER)) fs.mkdirSync(LOG_FOLDER);
+//if (!fs.existsSync(LOG_FOLDER)) fs.mkdirSync(LOG_FOLDER);
 if (!fs.existsSync(PUBLIC_FOLDER)) fs.mkdirSync(PUBLIC_FOLDER);
 
 // === UTILS ===
@@ -126,13 +125,6 @@ const server = http.createServer(app);
 const io = socketIo(server, { cors: { origin: "*" }});
 
 
-// Logging
-function log_browser_data(data, is_osc = false) {
-  const timestamp = new Date().toISOString();
-  const logFile = path.join(LOG_FOLDER, 'hover_data.csv');
-  const entry_type = is_osc ? "OSC" : "MSG";
-  fs.appendFileSync(logFile, `${timestamp},${entry_type},${JSON.stringify(data)}\n`);
-}
 
 // OSC Routing (version simplifiée et logique)
 function route_osc(data) {
@@ -153,7 +145,6 @@ const max = io.of('/max');
 browser.on('connection', (socket) => {
   socket.on('osc', (data) => {
     console.log('Received OSC from browser:', JSON.stringify(data, null, 2));
-    log_browser_data(data, true);
     route_osc(data);
   });
 });
