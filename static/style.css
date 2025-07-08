@@ -7,7 +7,6 @@ body {
 }
 
 .sidebarleft {
-    width: 70px;
     background-color: aliceblue;
     padding: 15px;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
@@ -15,7 +14,7 @@ body {
     display: flex ;
     flex-direction: column;
     align-items: center;
-    height: 100vh;
+    gap: 10px; 
     position: absolute;
     top: 0;
     left: 0;
@@ -40,17 +39,8 @@ body {
     top: 0;
     left: 0;
 }
-body.sidebarleft-hidden .main-content {
-    margin-left: 0;
-}
 
 
-#multisliderLeft {
-        flex-grow: 1 ;
-        display: flex;
-        height: fit-content;
-        align-items: center;
-    }
 
 #myChart {
         width: 100%;
@@ -67,22 +57,3 @@ body.sidebarleft-hidden .main-content {
 
     }
 
-#swipe-container {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    overflow: hidden;
-    z-index: 5;
-}
-.page {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-    display: none;
-    background: #fff;
-}
-.page.active {
-    display: block;
-}

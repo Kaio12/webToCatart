@@ -2,6 +2,10 @@ export let formeLibre;
 let formeLibreContext;
 
 export let drawing = false; // état du dessin à la main
+let onDrawStart, onDrawMove, onDrawEnd;
+let isCurrentlyDrawing = false; // Indique si le dessin est en cours
+let startDrawPoint;
+let currentPath = [];
 
 let pointsContainer; // conteneur Pixi pour les points
 export let centerX = window.innerWidth / 2;
@@ -63,6 +67,7 @@ export function drawPixiPoints(pointsData, app, pixiPoints) {
     pointGraphic.lastTrigger = 0;
     pointGraphic.sampleId = pointData.sampleId;
     pointGraphic.color = color;
+    pointGraphic.isEffectEnabled = false;
 
     pointGraphic.startTime = pointData.time;
     pointGraphic.duration = pointData.duration;
@@ -85,38 +90,73 @@ export function drawPixiPoints(pointsData, app, pixiPoints) {
 export function setupFormeLibre (app) {
   formeLibreContext = new PIXI.GraphicsContext();
   formeLibre = new PIXI.Graphics(formeLibreContext);
-  app.stage.addChild(formeLibre);
+
+  if (pointsContainer) {
+    pointsContainer.addChild(formeLibre);
+    console.log('formelibre ajoutée à pointsContainer');
+  } else {
+    app.stage.addChild(formeLibre);
+  }
   return formeLibre;
 }
       
-let onDrawStart, onDrawMove, onDrawEnd;
-let isCurrentlyDrawing = false; // Indique si le dessin est en cours
 
-export function DessinFormeLibre(app, drawingEnabled) {
+
+export function DessinFormeLibre(app, drawingEnabled, pixiPoints) {
   const stage = app.stage;
 
   if(drawingEnabled) {
 
     onDrawStart = (event) => {
       isCurrentlyDrawing = true;
-      const startPoint = event.global;
+      startDrawPoint = pointsContainer.toLocal(event.global);
+      currentPath = [startDrawPoint];
 
       formeLibreContext.clear()
-      formeLibreContext.moveTo(startPoint.x, startPoint.y);
   };
 
     onDrawMove = (event) => {
       if (isCurrentlyDrawing) {
-        const movePoint = event.global;
-        formeLibreContext.lineTo(movePoint.x, movePoint.y);
+        const movePoint = pointsContainer.toLocal(event.global);
+        currentPath.push(movePoint);
+        
+        formeLibreContext.clear();
+        formeLibreContext.moveTo(currentPath[0].x, currentPath[0].y);
+        for (let i = 1; i< currentPath.length; i++) {
+          formeLibreContext.lineTo(currentPath[i].x, currentPath[i].y);
+          }
         formeLibreContext.stroke({ width: 4, color: 0xff0000, alpha: 1});
         }
       };
 
     onDrawEnd = () => {
+      if(!isCurrentlyDrawing) return;
       isCurrentlyDrawing = false;
+
+      formeLibreContext.clear();
+      if (currentPath.length > 1) {
+        formeLibreContext.moveTo(currentPath[0].x, currentPath[0].y);
+        for (let i = 1; i < currentPath.length; i++) {
+          formeLibreContext.lineTo(currentPath[i].x, currentPath[i].y);
+        }
+        // On ferme le chemin en revenant au premier point
+        formeLibreContext.lineTo(currentPath[0].x, currentPath[0].y);
+      }
+
+      // On peut maintenant remplir ET tracer le contour
+      formeLibreContext.fill({ color: 0x0000ff, alpha: 0.2 });
       formeLibreContext.stroke({ width: 4, color: 0xff0000, alpha: 1 });
+      
+      // On réinitialise pour le prochain dessin
+      currentPath = [];
+
+      pixiPoints.forEach(point => {
+      point.isEffectEnabled = formeLibre.containsPoint(point.position);
+    })
     };
+    
+    
+
 
     stage.on("pointerdown", onDrawStart);
     stage.on("pointermove", onDrawMove);
@@ -131,14 +171,6 @@ export function DessinFormeLibre(app, drawingEnabled) {
       stage.off("pointerupoutside", onDrawEnd);
     }
   }
-}
-
-
-// mise à jour de la position et du zoom
-export function updateFormeLibreTransform(zoomFactor) {
- // if (!formeLibre) return;
- // formeLibre.scale.set(zoomFactor);
- // formeLibre.position.set(centerX, centerY);
 }
 
 // getBounds calcule les limites (min et max) des coordonnées et des valeurs pour un ensemble de points, permet d'adapter à la taille de la fenètre.
@@ -162,7 +194,6 @@ function getBounds(data) {
 // mapRange désigne ici une fonction fléchée
 const mapRange = (val, inMin, inMax, outMin, outMax) =>
     ((val - inMin) / (inMax - inMin)) * (outMax - outMin) + outMin;
-
 
 // Convertit une couleur HSL en valeurs RGB (fournit des couleurs très proches de CATART dans Max)
 function hslToRgb(h, s, l) {
@@ -189,8 +220,6 @@ function hslToRgb(h, s, l) {
 
   return [r, g, b];
 }
-
-
 
 export function createCursor(app) {
   const cursor = new PIXI.Graphics();

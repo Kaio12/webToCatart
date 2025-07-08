@@ -7,7 +7,7 @@ import {audioContext, loadAudioBuffer, playGrain, initFaustEffect} from "./audio
 //import {  sendOSC, getIp, initSocket, loadPoints, setupSocketAndHandlers} from "./network.js";
 import {  sendOSC, initSocket, loadPoints, setupSocketAndHandlers} from "./network.js";
 //import { loadMLPModel } from "./mlp.js";
-import { drawPixiPoints, updateFormeLibreTransform, setupFormeLibre, createCursor, updateCenter, DessinFormeLibre } from "./graphics.js";
+import { drawPixiPoints, setupFormeLibre, createCursor, updateCenter, DessinFormeLibre } from "./graphics.js";
 
 let pointsData = [];  // les données des points à afficher, chargées depuis le serveur
 let formeLibre; //layer pour le dessin libre
@@ -23,7 +23,6 @@ window.pointerPos = { x: -9999, y: -9999 };// propriété globale pour la positi
 const proximityThreshold = 80; // distance minimale pour déclencher un son
 //const cooldown = 300; // temps minimal entre deux update pour le toucher des points
 
-let audioStarted = false;
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -63,12 +62,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   console.log("DOM chargé, initialisation des éléments...");
 
-// Empêche le zoom natif du navigateur (pinch sur trackpad)
-window.addEventListener('wheel', function(e) {
-  if (e.ctrlKey) {
-    e.preventDefault();
-  }
-}, { passive: false });
+  // Empêche le zoom natif du navigateur (pinch sur trackpad)
+  window.addEventListener('wheel', function(e) {
+    if (e.ctrlKey) {
+      e.preventDefault();
+    }
+  }, { passive: false });
 
   //const sidebarleft = document.getElementById('sidebarleft');
   //const body = document.body;
@@ -76,36 +75,36 @@ window.addEventListener('wheel', function(e) {
   //const pages = Array.from(document.querySelectorAll('#swipe-container .page'));
 
 
-// pour dessiner la forme libre
-drawToggleButton.addEventListener("click", () => {
+  // pour dessiner la forme libre
+  drawToggleButton.addEventListener("click", () => {
 
-  drawingEnabled = !drawingEnabled;
+    drawingEnabled = !drawingEnabled;
 
-  DessinFormeLibre(window.pixiApp, drawingEnabled);
+    DessinFormeLibre(window.pixiApp, drawingEnabled, pixiPoints);
 
 
-  if (drawingEnabled) {
-    drawToggleButton.textContent = "Désactiver le dessin";
-    drawToggleButton.style.backgroundColor = "#f00"; // rouge
+    if (drawingEnabled) {
+      drawToggleButton.textContent = "Désactiver le dessin";
+      drawToggleButton.style.backgroundColor = "#f00"; // rouge
 
-    if (formeLibre) formeLibre.visible = true; // rend la forme libre visible
-    console.log("Dessin activé");
-  } else {
-    drawToggleButton.textContent = "Activer le dessin";
-    drawToggleButton.style.backgroundColor = "#0f0"; // vert
-    }
-  });
-
-  // bouton Fullscreen
-  document.getElementById("fullscreen-btn").addEventListener("click", () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
-      updateCenter(); // met à jour le centre de la vue
-      drawPixiPoints(pointsData, window.pixiApp, pixiPoints);// on redessine les points
+      if (formeLibre) formeLibre.visible = true; // rend la forme libre visible
+      console.log("Dessin activé");
     } else {
-      document.exitFullscreen();
+      drawToggleButton.textContent = "Activer le dessin";
+      drawToggleButton.style.backgroundColor = "#0f0"; // vert
     }
   });
+
+    // bouton Fullscreen
+    document.getElementById("fullscreen-btn").addEventListener("click", () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+        updateCenter(); // met à jour le centre de la vue
+        drawPixiPoints(pointsData, window.pixiApp, pixiPoints);// on redessine les points
+      } else {
+        document.exitFullscreen();
+      }
+    });
 
     // Séquence d'initialisation principale
     async function initializeApplication() {
@@ -159,9 +158,6 @@ function triggerGrainsOnProximity() {
    if (window.pointsContainer) {
     window.pointsContainer.scale.set(zoomFactor);
   }
-  if (formeLibre) {
-    formeLibre.scale.set(zoomFactor);
-  }
 
   if (drawingEnabled || (window.pointerPos.x === -9999 && window.pointerPos.y === -9999)) {
     return; // Ne rien faire si on dessine, ou si le pointeur n'est pas actif (pinch ou aucun doigt)
@@ -176,9 +172,9 @@ function triggerGrainsOnProximity() {
     
     // 1. Détecter un changement d'état : quand le pointeur ENTRE dans la zone
     if (isInside && !wasInside) {
-      // On est entré dans la zone, on déclenche le son et l'OSC
-      const isInForme = formeLibre && formeLibre.containsPoint(formeLibre.toLocal(new PIXI.Point(point.x, point.y)));
-      playGrain(point.startTime, point.duration, isInForme);
+      
+      console.log(point.isEffectEnabled);
+      playGrain(point.startTime, point.duration, point.isEffectEnabled);
       sendOSC("/hover", point.sampleId);
     }
 
@@ -250,7 +246,6 @@ async function setupPixi() {
     if ( audioContext && audioContext.state === "suspended") {
       audioContext.resume().then(() => {
         console.log("AudioContext activé par la première interaction sur la scène Pixi.");
-        audioStarted = true;
         triggerGrainsOnProximity();
       });
     } else {
@@ -313,7 +308,6 @@ async function setupPixi() {
     app.renderer.resize(window.innerWidth, window.innerHeight);
     updateCenter();
     drawPixiPoints(pointsData, window.pixiApp, pixiPoints);// on redessine les points
-    updateFormeLibreTransform(zoomFactor);
   });
 
   // ticker : actualisation de l'app sur chaque frame
