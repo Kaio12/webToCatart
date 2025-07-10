@@ -4,7 +4,7 @@
 
 //const path = require('path');              // Gère les chemins de fichiers (pas utilisé ici mais souvent utile)
 const Max = require('max-api');            // API pour communiquer avec Max/MSP
-const io = require('socket.io-client');    // Client WebSocket compatible avec Socket.IO
+const io = WebSocket = require('ws');    // Client WebSocket compatible avec Socket.IO
 const axios = require('axios'); 
 const path = require('path');
 const fs = require('fs');
@@ -21,14 +21,15 @@ axios.get("http://localhost:5001/api/ip")
     .then(response => {
         // Extraction de l'adresse IP depuis la réponse du serveur
         const ip = response.data.ip;
-        const url = `http://${ip}:5001/max`;  // Création de l'URL du namespace Socket.IO côté Max
+
+        const url = `ws://${ip}:5001`;  // Création de l'URL du namespace Socket.IO côté Max
         console.log("Connexion au socket :", url);
 
         // 2. Connexion WebSocket au serveur Flask sur le namespace /max
-        socket = io(url);
+        socket = new WebSocket(url);
 
         // 3. Quand la connexion est établie
-        socket.on('connect', () => {
+        socket.on('open', () => {
             console.log("WebSocket is open now.");
         });
 
@@ -42,20 +43,34 @@ axios.get("http://localhost:5001/api/ip")
             console.log("WebSocket connection closed.");
         });
 
-        // 6. Réception des données envoyées par le navigateur via server node (namespace /max → Max)
-        socket.on('to_max', (data) => {
-            // Transformation JSON pour éviter d’avoir des objets complexes
-            let json = JSON.stringify(data);
-            console.log(json);  // Log console côté Node
-            let obj = JSON.parse(json);
-            Max.outlet(obj.address, obj.args);  // Envoie uniquement les arguments (ex: [x, y, z]) dans Max  obj.args
-            log_browser_data(data, true);
-        });
 
-    })
-    .catch(error => {
-        console.error("Impossible de récupérer l'IP depuis le serveur Node :", error);
+        /*
+        // 6. Réception des données envoyées par le navigateur via server node (namespace /max → Max)
+        socket.on('message', (message) => {
+           try {
+            const dataString = message.toString();
+            const data = JSON.parse(dataString);
+
+            if (data.type === 'osc' && data.address) {
+              Max.outlet(data.address, ...data.args);
+            }
+           } catch (e) {
+              console.error("erreur de parsing du message reçu", e);
+           }
+
     });
+*/
+
+
+  })
+  .catch(error => {
+     console.error("Impossible de récupérer l'IP depuis le serveur Node :", error);
+  });
+
+
+       
+
+  
 
 // Écoute le message "clear_log" venant de l'inlet de l'objet node.script
 Max.addHandler("clear_log", () => {

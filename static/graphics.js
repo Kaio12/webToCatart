@@ -96,13 +96,14 @@ export function setupFormeLibre (app) {
     console.log('formelibre ajoutée à pointsContainer');
   } else {
     app.stage.addChild(formeLibre);
+    console.log('forme libre sans container')
   }
   return formeLibre;
 }
       
 
 
-export function DessinFormeLibre(app, drawingEnabled, pixiPoints) {
+export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCallback) {
   const stage = app.stage;
 
   if(drawingEnabled) {
@@ -152,11 +153,12 @@ export function DessinFormeLibre(app, drawingEnabled, pixiPoints) {
 
       pixiPoints.forEach(point => {
       point.isEffectEnabled = formeLibre.containsPoint(point.position);
-    })
-    };
-    
-    
+    });
 
+    if (onCompleteCallback) {
+      onCompleteCallback();
+    }
+    };
 
     stage.on("pointerdown", onDrawStart);
     stage.on("pointermove", onDrawMove);

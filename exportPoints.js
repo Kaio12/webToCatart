@@ -1,58 +1,74 @@
 outlets = 2;
 
 // exporte de max vers browser les coordonnées de chaque grain
-function exportPoints()
-    {
+    function exportPoints() {
     var mubu = new MubuJS("echantillons");
     mubu.refer("echantillons"); 
 
-    if (mubu != null) 
-        {
-            var lesdeux = mubu.gettrack(1, "lesdeux");
-            if(lesdeux != null){
-                DistX = lesdeux.getmxcolumn(1); // récupère les positions x des grains
-                DistY = lesdeux.getmxcolumn(2); // récupère les positions y des grains
-                loudnessMax = lesdeux.getmxcolumn(8);
-                energyMax = lesdeux.getmxcolumn(5);
-                Time = lesdeux.gettime();
-                Duration= lesdeux.getmxcolumn(3);
+    if (mubu != null) {
+        var lesdeux = mubu.gettrack(1, "lesdeux");
+        if (lesdeux != null) {
+            var DistX = lesdeux.getmxcolumn(1);
+            var DistY = lesdeux.getmxcolumn(2);
+            var loudnessMax = lesdeux.getmxcolumn(8);
+            var energyMax = lesdeux.getmxcolumn(5);
+            var Time = lesdeux.gettime();
+            var Duration = lesdeux.getmxcolumn(3);
 
-                var points = [];
-                for (let i = 0; i < DistX.length; i++)
-                        {
-                            var point = {
-                                x: DistX[i],
-                                y: DistY[i],
-                                loudnessmax : loudnessMax[i],
-                                energymax : energyMax[i],
-                                sampleId: i,
-                                time : Time[i],
-                                duration : Duration[i]
-                            };
-                            points.push(point);
+            try {
+                var folderPath = "/Users/philippecaillot/Documents/programmation/geste/public";
+                var fileName = "points.json";
+                var folder = new Folder(folderPath);
+                folder.deletefile(fileName);
+                post("ancien fichier supprimé");
+
+                var filePath = folderPath + "/" + fileName;
+                var file = new File(filePath, "write", "JSON");
+
+                if (file.isopen) {
+                    // --- MODIFICATION : Écriture itérative ---
+
+                    // 1. Écrire le début du fichier
+                    file.writestring('{\n  "type": "points",\n  "points": [\n');
+
+                    // 2. Boucler sur les points et les écrire un par un
+                    for (let i = 0; i < DistX.length; i++) {
+                        var point = {
+                            x: DistX[i],
+                            y: DistY[i],
+                            loudnessmax: loudnessMax[i],
+                            energymax: energyMax[i],
+                            sampleId: i,
+                            time: Time[i],
+                            duration: Duration[i]
+                        };
+                        
+                        // Convertir UN SEUL point en JSON
+                        var pointString = JSON.stringify(point, null, 2);
+                        
+                        // Ajouter une virgule sauf pour le dernier élément
+                        if (i < DistX.length - 1) {
+                            pointString += ',';
                         }
-              // On crée l'objet JavaScript complet
-                var dataObject = {type: "points", points: points};
-                
-                // On transforme l'objet en chaîne JSON formatée (avec sauts de ligne et indentation)
-                var dataToWrite = JSON.stringify(dataObject, null, 2);
-                
-                try {
-                    var file = new File("/Users/philippecaillot/Documents/programmation/geste/public/points.json", "write", "JSON");
-                    if (file.isopen) {
-                        file.writestring(dataToWrite);
-                        file.close();
-                        post("Fichier points.json mis à jour avec succès.\n");
-                    } else {
-                        post("Erreur : Impossible d'ouvrir le fichier points.json.\n");
+                        
+                        // Écrire le point dans le fichier
+                        file.writestring(pointString + '\n');
                     }
-                } catch (error) {
-                    post("Erreur lors de l'écriture du fichier points.json :", error.message, "\n");
+
+                    // 3. Écrire la fin du fichier
+                    file.writestring('  ]\n}\n');
+                    
+                    file.close();
+                    post("Fichier points.json mis à jour avec succès avec " + DistX.length + " points.\n");
+                } else {
+                    post("Erreur : Impossible d'ouvrir le fichier points.json.\n");
                 }
-               
+            } catch (error) {
+                post("Erreur lors de l'écriture du fichier points.json : " + error.message + "\n");
             }
         }
     }
+}
 
 // exporte le son enregistré dans mubu vers un fichier wav
 function exportSound()

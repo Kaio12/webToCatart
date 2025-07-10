@@ -2,10 +2,12 @@ const express = require('express');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const socketIo = require('socket.io');
+//const socketIo = require('socket.io');
 const cors = require('cors');
 const qrcode = require('qrcode');
 const ngrok = require('ngrok');
+const WebSocket = require('ws');
+const { Server: OscServer, Client: OscClient } = require('node-osc');
 
 require('dotenv').config(); // Charge les variables d'environnement depuis .env
 
@@ -14,6 +16,11 @@ const UPLOAD_FOLDER = path.join(__dirname, 'uploads');
 const PUBLIC_FOLDER = path.join(__dirname, 'public');
 const STATIC_FOLDER = path.join(__dirname, 'static');
 const PORT = 5001;
+const OSC_LISTEN_PORT = 9000;
+
+// destination pour les messages vers max
+const MAX_HOST = process.env.MAX_HOST;
+const MAX_PORT = process.env.MAX_PORT;
 
 const app = express();
 app.use(cors());
@@ -87,10 +94,12 @@ app.get('/mlp_model', (req, res) => {
 
 // génère et affiche le QR code
 app.get('/qr', async (req, res) => {
-  // 2. UTILISEZ directement la variable ngrokUrl
-  if (ngrokUrl) {
+  const localIp = getLocalIp();
+
+  if (localIp) {
+    const localUrl = `http://${localIp}:${PORT}`;
     try {
-      const qrCodeDataUrl = await qrcode.toDataURL(ngrokUrl);
+      const qrCodeDataUrl = await qrcode.toDataURL(localUrl);
       res.send(`
         <!DOCTYPE html>
         <html lang="fr">
@@ -108,7 +117,7 @@ app.get('/qr', async (req, res) => {
         <body>
           <h1>Scannez pour vous connecter</h1>
           <img src="${qrCodeDataUrl}" alt="QR Code">
-          <p>URL : <a href="${ngrokUrl}" target="_blank">${ngrokUrl}</a></p>
+          <p>URL : <a href="${localUrl}" target="_blank">${localUrl}</a></p>
         </body>
         </html>
       `);
@@ -116,77 +125,79 @@ app.get('/qr', async (req, res) => {
       res.status(500).send("<h1>Erreur lors de la génération du QR Code.</h1>");
     }
   } else {
-    res.status(404).send("<h1>Erreur : Tunnel ngrok non encore initialisé.</h1><p>Veuillez patienter quelques secondes et rafraîchir la page.</p>");
+    res.status(404).send("<h1>Erreur : impossible de déterminer l'adresse ip locale.</h1><p>Assurez-vous d'être connecté à un réseau.</p>");
   }
 });
 
-// === SOCKET.IO ===
+
+
+// === serveur http ===
 const server = http.createServer(app);
-const io = socketIo(server, { cors: { origin: "*" }});
 
+// === serveur webSocket ===
+const wss = new WebSocket.Server({ server });
+let webClientSocket = null;
 
+wss.on('connection', (ws) => {
+  console.log('Client websocket connecté');
+  webClientSocket = ws;
 
-// OSC Routing (version simplifiée et logique)
-function route_osc(data) {
-  const address = data.address || "";
-  if (!address) {
-    console.warn("Message OSC reçu sans adresse.");
-    return;
-  }
-  console.log(`Routage OSC: ${address} -> /max`);
-  io.of('/max').emit('to_max', data);
-}
+  ws.on('message', (message) => {
+    try {
+      const data = JSON.parse(message.toString());
+      if (data.type === 'osc-to-max' && data.address) {
+        console.log(`relai vers max: ${data.address}`, data.args);
+        maxClient.send(data.address, ...data.args);
+      }
+     } catch(e) {
+        console.error("erreur de parsing du mes ws", e);
+      }
+    });
 
-// Namespaces
-const browser = io.of('/browser');
-const max = io.of('/max');
-
-// Communication côté navigateur
-browser.on('connection', (socket) => {
-  socket.on('osc', (data) => {
-    console.log('Received OSC from browser:', JSON.stringify(data, null, 2));
-    route_osc(data);
+    ws.on('close', () => {
+      console.log('Client ws déconnecté');
+      webClientSocket = null;
+    });
   });
+
+
+  // === OSC : écoute TouchOSC ===
+const oscServer = new OscServer(OSC_LISTEN_PORT, '0.0.0.0', () => {
+  console.log(`serveur osc écoute ToucOSC sur le port UDP ${OSC_LISTEN_PORT}`);
+  });
+
+oscServer.on('message', (msg) => {
+  const [address, ...args] = msg;
+  console.log(`message OSC recu de TouchOsc: ${address}`, args);
+
+  // relai vers browser
+  if(webClientSocket && webClientSocket.readyState === WebSocket.OPEN) {
+    webClientSocket.send(JSON.stringify({ type: 'osc-from-server', address, args }));
+  }
 });
+
+
+//=== OSC lien max ===
+const maxClient = new OscClient(MAX_HOST, MAX_PORT);
+console.log(`Client OSC prêt à envoyer vers max sur ${MAX_HOST}:${MAX_PORT}`);
 
 
 // === SERVER START ===
 function startServer() {
   server.listen(PORT, () => {
+    const localIp = getLocalIp();
     console.log(`Serveur HTTP local lancé sur http://localhost:${PORT}`);
-    
-    // On vérifie d'abord si une URL externe est fournie
-    if (process.env.NGROK_URL) {
-      ngrokUrl = process.env.NGROK_URL;
-      console.log(`URL Ngrok externe définie : ${ngrokUrl}`);
-      console.log(`Accédez à http://localhost:${PORT}/qr pour voir le QR code.`);
-    } else {
-      // Sinon, on essaie le mode automatique (votre code actuel)
-      console.log("Tentative de lancement automatique de Ngrok...");
-      startNgrokTunnel();
-    }
+
+    if (localIp) {
+      const localUrl = `http://${localIp}:${PORT}`;
+      console.log(`pour ipad: ${localUrl}`);
+      console.log (`lien qr code: ${localUrl}/qr` );
+     } else {
+        console.warn ('impossible de déterminer ip locale');
+      }
   });
 }
 
-// Fonction séparée pour le lancement automatique de Ngrok
-async function startNgrokTunnel() {
-  try {
-    
-    const url = await ngrok.connect({
-      proto: 'http',
-      addr: PORT,
-      authtoken: process.env.NGROK_AUTHTOKEN,
-      domain: process.env.NGROK_STATIC_DOMAIN
-    });
-    ngrokUrl = url;
-    console.log(`Tunnel Ngrok automatique ouvert : ${ngrokUrl}`);
-    console.log(`Accédez à http://localhost:${PORT}/qr pour voir le QR code.`);
-  } catch (error) {
-    console.error("Erreur lors de l'ouverture automatique du tunnel Ngrok :", error);
-    console.error("Vous pouvez utiliser le mode manuel :");
-    console.error("1. Lancez 'ngrok http 5001 --domain prawn-model-mostly.ngrok-free.app' dans un autre terminal");
-    console.error("2. Relancez le serveur avec : NGROK_URL='https://prawn-model-mostly.ngrok-free.app' node serveur_node.js");
-  }
-}
+
 
 startServer();

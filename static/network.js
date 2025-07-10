@@ -1,44 +1,52 @@
 export let socket;
 
 // Envoie messages OSC via socket.io ===
-export let sendOSC = function (address, args) {
-  if (socket && socket.connected) {
-    console.log("Sending OSC:", address, args);
-    socket.emit('osc', { address, args });
+export function sendOSC (address, ...args) {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    const message = {
+      type: 'osc-to-max',
+      address: address,
+      args: args
+    };
+    socket.send(JSON.stringify(message));
   } else {
     console.error("Socket not connected.");
   }
 };
 
 
-export function initSocket(ip) {
+export function initSocket() {
+  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws';
+  const wsUrl = `${wsProtocol}//${window.location.host}`;
+  socket = new WebSocket(wsUrl);
+  
 
-  socket = io('/browser'); // Connexion au namespace '/browser' 
-  socket.on('connect', () => {
-    console.log("Socket.IO connecté avec succès!");
-  });
+  socket.onopen = () => {
+    console.log("connexion websocket");
+  };
 
-  socket.on('connect_error', (error) => {
-    console.error("Erreur de connexion Socket.IO:", error.message);
-  });
+  socket.onclose =  (event) => {
+    console.log("Socket déconnecté:", event.reason);
+  };
 
-  socket.on('disconnect', (reason) => {
-    console.log("Socket.IO déconnecté:", reason);
-  });
-}
+  socket.onerror = (error) => {
+    console.log("erreur websocket:", error);
+  }
+
+};
 
 export function setupSocketAndHandlers(faustNode) {
-  socket.on('to_browser', (data) => {
-    if (!data) {
-      console.warn("data to_browser vide ou non défini");}
-    //console.log("data to_browser:", data);
-    
-    const { address, args } = data;
-    if (address === "/hover") return;  
-    console.log("osc recu: ", address, args);
-    mapOSCToFaust(address, args, faustNode);
-  });
+  if(!socket) return;
+
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+
+    if (data.type === 'osc-from-server') {
+      mapOSCToFaust(data.address, data.args, faustNode);
+    }
+  };
 }
+
 
 // Mapping OSC → paramètres Faust
 function mapOSCToFaust(address, args, faustNode) {
