@@ -1,5 +1,4 @@
 const express = require('express');
-const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
@@ -9,8 +8,8 @@ const WebSocket = require('ws');
 const { Server: OscServer, Client: OscClient } = require('node-osc');
 
 const httpsOptions = {
-  key: fs.readFileSync('./secrets/rootCA-key.pem'),
-  cert: fs.readFileSync('./rootCA.pem')
+  key: fs.readFileSync(path.join(__dirname, 'secrets','192.168.1.100-key.pem')),
+  cert: fs.readFileSync(path.join(__dirname, 'secrets','192.168.1.100.pem'))
 };
 
 require('dotenv').config(); // Charge les variables d'environnement depuis .env
@@ -99,9 +98,11 @@ app.get('/qr', async (req, res) => {
   const localIp = getLocalIp();
 
   if (localIp) {
-    const localUrl = `http://${localIp}:${PORT}`;
+    const localUrl = `https://${localIp}:${PORT}`;
+    const effectUrl = `https://${localIp}:${PORT}/effect`;
     try {
       const qrCodeDataUrl = await qrcode.toDataURL(localUrl);
+      const qrCodeEffectUrl = await qrcode.toDataURL(effectUrl);
       res.send(`
         <!DOCTYPE html>
         <html lang="fr">
@@ -117,9 +118,13 @@ app.get('/qr', async (req, res) => {
           </style>
         </head>
         <body>
-          <h1>Scannez pour vous connecter</h1>
+          <h1>Scannez pour vous connecter a l'appli principale</h1>
           <img src="${qrCodeDataUrl}" alt="QR Code">
           <p>URL : <a href="${localUrl}" target="_blank">${localUrl}</a></p>
+
+          <h1>Scannez pour vous connecter à la page de gestion de l'effet Faust</h1>
+          <img src="${qrCodeEffectUrl}" alt="QR Code Effect">
+          <p> URL : <a href="${effectUrl}" target="_blank">${effectUrl}</a></p>
         </body>
         </html>
       `);
@@ -131,7 +136,7 @@ app.get('/qr', async (req, res) => {
   }
 });
 
-// === serveur http ===
+// === serveur https ===
 const server = https.createServer(httpsOptions, app);
 
 // === serveur webSocket ===
@@ -161,6 +166,7 @@ wss.on('connection', (ws, request) => {
         maxClient.send(data.address, ...data.args);
       } else if 
         (data.type === 'osc-to-browser' && data.address) {
+          
           console.log(`relai vers browser: ${data.address}`, data.args)
           
           webClientSocket.send(JSON.stringify({
@@ -209,10 +215,10 @@ function startServer() {
     console.log(`Serveur HTTP local lancé sur http://localhost:${PORT}`);
 
     if (localIp) {
-      const localUrl = `http://${localIp}:${PORT}`;
+      const localUrl = `https://${localIp}:${PORT}`;
       console.log(`pour ipad: ${localUrl}`);
       console.log (`lien qr code: ${localUrl}/qr` );
-      console.log(`lien vers la page effect: http://${localIp}:${PORT}/effect`)
+      console.log(`lien vers la page effect: https://${localIp}:${PORT}/effect`)
      } else {
         console.warn ('impossible de déterminer ip locale');
       }
