@@ -30,7 +30,6 @@ app.use('/public', express.static(PUBLIC_FOLDER));
 
 
 if (!fs.existsSync(UPLOAD_FOLDER)) fs.mkdirSync(UPLOAD_FOLDER);
-//if (!fs.existsSync(LOG_FOLDER)) fs.mkdirSync(LOG_FOLDER);
 if (!fs.existsSync(PUBLIC_FOLDER)) fs.mkdirSync(PUBLIC_FOLDER);
 
 // === UTILS ===
@@ -47,7 +46,6 @@ function getLocalIp() {
   return '127.0.0.1';
 }
 const local_ip = getLocalIp();
-let ngrokUrl = ''; 
 
 app.get('/effect', (req, res) => res.sendFile(path.join(STATIC_FOLDER, 'gestion_effet.html')));
 
@@ -129,16 +127,25 @@ app.get('/qr', async (req, res) => {
   }
 });
 
-
-
 // === serveur http ===
 const server = http.createServer(app);
 
 // === serveur webSocket ===
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({ 
+  server,
+  verifyClient: (info) => {
+    console.log(`Tentative de connexion WebSocket depuis: ${info.req.socket.remoteAddress}`);
+    console.log(`Headers:`, info.req.headers);
+    return true; // Accepter toutes les connexions pour le débogage
+  }
+});
 let webClientSocket = null;
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, request) => {
+  const clientIp = request.socket.remoteAddress;
+  console.log(`Client WebSocket connecté depuis: ${clientIp}`);
+  console.log(`URL demandée: ${request.url}`);
+  console.log(`Host header: ${request.headers.host}`);
   console.log('Client websocket connecté');
   webClientSocket = ws;
 
@@ -148,7 +155,17 @@ wss.on('connection', (ws) => {
       if (data.type === 'osc-to-max' && data.address) {
         console.log(`relai vers max: ${data.address}`, data.args);
         maxClient.send(data.address, ...data.args);
-      }
+      } else if 
+        (data.type === 'osc-to-browser' && data.address) {
+          console.log(`relai vers browser: ${data.address}`, data.args)
+          
+          webClientSocket.send(JSON.stringify({
+            type: 'osc-from-server',
+            address: data.address,
+            args: data.args
+  }));
+        }
+      
      } catch(e) {
         console.error("erreur de parsing du mes ws", e);
       }
@@ -176,7 +193,6 @@ oscServer.on('message', (msg) => {
   }
 });
 
-
 //=== OSC lien max ===
 const maxClient = new OscClient(MAX_HOST, MAX_PORT);
 console.log(`Client OSC prêt à envoyer vers max sur ${MAX_HOST}:${MAX_PORT}`);
@@ -184,7 +200,7 @@ console.log(`Client OSC prêt à envoyer vers max sur ${MAX_HOST}:${MAX_PORT}`);
 
 // === SERVER START ===
 function startServer() {
-  server.listen(PORT, () => {
+  server.listen(PORT, '0.0.0.0', () => {
     const localIp = getLocalIp();
     console.log(`Serveur HTTP local lancé sur http://localhost:${PORT}`);
 

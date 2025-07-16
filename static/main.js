@@ -1,32 +1,29 @@
-//****** script coté browser */
+//*** script coté browser ***/
 // script.js - Gère l'interaction entre le navigateur, Pixi.js, l'audio et le MIDI
 
-// pour l'instant, pas de midi
 import {audioContext, loadAudioBuffer, playGrain, initFaustEffect} from "./audio.js";
-//import {  sendOSC, getIp, initSocket, loadPoints, setupSocketAndHandlers} from "./network.js";
 import {   initSocket, loadPoints, setupSocketAndHandlers, sendOSC} from "./network.js";
-//import { loadMLPModel } from "./mlp.js";
 import { drawPixiPoints, setupFormeLibre, createCursor, updateCenter, DessinFormeLibre } from "./graphics.js";
 
-//import { initDevtools } from '@pixi/devtools';
 
-let app;
-let faustNode;
+let app; // app pixi
+let faustNode; // effet audio
+let isInitialized = false;
+
 let pointsData = [];  // les données des points à afficher, chargées depuis le serveur
-let formeLibre; //layer pour le dessin libre
+let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
+
+let formeLibre; //layer pour le dessin libre de la zone effet audio
 let drawingEnabled = false; // pour activer/désactiver le dessin libre
+
 let zoomFactor = 1.0 // facteur zoom affichage des points
 
 let cursorGraphic; // le curseur.
-
-let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
-
 let pointerPos = { x: -9999, y: -9999 } //pointer position doigt
 
 const proximityThreshold = 80; // distance minimale pour déclencher un son
-//const cooldown = 300; // temps minimal entre deux update pour le toucher des points
 
-
+// nécessaire pour pwa
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/service-worker.js')
@@ -39,27 +36,30 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Fonction pour charger le buffer audio et l'effet faust.
-(async () => {
-  await loadAudioBuffer();
+async function initializeAudioAndNetwork() {
+
+  if (isInitialized) return;
+
+  isInitialized = true;
+
   try {
+    if (audioContext && audioContext.state === "suspended") {
+        await audioContext.resume();
+    }
+
+    await loadAudioBuffer();
+
     const result = await initFaustEffect();
     faustNode = result.faustNode;
-    console.log("FaustNode initialisé :", faustNode);
+    console.log("faustnode init: ", faustNode);
 
-    try {
-      initSocket();
-      setupSocketAndHandlers(faustNode);
+    initSocket();
+    setupSocketAndHandlers(faustNode);
     } catch (error) {
-      console.error("Erreur lors de la récupération de l'IP :", error);
-    }
-  } catch (error) {
-    console.error("Erreur lors de l'initialisation de Faust :", error);
+        console.error("erreur lors de l'init post-interaction: ", error);
+      
+      }
   }
-})();
-
-//initMIDI();
-//loadMLPModel();
 
 // fonction envoyée en callback pour désactiver le mode dessin
 function disableDrawingMode() {
@@ -72,6 +72,7 @@ function disableDrawingMode() {
   DessinFormeLibre(app, false, pixiPoints);
 }
  
+
 // les opérations interviennent après le chargement du DOM
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -83,6 +84,12 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
     }
   }, { passive: false });
+
+  const init = document.getElementById("init");
+  init.addEventListener("click", () => {
+    initializeAudioAndNetwork();
+  });
+
 
   const drawToggleButton = document.getElementById("draw-toggle");
 
@@ -235,15 +242,14 @@ async function setupPixi() {
   let lastPinchDistance = null;
 
 
-  app.stage.on("pointerdown", (event) => {
+
+  app.stage.on("pointerdown", async (event) => {
+   
 
     if (drawingEnabled) return;
 
-     if ( audioContext && audioContext.state === "suspended") {
-      audioContext.resume().then(() => {
-        console.log("AudioContext activé par la première interaction sur la scène Pixi.");
-      });
-    } 
+    
+     
 
     pointerPos = { x: event.global.x, y: event.global.y }; // met à jour la position du pointeur
     activePointers.set(event.pointerId, event.global.clone());
@@ -259,6 +265,7 @@ async function setupPixi() {
   });
 
   app.stage.on("pointermove", (event) => {
+   
 
     if (drawingEnabled) return; // Ne rien faire si on dessine
 

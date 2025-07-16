@@ -1,31 +1,33 @@
 // ****** script définit le comportement d'une page destinée à un Iphone controlant un effet faust
-// manque la gestion BT midi.
-//  manque un éventuel mention des données envoyées 
+
 
 var position = new Nexus.Position('#position')
 
-// === Connexion socket.io avec Max/MSP ===
+
 let socket;
 fetch("/api/ip")
   .then(response => response.json())
   .then(data => {
-    socket = io(`http://${data.ip}:5001/browser`);
-    window.socket = socket;
-    socket.on('connect', () => {
-      console.log("Connecté à", data.ip);
-    });
-  }
-);
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProtocol}//${data.ip}:5001/browser`;
+    socket = new WebSocket(wsUrl);
+});
+  
 
-// === Communication avec Max/MSP via socket.io ===
+// === Communication avec la wpa ===
 let sendOSC = function (address, args) {
-    if (socket && socket.connected) {
-      console.log("Sending OSC:", address, args);
-      socket.emit('osc', { address, args });
+    if (socket) {
+      console.log("Sending via ws:", address, args);
+      const message = {
+        type: 'osc-to-browser',
+        address,
+        args
+      };
+      socket.send(JSON.stringify(message));
     } else {
       console.error("Socket not connected.");
     }
-  };
+};
 
 // === Transmission coordonnées ===
 position.on('change',function(v) {

@@ -18,9 +18,7 @@ outlets = 2;
             try {
                 var folderPath = "/Users/philippecaillot/Documents/programmation/geste/public";
                 var fileName = "points.json";
-                var folder = new Folder(folderPath);
-                folder.deletefile(fileName);
-                post("ancien fichier supprimé");
+                
 
                 var filePath = folderPath + "/" + fileName;
                 var file = new File(filePath, "write", "JSON");

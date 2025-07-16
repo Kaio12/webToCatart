@@ -11,7 +11,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>interface to catart, map grains</title>
      <link rel="icon" href="/icons/icon-512.png" type="image/x-icon">
-    <script src="/socket.io.min.js"></script>
     <script src="/NexusUI.js"></script>
     <script src="/pixi.min.js"></script>
     <script src="/swipe.min.js"></script>
@@ -25,17 +24,12 @@
 <div class="sidebarleft" id="sidebarleft">
     <button id="fullscreen-btn">Full screen</button>
     <button id="draw-toggle">Forme effet</button>
+    <button id="init">Init</button>
 </div>
 
    
 <div id="pixi-container"></div> 
 
-
-<div id="swipe-container">
-  <div class="page" id="page-points1"> </div>
-  <div class="page" id="page-points2"> </div>
-  <div class="page" id="page-settings"> </div>
-</div>
 
 <script type="module" src = "/main.js"></script>
   </body>

@@ -74,6 +74,12 @@ export async function initFaustEffect() {
     const module = await import("./faust/multi_Ef_dsp_wasm/create-node.js");
     console.log("module importé (initFaustEffect)");
     const { createFaustNode } = module;
+
+    // Vérification de l'AudioContext et de l'AudioWorklet
+    if (!audioContext.audioWorklet) {
+      throw new Error("AudioWorklet non supporté ou non initialisé.");
+    }
+
     const result = await createFaustNode(audioContext, "multi_Ef", 0);
     console.log("createFaustNode effectué");
     faustNode = result.faustNode;
