@@ -1,13 +1,17 @@
 const express = require('express');
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
-//const socketIo = require('socket.io');
 const cors = require('cors');
 const qrcode = require('qrcode');
-const ngrok = require('ngrok');
 const WebSocket = require('ws');
 const { Server: OscServer, Client: OscClient } = require('node-osc');
+
+const httpsOptions = {
+  key: fs.readFileSync('./secrets/rootCA-key.pem'),
+  cert: fs.readFileSync('./rootCA.pem')
+};
 
 require('dotenv').config(); // Charge les variables d'environnement depuis .env
 
@@ -128,7 +132,7 @@ app.get('/qr', async (req, res) => {
 });
 
 // === serveur http ===
-const server = http.createServer(app);
+const server = https.createServer(httpsOptions, app);
 
 // === serveur webSocket ===
 const wss = new WebSocket.Server({ 
@@ -208,6 +212,7 @@ function startServer() {
       const localUrl = `http://${localIp}:${PORT}`;
       console.log(`pour ipad: ${localUrl}`);
       console.log (`lien qr code: ${localUrl}/qr` );
+      console.log(`lien vers la page effect: http://${localIp}:${PORT}/effect`)
      } else {
         console.warn ('impossible de déterminer ip locale');
       }
