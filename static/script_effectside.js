@@ -2,6 +2,7 @@
 
 
 var position = new Nexus.Position('#position')
+position.colorize ("fill", "#356");
 
 
 let socket;

@@ -1,16 +1,35 @@
 .container {
   display: grid;
-  grid-template-columns: 1fr 3fr;
+  grid-template-columns: 3fr 1fr;
   height: 100vh;
 }
 
-
+.zone-xy {
+  position: relative;
+  width: 100%;
+  height: 100%;
+ 
+}
 
 #position {
-  width: 100%; /* Full width of the viewport */
-  height: 100%; /* Full height of the viewport */
-  position: absolute; /* Ensure it covers the entire window */
-  top: 0;
-  left: 0;
-  background-color: #f0f0f0; /* Optional: Set a background color */
+  width: 100%; 
+  height: 100%; 
+  position: relative; 
+}
+
+.zone-boutons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 2em 1em;
+  background: #1f5f8d;
+  border-left: 2px solid #ddd;
+  height: 100%;
+}
+
+.zone-boutons button {
+  margin-bottom: 1em;
+  width: 100%;
+  font-size: 1.2em;;
 }
