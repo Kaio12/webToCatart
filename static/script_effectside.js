@@ -9,7 +9,8 @@ fetch("/api/ip")
   .then(response => response.json())
   .then(data => {
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${wsProtocol}//${data.ip}:5001/browser`;
+    const host = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'localhost' : data.ip;
+    const wsUrl = `${wsProtocol}//${host}:5001/browser`;
     socket = new WebSocket(wsUrl);
 });
   

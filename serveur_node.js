@@ -212,7 +212,7 @@ function startServer() {
   server.listen(PORT, '0.0.0.0', () => {
     const localIp = getLocalIp();
     console.log(`Serveur HTTP local lancé sur https://localhost:${PORT}`);
-
+    console.log(`page effect sur https://localhost:${PORT}/effect`);
     if (localIp) {
       const localUrl = `https://${localIp}:${PORT}`;
       console.log(`pour ipad: ${localUrl}`);
