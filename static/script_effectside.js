@@ -1,4 +1,5 @@
 // *** script définit le comportement d'une page destinée à un Iphone controlant un effet faust ***
+import { LitElement, html, css } from "lit";
 
 
 var position = new Nexus.Position('#position')
