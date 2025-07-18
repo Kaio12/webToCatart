@@ -21,6 +21,7 @@ export let faustNode = null; //node pour integrer l'effet audio codé en faust
 export let grainBus = null; // bus fixe pour router les grains vers l'effet
 
 //playgrain, pour jouer le grain correspondant au point PIXI sélectionné (survolé)
+//*** probleme avec l'effet faust et la garbage collection ***
 export function playGrain(startMs, durationMs, useEffect = false) {
   if(!audioBuffer) return;
 
@@ -31,7 +32,11 @@ export function playGrain(startMs, durationMs, useEffect = false) {
   
   source.onended = () => {
     
-    
+    source.disconnect(); // déconnecte la source une fois terminée
+    activeAudioSources = activeAudioSources.filter(s => s !== source); // retire la source
+
+
+    /*
     if (!useEffect) {
       source.disconnect(); // déconnecte la source une fois terminée
       activeAudioSources = activeAudioSources.filter(s => s !== source); // retire la source du tableau
@@ -43,6 +48,7 @@ export function playGrain(startMs, durationMs, useEffect = false) {
         activeAudioSources = activeAudioSources.filter(s => s !== source); // retire la source du tableau après la queue
       }, delayTailDuration);
     }
+      */
   };
   
   //connexion au faustnode. on verifie si le point est dans la forme libre

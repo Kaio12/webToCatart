@@ -8,8 +8,8 @@ const WebSocket = require('ws');
 const { Server: OscServer, Client: OscClient } = require('node-osc');
 
 const httpsOptions = {
-  key: fs.readFileSync(path.join(__dirname, 'secrets','192.168.1.100-key.pem')),
-  cert: fs.readFileSync(path.join(__dirname, 'secrets','192.168.1.100.pem'))
+  key: fs.readFileSync(path.join(__dirname, 'secrets','localhost-key.pem')),
+  cert: fs.readFileSync(path.join(__dirname, 'secrets','localhost.pem'))
 };
 
 require('dotenv').config(); // Charge les variables d'environnement depuis .env
@@ -207,12 +207,11 @@ oscServer.on('message', (msg) => {
 const maxClient = new OscClient(MAX_HOST, MAX_PORT);
 console.log(`Client OSC prêt à envoyer vers max sur ${MAX_HOST}:${MAX_PORT}`);
 
-
 // === SERVER START ===
 function startServer() {
   server.listen(PORT, '0.0.0.0', () => {
     const localIp = getLocalIp();
-    console.log(`Serveur HTTP local lancé sur http://localhost:${PORT}`);
+    console.log(`Serveur HTTP local lancé sur https://localhost:${PORT}`);
 
     if (localIp) {
       const localUrl = `https://${localIp}:${PORT}`;
@@ -224,7 +223,5 @@ function startServer() {
       }
   });
 }
-
-
 
 startServer();
