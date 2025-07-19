@@ -15,8 +15,8 @@ let activeAudioSources = []; // tableau pour stocker les sources audio actives
 export const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
 // FaustNode
-export let faustNode = null; //node pour integrer l'effet audio codé en faust
-
+//export let faustNode = null; //node pour integrer l'effet audio codé en faust
+export let effectNode = null;
 // GrainBus
 export let grainBus = null; // bus fixe pour router les grains vers l'effet
 
@@ -31,11 +31,8 @@ export function playGrain(startMs, durationMs, useEffect = false) {
   activeAudioSources.push(source); // ajoute la source pour éviter qu'elle soit garbage collectée
   
   source.onended = () => {
-    
     source.disconnect(); // déconnecte la source une fois terminée
     activeAudioSources = activeAudioSources.filter(s => s !== source); // retire la source
-
-
     /*
     if (!useEffect) {
       source.disconnect(); // déconnecte la source une fois terminée
@@ -78,11 +75,20 @@ export async function loadAudioBuffer() {
 export async function initEffect() {
   try {
     effectNode = audioContext.createDelay();
-    effectNode.delayTime.value = 0.3;
+    effectNode.delayTime.value = 0.1;
+
+    const feedbackGain = audioContext.createGain();
+    feedbackGain.gain.value = 0.8;
 
     grainBus = audioContext.createGain();
+
     grainBus.connect(effectNode);
     effectNode.connect(audioContext.destination);
+
+    //boucle de feedback
+    effectNode.connect(feedbackGain);
+    feedbackGain.connect(effectNode);
+
 
     console.log("effectNode chargé");
     return {effectNode };
