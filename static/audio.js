@@ -74,6 +74,25 @@ export async function loadAudioBuffer() {
   }
 }
 
+
+export async function initEffect() {
+  try {
+    effectNode = audioContext.createDelay();
+    effectNode.delayTime.value = 0.3;
+
+    grainBus = audioContext.createGain();
+    grainBus.connect(effectNode);
+    effectNode.connect(audioContext.destination);
+
+    console.log("effectNode chargé");
+    return {effectNode };
+  } catch (e) {
+    console.error("erreur lors de l'init de effectNode");
+    return null;s
+  }
+}
+
+/*
 //init faust effect
 export async function initFaustEffect() {
   try{
@@ -110,5 +129,7 @@ export async function initFaustEffect() {
     return null;
   }
 }
+
+*/
 
 

@@ -49,8 +49,16 @@ async function initializeAudioAndNetwork() {
 
     await loadAudioBuffer();
 
-    const result = await initFaustEffect();
-    faustNode = result.faustNode;
+
+    //*** pour l'instant, on utilise pas faust, pb garbage collection */
+    
+    //const result = await initFaustEffect();
+    const result = await initEffect();
+
+    //faustNode = result.faustNode;
+    faustNode = result.effectNode;
+
+
     console.log("faustnode init: ", faustNode);
 
     initSocket();
