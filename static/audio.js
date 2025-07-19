@@ -8,6 +8,8 @@
 │   ├── initFaustEffect()
 */
 
+export let feedbackGain = null;
+
 let audioBuffer = null; //buffer pour intégrer le fichier son reçu de max
 let activeAudioSources = []; // tableau pour stocker les sources audio actives
 
@@ -77,7 +79,7 @@ export async function initEffect() {
     effectNode = audioContext.createDelay();
     effectNode.delayTime.value = 0.1;
 
-    const feedbackGain = audioContext.createGain();
+    feedbackGain = audioContext.createGain();
     feedbackGain.gain.value = 0.8;
 
     grainBus = audioContext.createGain();

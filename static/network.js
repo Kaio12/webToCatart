@@ -35,19 +35,20 @@ export function initSocket() {
 
 };
 
-export function setupSocketAndHandlers(faustNode) {
+export function setupSocketAndHandlers(effectNode, feedbackGain) {
   if(!socket) return;
 
   socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
 
     if (data.type === 'osc-from-server') {
-      mapOSCToFaust(data.address, data.args, faustNode);
+      //mapOSCToFaust(data.address, data.args, effectNode);
+      mapOSCToEffect(data.address, data.args, effectNode, feedbackGain)
     }
   };
 }
 
-
+/*
 // Mapping OSC → paramètres Faust
 function mapOSCToFaust(address, args, faustNode) {
   if (!faustNode ) {
@@ -86,6 +87,37 @@ function mapOSCToFaust(address, args, faustNode) {
     console.warn("Adresse OSC non reconnue :", address);
   }
 }
+*/
+
+
+
+function mapOSCToEffect(address, args, effectNode, feedbackGain) {
+   if (!effectNode) {
+    console.warn("EffectNode non initialisé", effectNode);
+    return;
+  }
+  if (!address) {
+    console.warn("adresse OSC invalide :", address);
+    return;
+  }
+
+  if (!args || !Array.isArray(args)) {
+    console.warn("Arguments OSC invalides :", args);
+    return;
+  }
+  if (args.length === 0) {
+    console.warn("Aucun argument fourni pour l'adresse OSC :", address);
+    return;
+  }
+
+  if (address === "/effectPos") {
+    feedbackGain.gain.value = args[0];
+    effectNode.delayTime.value = args[1];
+  }
+
+
+}
+
 
 // fonction pour charger les points via HTTP
 export async function loadPoints() {

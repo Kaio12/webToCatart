@@ -1,25 +1,4 @@
 
-@media screen and (orientation: portrait) {
-  html, body {
-    width: 100vh;
-    height: 100vw;
-    overflow: auto;
-    position: absolute;
-    top: 0;
-    left: 0;
-    transform: rotate(90deg) translateY(-100vh);
-    transform-origin: left top;
-  }
-  .container {
-    display: grid;
-    grid-template-columns: 3fr 1fr;
-    height: 100vw;
-    width: 100vh;
-  }
-}
-
-
-
 .container {
   display: grid;
   grid-template-columns: 3fr 1fr;
@@ -34,24 +13,23 @@
 }
 
 #position {
-  width: 100%; 
   height: 100%; 
+   width: 100%;
   position: relative; 
 }
 
 .zone-boutons {
   display: flex;
+  padding: 1em;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 2em 1em;
   background: #1f5f8d;
-  border-left: 2px solid #ddd;
   height: 100%;
 }
 
 .zone-boutons button {
-  margin-bottom: 1em;
+
   width: 100%;
   font-size: 1.2em;;
 }

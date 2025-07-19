@@ -1,13 +1,13 @@
 //*** script coté browser ***/
 // script.js - Gère l'interaction entre le navigateur, Pixi.js, l'audio et le MIDI
 
-import {audioContext, loadAudioBuffer, playGrain,initEffect} from "./audio.js";
+import {audioContext, loadAudioBuffer, playGrain,initEffect, feedbackGain} from "./audio.js";
 import {   initSocket, loadPoints, setupSocketAndHandlers, sendOSC} from "./network.js";
 import { drawPixiPoints, setupFormeLibre, createCursor, updateCenter, DessinFormeLibre } from "./graphics.js";
 
 
 let app; // app pixi
-//let faustNode; // effet audio
+//let effectNode; // effet audio
 let isInitialized = false;
 
 let pointsData = [];  // les données des points à afficher, chargées depuis le serveur
@@ -55,15 +55,14 @@ async function initializeAudioAndNetwork() {
     //const result = await initFaustEffect();
     const result = await initEffect();
 
-    //faustNode = result.faustNode;
-    let faustNode = null;
-    faustNode = result.effectNode;
+    let effectNode = null;
+    effectNode = result.effectNode;
 
 
-    console.log("faustnode init: ", faustNode);
+    console.log("effectNode init: ", effectNode);
 
     initSocket();
-    setupSocketAndHandlers(faustNode);
+    setupSocketAndHandlers(effectNode, feedbackGain);
     } catch (error) {
         console.error("erreur lors de l'init post-interaction: ", error);
       

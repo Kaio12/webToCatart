@@ -1,9 +1,20 @@
 // *** script définit le comportement d'une page destinée à un Iphone controlant un effet faust ***
-import { LitElement, html, css } from "lit";
+
+//import { LitElement, html, css } from "lit";
 
 
-var position = new Nexus.Position('#position')
+var position = new Nexus.Position('#position');
 position.colorize ("fill", "#356");
+position.maxX = 1;
+position.maxY = 1;
+position.minX = 0;
+position.minY = 0;
+
+
+var dessinEffet = new Nexus.TextButton('#dessinEffet',{
+  'text' : 'dessinEffet',
+});
+
 
 
 let socket;
