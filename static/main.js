@@ -3,7 +3,7 @@
 
 import {audioContext, loadAudioBuffer, playGrain,initEffect, feedbackGain} from "./audio.js";
 import {   initSocket, loadPoints, setupSocketAndHandlers, sendOSC} from "./network.js";
-import { drawPixiPoints, setupFormeLibre, createCursor, updateCenter, DessinFormeLibre } from "./graphics.js";
+import { drawPixiPoints, setupFormeLibre, createCursor, updateCenter, DessinFormeLibre, ReDessinFormeLibre } from "./graphics.js";
 
 
 let app; // app pixi
@@ -14,6 +14,7 @@ let pointsData = [];  // les données des points à afficher, chargées depuis l
 let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
 
 let formeLibre; //layer pour le dessin libre de la zone effet audio
+let lastFormeLibrePath; //sauvegarde des coordo de la forme libre.
 let drawingEnabled = false; // pour activer/désactiver le dessin libre
 
 let zoomFactor = 1.0 // facteur zoom affichage des points
@@ -67,7 +68,13 @@ async function initializeAudioAndNetwork() {
         console.error("erreur lors de l'init post-interaction: ", error);
       
       }
-  }
+}
+
+function onFormeLibreComplete(path) {
+  lastFormeLibrePath = path; // stocke le chemin pour le resize/redessin
+  disableDrawingMode();      // désactive le mode dessin
+}
+
 
 // fonction envoyée en callback pour désactiver le mode dessin
 function disableDrawingMode() {
@@ -109,7 +116,8 @@ document.addEventListener('DOMContentLoaded', () => {
       drawToggleButton.textContent = 'Désactiver mode dessin';
       drawToggleButton.style.backgroundColor = "#f00";
 
-      DessinFormeLibre(app, drawingEnabled, pixiPoints, disableDrawingMode);
+      DessinFormeLibre(app, drawingEnabled, pixiPoints, onFormeLibreComplete);
+      console.log ("lastFormeLibrePath :", lastFormeLibrePath);
 
       if (formeLibre) formeLibre.visible = true; // rend la forme libre visible
       console.log("Dessin activé");
@@ -252,12 +260,7 @@ async function setupPixi() {
 
 
   app.stage.on("pointerdown", async (event) => {
-   
-
     if (drawingEnabled) return;
-
-    
-     
 
     pointerPos = { x: event.global.x, y: event.global.y }; // met à jour la position du pointeur
     activePointers.set(event.pointerId, event.global.clone());
@@ -344,6 +347,13 @@ async function setupPixi() {
     app.renderer.resize(window.innerWidth, window.innerHeight);
     updateCenter();
     drawPixiPoints(pointsData, app, pixiPoints);// on redessine les points
+    ReDessinFormeLibre(lastFormeLibrePath);
+    if (window.pointsContainer && formeLibre && !window.pointsContainer.children.includes(formeLibre)) {
+  window.pointsContainer.addChild(formeLibre);
+}
+    console.log("formeLibre: ",formeLibre);
+    console.log ("reDessinFormeLibre");
+
   });
 
   // ticker : actualisation de l'app sur chaque frame

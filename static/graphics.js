@@ -17,7 +17,6 @@ export function updateCenter() {
   centerY = window.innerHeight / 2;
 }
 
-
 export function drawPixiPoints(pointsData, app, pixiPoints) {
 
   if (!app) {console.error("L'app pixi n'est pas initialisée");
@@ -85,7 +84,6 @@ export function drawPixiPoints(pointsData, app, pixiPoints) {
     pixiPoints.push(pointGraphic);
   });
 }
-
   
 export function setupFormeLibre (app) {
   formeLibreContext = new PIXI.GraphicsContext();
@@ -99,12 +97,11 @@ export function setupFormeLibre (app) {
     console.log('forme libre sans container')
   }
   return formeLibre;
-}
-      
-
+}   
 
 export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCallback) {
   const stage = app.stage;
+  let lastPath; //pour sauvegarder les coordonnées après dessin de la forme libre.
 
   if(drawingEnabled) {
 
@@ -148,7 +145,8 @@ export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCall
       formeLibreContext.fill({ color: 0x0000ff, alpha: 0.2 });
       formeLibreContext.stroke({ width: 4, color: 0xff0000, alpha: 1 });
       
-      // On réinitialise pour le prochain dessin
+      // On réinitialise pour le prochain dessin, on sauvegarde dans lastPath
+      lastPath = currentPath;
       currentPath = [];
 
       pixiPoints.forEach(point => {
@@ -156,7 +154,12 @@ export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCall
     });
 
     if (onCompleteCallback) {
-      onCompleteCallback();
+      // coordonnées normalisés
+      const normPath = lastPath.map(pt => ({
+        x: pt.x / window.innerWidth,
+        y: pt.y / window.innerHeight
+      }));
+      onCompleteCallback(normPath);
     }
     };
 
@@ -173,6 +176,26 @@ export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCall
       stage.off("pointerupoutside", onDrawEnd);
     }
   }
+ 
+}
+
+export function ReDessinFormeLibre(normPath) {
+  formeLibreContext.clear();
+  const pxPath = normPath.map(pt => ({
+    x: pt.x * window.innerWidth,
+    y: pt.y * window.innerHeight
+  }));
+
+  formeLibreContext.moveTo(pxPath[0].x, pxPath[0].y);
+  for (let i = 1; i < pxPath.length; i++) {
+    formeLibreContext.lineTo(pxPath[i].x, pxPath[i].y);
+  }
+  // On ferme le chemin en revenant au premier point
+  formeLibreContext.lineTo(pxPath[0].x, pxPath[0].y);
+
+  // On peut remplir et tracer le contour
+  formeLibreContext.fill({ color: 0x0000ff, alpha: 0.2 });
+  formeLibreContext.stroke({ width: 4, color: 0xff0000, alpha: 1 });
 }
 
 // getBounds calcule les limites (min et max) des coordonnées et des valeurs pour un ensemble de points, permet d'adapter à la taille de la fenètre.
