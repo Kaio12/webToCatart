@@ -166,14 +166,12 @@ wss.on('connection', (ws, request) => {
         maxClient.send(data.address, ...data.args);
       } else if 
         (data.type === 'osc-to-browser' && data.address) {
-          
           console.log(`relai vers browser: ${data.address}`, data.args)
-          
           webClientSocket.send(JSON.stringify({
             type: 'osc-from-server',
             address: data.address,
             args: data.args
-  }));
+          }));
         }
       
      } catch(e) {

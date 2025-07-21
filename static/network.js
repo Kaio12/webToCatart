@@ -1,5 +1,9 @@
 export let socket;
 
+import {DessinFormeLibre} from "./graphics.js";
+import {app, pixiPoints, drawingEnabled, onFormeLibreComplete, enableDrawing} from "./main.js";
+
+
 // Envoie messages OSC via socket.io ===
 export function sendOSC (address, ...args) {
   if (socket && socket.readyState === WebSocket.OPEN) {
@@ -42,54 +46,19 @@ export function setupSocketAndHandlers(effectNode, feedbackGain) {
     const data = JSON.parse(event.data);
 
     if (data.type === 'osc-from-server') {
-      console.log("osc-from-server", data.args[0], data.args[1]);
-      //mapOSCToFaust(data.address, data.args, effectNode);
+     if (data.address === '/effectPos') {
       mapOSCToEffect(data.address, data.args, effectNode, feedbackGain)
+      console.log("osc-from-server", data.address, data.args[0], data.args[1]);
+     }
+      else if (data.address === '/dessin') {
+        console.log ('dessin recu');
+        enableDrawing();
+        DessinFormeLibre(app, drawingEnabled, pixiPoints, onFormeLibreComplete);
+      }
+      
     }
   };
 }
-
-/*
-// Mapping OSC → paramètres Faust
-function mapOSCToFaust(address, args, faustNode) {
-  if (!faustNode ) {
-    console.warn("FaustNode non initialisé", faustNode);
-    return;
-  }
- if (!address ) {
-    console.warn("adresse OSC invalide :", address);
-    return;
-  }
-
-  if (!args || typeof args !== "object" || !Array.isArray(args)) {
-    console.warn("Arguments OSC invalides :", args);
-    return;
-  }
-  if (args.length === 0) {
-    console.warn("Aucun argument fourni pour l'adresse OSC :", address);
-    return;
-  }
-
-  const oscToFaustMap = {
-  "/effectPos": ["/multi_Ef/g", "/multi_Ef/feedback"] // POUR L'INSTANT MAP UNIQUEMENT G ET FEEDBACK, SANS UTILISER LA REGRESSION 
-  };
-
-  const param = oscToFaustMap[address];
-  if (Array.isArray(param)) {
-    param.forEach((p, i) => {
-      if (args[i] !== undefined) {
-        console.log(`SetParam: ${p} = ${args[i]}`);
-        faustNode.setParamValue(p, args[i]);
-      }
-    });
-  } else if (typeof param === "string" && args[0] !== undefined) {
-    faustNode.setParamValue(param, args[0]);
-  } else {
-    console.warn("Adresse OSC non reconnue :", address);
-  }
-}
-*/
-
 
 
 function mapOSCToEffect(address, args, effectNode, feedbackGain) {
@@ -115,9 +84,9 @@ function mapOSCToEffect(address, args, effectNode, feedbackGain) {
     feedbackGain.gain.value = args[0];
     effectNode.delayTime.value = args[1];
   }
+  }
 
 
-}
 
 
 // fonction pour charger les points via HTTP

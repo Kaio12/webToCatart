@@ -6,16 +6,16 @@ import {   initSocket, loadPoints, setupSocketAndHandlers, sendOSC} from "./netw
 import { drawPixiPoints, setupFormeLibre, createCursor, updateCenter, DessinFormeLibre, ReDessinFormeLibre } from "./graphics.js";
 
 
-let app; // app pixi
+export let app; // app pixi
 //let effectNode; // effet audio
 let isInitialized = false;
 
 let pointsData = [];  // les données des points à afficher, chargées depuis le serveur
-let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
+export let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
 
 let formeLibre; //layer pour le dessin libre de la zone effet audio
 let lastFormeLibrePath; //sauvegarde des coordo de la forme libre.
-let drawingEnabled = false; // pour activer/désactiver le dessin libre
+export let drawingEnabled = false; // pour activer/désactiver le dessin libre
 
 let zoomFactor = 1.0 // facteur zoom affichage des points
 
@@ -70,10 +70,16 @@ async function initializeAudioAndNetwork() {
       }
 }
 
-function onFormeLibreComplete(path) {
+export function onFormeLibreComplete(path) {
   lastFormeLibrePath = path; // stocke le chemin pour le resize/redessin
   disableDrawingMode();      // désactive le mode dessin
 }
+
+//pour activer drawingEnabled depuis network.js
+export function enableDrawing() {
+  drawingEnabled = true;
+}
+
 
 // fonction envoyée en callback pour désactiver le mode dessin
 function disableDrawingMode() {

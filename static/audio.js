@@ -85,6 +85,7 @@ export async function initEffect() {
     grainBus = audioContext.createGain();
 
     grainBus.connect(effectNode);
+    grainBus.connect(audioContext.destination);
     effectNode.connect(audioContext.destination);
 
     //boucle de feedback

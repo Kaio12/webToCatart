@@ -10,6 +10,8 @@ document.addEventListener('touchmove', function(e) {
 const pad = document.getElementById('xy-pad');
 let dragging = false;
 
+const dessin = document.getElementById('dessin');
+
 function getCoords(e) {
   const rect = pad.getBoundingClientRect();
   const x = ((e.touches ? e.touches[0].clientX : e.clientX) - rect.left) / rect.width;
@@ -22,11 +24,6 @@ function getCoords(e) {
 
 function updateDot(x,y) {
   let dot = document.getElementById('xy-dot');
-  if (!dot) {
-    dot = document.createElement('div');
-    dot.id = 'xy-dot';
-    pad.appendChild(dot);
-  }
   dot.style.left = (x * 100) + '%';
   dot.style.top = (y * 100) + '%';
 }
@@ -39,16 +36,23 @@ function handleEvent(e) {
   sendOSC("/effectPos", [x, y]);
 }
 
+dessin.addEventListener("click", () =>  {
+  sendOSC("/dessin", [1])
+});
+
 pad.addEventListener('mousedown', e => { dragging = true; handleEvent(e); });
 pad.addEventListener('mousemove', e => { if (dragging) handleEvent(e); });
 pad.addEventListener('mouseup', () => { dragging = false; });
 pad.addEventListener('mouseleave', () => { dragging = false; });
+
 
 pad.addEventListener('touchstart', e => { dragging = true; handleEvent(e); });
 pad.addEventListener('touchmove', handleEvent);
 pad.addEventListener('touchend', () => { dragging = false; });
 pad.addEventListener('touchcancel', () => { dragging = false; });
 
+// on commence avec le point au centre du pad xy
+updateDot(0.5, 0.5);
 
 //*** partie réseau */
 
