@@ -3,7 +3,7 @@
 
 import {audioContext, loadAudioBuffer, playGrain,initEffect, feedbackGain} from "./audio.js";
 import {   initSocket, loadPoints, setupSocketAndHandlers, sendOSC} from "./network.js";
-import { drawPixiPoints, setupFormeLibre, createCursor, updateCenter, DessinFormeLibre, ReDessinFormeLibre } from "./graphics.js";
+import { drawPixiPoints, setupFormeLibre, createCursor, updateCenter, DessinFormeLibre, ReDessinFormeLibre, pixiContainer } from "./graphics.js";
 
 
 export let app; // app pixi
@@ -22,7 +22,7 @@ let zoomFactor = 1.0 // facteur zoom affichage des points
 let cursorGraphic; // le curseur.
 let pointerPos = { x: -9999, y: -9999 } //pointer position doigt
 
-const proximityThreshold = 80; // distance minimale pour déclencher un son
+//const proximityThreshold = 80; // distance minimale pour déclencher un son
 
 // nécessaire pour pwa
 if ('serviceWorker' in navigator) {
@@ -78,6 +78,11 @@ export function onFormeLibreComplete(path) {
 //pour activer drawingEnabled depuis network.js
 export function enableDrawing() {
   drawingEnabled = true;
+}
+
+function getProximityThreshold() {
+  const base = Math.min(window.innerWidth, window.innerHeight) * 0.08;
+  return base / zoomFactor;
 }
 
 
@@ -190,20 +195,18 @@ document.addEventListener('DOMContentLoaded', () => {
 //*********   FONCTION QUI JOUE LES GRAINS, ENVOIE LES INFOS OSC */
 function triggerGrainsOnProximity() {
 
-   if (window.pointsContainer) {
-    window.pointsContainer.scale.set(zoomFactor);
-  }
-
   if (drawingEnabled || (pointerPos.x === -9999 && pointerPos.y === -9999)) {
     return; // Ne rien faire si on dessine, ou si le pointeur n'est pas actif (pinch ou aucun doigt)
   }
+
   // On convertit la position globale du pointeur en coordonnées locales au conteneur des points.
-  const localPointerPos = window.pointsContainer.toLocal(pointerPos);
+  const localPointerPos = pixiContainer.toLocal(pointerPos);
 
   for (const point of pixiPoints) {
     const dist = Math.hypot(point.x - localPointerPos.x, point.y - localPointerPos.y);
     const wasInside = point.isInside || false; // L'état à la frame précédente
-    const isInside = dist < proximityThreshold; // Le nouvel état
+    const isInside = dist < getProximityThreshold(); // Le nouvel état
+   
     
     // 1. Détecter un changement d'état : quand le pointeur ENTRE dans la zone
     if (isInside && !wasInside) {
@@ -238,8 +241,9 @@ async function setupPixi() {
   app = new PIXI.Application();
   await app.init({
     resizeTo: window,
-    backgroundColor: 0xffffff // couleur du fond, à adapter, mode clair mode sombre????
+    backgroundColor: 0xffffff // couleur du fond
   });
+
   const container = document.getElementById("pixi-container");
   if (container) container.appendChild(app.canvas);
 
@@ -303,13 +307,13 @@ async function setupPixi() {
       if (lastPinchDistance === null) {
         //point central entre les deux doigts
         const pinchCenterGlobal = new PIXI.Point((p1.x + p2.x)/2, (p1.y + p2.y)/2);
-        const pinchCenterLocal = window.pointsContainer.toLocal(pinchCenterGlobal);
+        const pinchCenterLocal = pixiContainer.toLocal(pinchCenterGlobal);
 
         //on déplace le pivot du conteneur vers ce nouveau centre:
-        window.pointsContainer.pivot.copyFrom(pinchCenterLocal);
+        pixiContainer.pivot.copyFrom(pinchCenterLocal);
 
         //on ajuste sa position pour que le nouveau pivot apparaisse au m endroit que l'ancien
-        window.pointsContainer.position.copyFrom(pinchCenterGlobal);
+        pixiContainer.position.copyFrom(pinchCenterGlobal);
       }
 
       if (lastPinchDistance !== null) {
@@ -352,8 +356,8 @@ async function setupPixi() {
       ReDessinFormeLibre(lastFormeLibrePath, pixiPoints);
     }
     
-    if (window.pointsContainer && formeLibre && !window.pointsContainer.children.includes(formeLibre)) {
-      window.pointsContainer.addChild(formeLibre);
+    if (pixiContainer && formeLibre && !pixiContainer.children.includes(formeLibre)) {
+      pixiContainer.addChild(formeLibre);
     }
     console.log("formeLibre: ",formeLibre);
     console.log ("reDessinFormeLibre");
@@ -366,6 +370,11 @@ async function setupPixi() {
       cursorGraphic.position.set(pointerPos.x, pointerPos.y);
     }
     
+    //** mais a jour l'echelle du zoom à chaque frame */
+    if (pixiContainer) {
+    pixiContainer.scale.set(zoomFactor);
+    }
+
     triggerGrainsOnProximity();
   });
 

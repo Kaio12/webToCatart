@@ -7,7 +7,7 @@ let isCurrentlyDrawing = false; // Indique si le dessin est en cours
 let startDrawPoint;
 let currentPath = [];
 
-let pointsContainer; // conteneur Pixi pour les points
+export let pixiContainer = null; // conteneur Pixi pour les points
 export let centerX = window.innerWidth / 2;
 export let centerY = window.innerHeight / 2;
 
@@ -26,15 +26,14 @@ export function drawPixiPoints(pointsData, app, pixiPoints) {
       return;
     }
 
-  if (!pointsContainer) {
-    pointsContainer = new PIXI.Container();
-    pointsContainer.pivot.set(centerX, centerY); // Centre le conteneur
-    pointsContainer.position.set(centerX, centerY); 
-    app.stage.addChild(pointsContainer);
-    window.pointsContainer = pointsContainer; // Stocke le conteneur dans la fenêtre pour un accès global
+  if (!pixiContainer) {
+    pixiContainer = new PIXI.Container();
+    pixiContainer.pivot.set(centerX, centerY); // Centre le conteneur
+    pixiContainer.position.set(centerX, centerY); 
+    app.stage.addChild(pixiContainer);
   }
 
-  pointsContainer.removeChildren(); // Efface les anciens points
+  pixiContainer.removeChildren(); // Efface les anciens points
   pixiPoints.length = 0;
 
   const bounds = getBounds(pointsData);
@@ -80,7 +79,7 @@ export function drawPixiPoints(pointsData, app, pixiPoints) {
 
     pointGraphic.drawSelf();
 
-    pointsContainer.addChild(pointGraphic); // Ajoute au container dédié
+    pixiContainer.addChild(pointGraphic); // Ajoute au container dédié
     pixiPoints.push(pointGraphic);
   });
 }
@@ -89,9 +88,9 @@ export function setupFormeLibre (app) {
   formeLibreContext = new PIXI.GraphicsContext();
   formeLibre = new PIXI.Graphics(formeLibreContext);
 
-  if (pointsContainer) {
-    pointsContainer.addChild(formeLibre);
-    console.log('formelibre ajoutée à pointsContainer');
+  if (pixiContainer) {
+    pixiContainer.addChild(formeLibre);
+    console.log('formelibre ajoutée à pixiContainer');
   } else {
     app.stage.addChild(formeLibre);
     console.log('forme libre sans container')
@@ -107,7 +106,7 @@ export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCall
 
     onDrawStart = (event) => {
       isCurrentlyDrawing = true;
-      startDrawPoint = pointsContainer.toLocal(event.global);
+      startDrawPoint = pixiContainer.toLocal(event.global);
       currentPath = [startDrawPoint];
 
       formeLibreContext.clear()
@@ -115,7 +114,7 @@ export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCall
 
     onDrawMove = (event) => {
       if (isCurrentlyDrawing) {
-        const movePoint = pointsContainer.toLocal(event.global);
+        const movePoint = pixiContainer.toLocal(event.global);
         currentPath.push(movePoint);
         
         formeLibreContext.clear();
