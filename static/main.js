@@ -80,6 +80,8 @@ export function enableDrawing() {
   drawingEnabled = true;
 }
 
+
+// modifie le threshold suivant le zoom et la taille de fenetre
 function getProximityThreshold() {
   const base = Math.min(window.innerWidth, window.innerHeight) * 0.08;
   return base / zoomFactor;
@@ -141,6 +143,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.documentElement.requestFullscreen();
         updateCenter(); // met à jour le centre de la vue
         drawPixiPoints(pointsData, app, pixiPoints);// on redessine les points
+        console.log('lastFormeLibrePath pour fullscreen', lastFormeLibrePath);
+        if (lastFormeLibrePath) {
+        ReDessinFormeLibre(lastFormeLibrePath, pixiPoints);
+        if (pixiContainer && formeLibre && !pixiContainer.children.includes(formeLibre)) {
+          pixiContainer.addChild(formeLibre);
+        }
+    }
       } else {
         document.exitFullscreen();
       }
