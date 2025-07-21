@@ -1,35 +1,5 @@
 
 .container {
-  display: grid;
-  grid-template-columns: 3fr 1fr;
-  height: 100vh;
-}
-
-.zone-xy {
-  position: relative;
-  width: 100%;
+  
   height: 100%;
- 
-}
-
-#position {
-  height: 100%; 
-   width: 100%;
-  position: relative; 
-}
-
-.zone-boutons {
-  display: flex;
-  padding: 1em;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  background: #1f5f8d;
-  height: 100%;
-}
-
-.zone-boutons button {
-
-  width: 100%;
-  font-size: 1.2em;;
 }

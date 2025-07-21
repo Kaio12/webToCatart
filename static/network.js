@@ -42,6 +42,7 @@ export function setupSocketAndHandlers(effectNode, feedbackGain) {
     const data = JSON.parse(event.data);
 
     if (data.type === 'osc-from-server') {
+      console.log("osc-from-server", data.args[0], data.args[1]);
       //mapOSCToFaust(data.address, data.args, effectNode);
       mapOSCToEffect(data.address, data.args, effectNode, feedbackGain)
     }

@@ -75,7 +75,6 @@ function onFormeLibreComplete(path) {
   disableDrawingMode();      // désactive le mode dessin
 }
 
-
 // fonction envoyée en callback pour désactiver le mode dessin
 function disableDrawingMode() {
   drawingEnabled = false;
@@ -86,7 +85,6 @@ function disableDrawingMode() {
   // nettoyer les écouteurs d'évènements de DessinFormeLibre
   DessinFormeLibre(app, false, pixiPoints);
 }
- 
 
 // les opérations interviennent après le chargement du DOM
 document.addEventListener('DOMContentLoaded', () => {
@@ -257,8 +255,6 @@ async function setupPixi() {
   const activePointers = new Map();
   let lastPinchDistance = null;
 
-
-
   app.stage.on("pointerdown", async (event) => {
     if (drawingEnabled) return;
 
@@ -276,10 +272,7 @@ async function setupPixi() {
   });
 
   app.stage.on("pointermove", (event) => {
-   
-
     if (drawingEnabled) return; // Ne rien faire si on dessine
-
     if (!activePointers.has(event.pointerId)) return;
 
     activePointers.set(event.pointerId, event.global.clone());
@@ -346,14 +339,18 @@ async function setupPixi() {
   window.addEventListener('resize', () => {
     app.renderer.resize(window.innerWidth, window.innerHeight);
     updateCenter();
+    
     drawPixiPoints(pointsData, app, pixiPoints);// on redessine les points
-    ReDessinFormeLibre(lastFormeLibrePath);
+    
+    if (lastFormeLibrePath) {
+      ReDessinFormeLibre(lastFormeLibrePath, pixiPoints);
+    }
+    
     if (window.pointsContainer && formeLibre && !window.pointsContainer.children.includes(formeLibre)) {
-  window.pointsContainer.addChild(formeLibre);
-}
+      window.pointsContainer.addChild(formeLibre);
+    }
     console.log("formeLibre: ",formeLibre);
     console.log ("reDessinFormeLibre");
-
   });
 
   // ticker : actualisation de l'app sur chaque frame

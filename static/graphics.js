@@ -179,7 +179,8 @@ export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCall
  
 }
 
-export function ReDessinFormeLibre(normPath) {
+// après un zoom ou un redimensionnement de fenetre
+export function ReDessinFormeLibre(normPath, pixiPoints) {
   formeLibreContext.clear();
   const pxPath = normPath.map(pt => ({
     x: pt.x * window.innerWidth,
@@ -196,6 +197,12 @@ export function ReDessinFormeLibre(normPath) {
   // On peut remplir et tracer le contour
   formeLibreContext.fill({ color: 0x0000ff, alpha: 0.2 });
   formeLibreContext.stroke({ width: 4, color: 0xff0000, alpha: 1 });
+
+  // On met à jour la propriété des points pour l'effet
+  pixiPoints.forEach(point => {
+      point.isEffectEnabled = formeLibre.containsPoint(point.position);
+  });
+
 }
 
 // getBounds calcule les limites (min et max) des coordonnées et des valeurs pour un ensemble de points, permet d'adapter à la taille de la fenètre.
