@@ -202,6 +202,12 @@ export function ReDessinFormeLibre(normPath, pixiPoints) {
       point.isEffectEnabled = formeLibre.containsPoint(point.position);
   });
 
+  
+  if (pixiContainer && formeLibre && !pixiContainer.children.includes(formeLibre)) {
+            pixiContainer.addChild(formeLibre);
+          }
+
+
 }
 
 // getBounds calcule les limites (min et max) des coordonnées et des valeurs pour un ensemble de points, permet d'adapter à la taille de la fenètre.

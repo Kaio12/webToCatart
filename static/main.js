@@ -146,9 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('lastFormeLibrePath pour fullscreen', lastFormeLibrePath);
         if (lastFormeLibrePath) {
         ReDessinFormeLibre(lastFormeLibrePath, pixiPoints);
-        if (pixiContainer && formeLibre && !pixiContainer.children.includes(formeLibre)) {
-          pixiContainer.addChild(formeLibre);
-        }
+       
     }
       } else {
         document.exitFullscreen();
@@ -368,9 +366,6 @@ async function setupPixi() {
       ReDessinFormeLibre(lastFormeLibrePath, pixiPoints);
     }
     
-    if (pixiContainer && formeLibre && !pixiContainer.children.includes(formeLibre)) {
-      pixiContainer.addChild(formeLibre);
-    }
     console.log("formeLibre: ",formeLibre);
     console.log ("reDessinFormeLibre");
   });
