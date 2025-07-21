@@ -332,12 +332,15 @@ async function setupPixi() {
     activePointers.delete(event.pointerId);
     if (activePointers.size < 2) {
       lastPinchDistance = null;
-
-
     }
     if (activePointers.size === 0) {
       pointerPos = { x: -9999, y: -9999 };
       if (cursorGraphic) cursorGraphic.visible = false; // cache le curseur
+
+      // Réinitialise l'état de proximité de tous les points
+  for (const point of pixiPoints) {
+    point.isInside = false;
+  }
     }
   };
 
