@@ -169,7 +169,6 @@ export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCall
         stage.off("pointerup", onDrawEnd);
         stage.off("pointerupoutside", onDrawEnd);
       }
-
     };
 
     stage.on("pointerdown", onDrawStart);

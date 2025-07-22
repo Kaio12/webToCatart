@@ -8,8 +8,8 @@ const WebSocket = require('ws');
 const { Server: OscServer, Client: OscClient } = require('node-osc');
 
 const httpsOptions = {
-  key: fs.readFileSync(path.join(__dirname, 'secrets','192.168.1.100-key.pem')),
-  cert: fs.readFileSync(path.join(__dirname, 'secrets','192.168.1.100.pem'))
+  key: fs.readFileSync(path.join(__dirname, 'secrets','ggkey.pem')),
+  cert: fs.readFileSync(path.join(__dirname, 'secrets','gg.pem'))
 };
 
 require('dotenv').config(); // Charge les variables d'environnement depuis .env

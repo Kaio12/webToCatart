@@ -71,6 +71,7 @@ async function initializeAudioAndNetwork() {
 }
 
 export function onFormeLibreComplete(path) {
+
   lastFormeLibrePath = path; // stocke le chemin pour le resize/redessin
   drawingEnabled = false;
   const drawToggleButton = document.getElementById("draw-toggle");
@@ -134,7 +135,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (pixiContainer && formeLibre && !pixiContainer.children.includes(formeLibre)) {pixiContainer.addChild(formeLibre);}
 
-        console.log('lastFormeLibrePath pour fullscreen', lastFormeLibrePath);
+        console.log('Log fullscreen : lastFormeLibrePath', lastFormeLibrePath, 
+                  'pixicontainer: ', pixiContainer, 
+                  'formelibre:', formeLibre, 
+                  '!pixiContainer.children.includes(formeLibre)', !pixiContainer.children.includes(formeLibre), 
+                  'pixiContainer.children: ', pixiContainer.children);
 
         if (lastFormeLibrePath) {
         console.log("fullscreen redessine");
@@ -361,10 +366,8 @@ async function setupPixi() {
     
     if (lastFormeLibrePath) {
       ReDessinFormeLibre(lastFormeLibrePath, pixiPoints);
+      console.log('formelibre dessinée de resize');
     }
-    
-    console.log("formeLibre: ",formeLibre);
-    console.log ("reDessinFormeLibre");
   });
 
   // ticker : actualisation de l'app sur chaque frame
