@@ -7,22 +7,22 @@ import { drawPixiPoints, setupFormeLibre, createCursor, updateCenter, DessinForm
 
 
 export let app; // app pixi
-//let effectNode; // effet audio
+export let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
+export let drawingEnabled = false; // pour activer/désactiver le dessin libre
+
+
 let isInitialized = false;
 
 let pointsData = [];  // les données des points à afficher, chargées depuis le serveur
-export let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
 
 let formeLibre; //layer pour le dessin libre de la zone effet audio
 let lastFormeLibrePath; //sauvegarde des coordo de la forme libre.
-export let drawingEnabled = false; // pour activer/désactiver le dessin libre
 
 let zoomFactor = 1.0 // facteur zoom affichage des points
 
 let cursorGraphic; // le curseur.
 let pointerPos = { x: -9999, y: -9999 } //pointer position doigt
 
-//const proximityThreshold = 80; // distance minimale pour déclencher un son
 
 // nécessaire pour pwa
 if ('serviceWorker' in navigator) {
@@ -72,7 +72,10 @@ async function initializeAudioAndNetwork() {
 
 export function onFormeLibreComplete(path) {
   lastFormeLibrePath = path; // stocke le chemin pour le resize/redessin
-  disableDrawingMode();      // désactive le mode dessin
+  drawingEnabled = false;
+  const drawToggleButton = document.getElementById("draw-toggle");
+  drawToggleButton.textContent = "Activer le dessin";
+  drawToggleButton.style.backgroundColor = "#0f0";
 }
 
 //pour activer drawingEnabled depuis network.js
@@ -80,23 +83,10 @@ export function enableDrawing() {
   drawingEnabled = true;
 }
 
-
 // modifie le threshold suivant le zoom et la taille de fenetre
 function getProximityThreshold() {
   const base = Math.min(window.innerWidth, window.innerHeight) * 0.08;
   return base / zoomFactor;
-}
-
-
-// fonction envoyée en callback pour désactiver le mode dessin
-function disableDrawingMode() {
-  drawingEnabled = false;
-  const drawToggleButton = document.getElementById("draw-toggle");
-  drawToggleButton.textContent = "Activer le dessin";
-  drawToggleButton.style.backgroundColor = "#0f0";
-
-  // nettoyer les écouteurs d'évènements de DessinFormeLibre
-  DessinFormeLibre(app, false, pixiPoints);
 }
 
 // les opérations interviennent après le chargement du DOM
@@ -119,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const drawToggleButton = document.getElementById("draw-toggle");
 
-  // pour dessiner la forme libre
+  // ****** pour dessiner la forme libre *******
   drawToggleButton.addEventListener("click", () => {
 
     if (!drawingEnabled) {
@@ -129,12 +119,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
       DessinFormeLibre(app, drawingEnabled, pixiPoints, onFormeLibreComplete);
       console.log ("lastFormeLibrePath :", lastFormeLibrePath);
-
+      console.log("formeLibre", formeLibre);
       if (formeLibre) formeLibre.visible = true; // rend la forme libre visible
       console.log("Dessin activé");
-    } else {
-      disableDrawingMode();
-    }
+    } 
   });
 
     // bouton Fullscreen
@@ -143,11 +131,20 @@ document.addEventListener('DOMContentLoaded', () => {
         document.documentElement.requestFullscreen();
         updateCenter(); // met à jour le centre de la vue
         drawPixiPoints(pointsData, app, pixiPoints);// on redessine les points
+
+        if (pixiContainer && formeLibre && !pixiContainer.children.includes(formeLibre)) {pixiContainer.addChild(formeLibre);}
+
         console.log('lastFormeLibrePath pour fullscreen', lastFormeLibrePath);
+
         if (lastFormeLibrePath) {
+        console.log("fullscreen redessine");
+
         ReDessinFormeLibre(lastFormeLibrePath, pixiPoints);
-       
-    }
+
+        if (formeLibre) formeLibre.visible = true;
+        } else {
+          if(formeLibre) formeLibre.visible = false;
+        }
       } else {
         document.exitFullscreen();
       }

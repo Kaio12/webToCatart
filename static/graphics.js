@@ -124,7 +124,7 @@ export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCall
           }
         formeLibreContext.stroke({ width: 4, color: 0xff0000, alpha: 1});
         }
-      };
+    };
 
     onDrawEnd = () => {
       if(!isCurrentlyDrawing) return;
@@ -148,34 +148,36 @@ export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCall
       lastPath = currentPath;
       currentPath = [];
 
+      // gestion de l'effet: on marque les points concernés, à l'intérieur de la forme libre.
       pixiPoints.forEach(point => {
-      point.isEffectEnabled = formeLibre.containsPoint(point.position);
-    });
+        point.isEffectEnabled = formeLibre.containsPoint(point.position);
+      });
 
-    if (onCompleteCallback) {
-      // coordonnées normalisés
-      const normPath = lastPath.map(pt => ({
-        x: pt.x / window.innerWidth,
-        y: pt.y / window.innerHeight
-      }));
+      if (onCompleteCallback) {
+        // coordonnées normalisés
+        const normPath = lastPath.map(pt => ({
+          x: pt.x / window.innerWidth,
+          y: pt.y / window.innerHeight
+        }));
       onCompleteCallback(normPath);
-    }
+      }
+
+      // on nettoie les écouteurs après le dessin de la forme libre.
+      if (onDrawStart) stage.off("pointerdown", onDrawStart);
+      if (onDrawMove) stage.off("pointermove", onDrawMove);
+      if (onDrawEnd) {
+        stage.off("pointerup", onDrawEnd);
+        stage.off("pointerupoutside", onDrawEnd);
+      }
+
     };
 
     stage.on("pointerdown", onDrawStart);
     stage.on("pointermove", onDrawMove);
     stage.on("pointerup", onDrawEnd);
     stage.on("pointerupoutside", onDrawEnd);
-  } else {
-    // Si le dessin est désactivé, on nettoie les anciens écouteurs d'événements
-    if (onDrawStart) stage.off("pointerdown", onDrawStart);
-    if (onDrawMove) stage.off("pointermove", onDrawMove);
-    if (onDrawEnd) {
-      stage.off("pointerup", onDrawEnd);
-      stage.off("pointerupoutside", onDrawEnd);
-    }
-  }
- 
+
+  } 
 }
 
 // après un zoom ou un redimensionnement de fenetre
@@ -202,11 +204,7 @@ export function ReDessinFormeLibre(normPath, pixiPoints) {
       point.isEffectEnabled = formeLibre.containsPoint(point.position);
   });
 
-  
-  if (pixiContainer && formeLibre && !pixiContainer.children.includes(formeLibre)) {
-            pixiContainer.addChild(formeLibre);
-          }
-
+  if (pixiContainer && formeLibre && !pixiContainer.children.includes(formeLibre)) {pixiContainer.addChild(formeLibre);}
 
 }
 
