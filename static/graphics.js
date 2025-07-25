@@ -1,5 +1,5 @@
-export let formeLibre;
-let formeLibreContext;
+export let formesLibres;
+export let formesLibresContextes;
 
 export let drawing = false; // état du dessin à la main
 let onDrawStart, onDrawMove, onDrawEnd;
@@ -84,21 +84,31 @@ export function drawPixiPoints(pointsData, app, pixiPoints) {
   });
 }
   
-export function setupFormeLibre (app) {
-  formeLibreContext = new PIXI.GraphicsContext();
-  formeLibre = new PIXI.Graphics(formeLibreContext);
+export function setupFormesLibres (app,  nbPages) {
+  formesLibres = [];
+  formesLibresContextes = [];
 
-  if (pixiContainer) {
-    pixiContainer.addChild(formeLibre);
-    console.log('formelibre ajoutée à pixiContainer');
-  } else {
-    app.stage.addChild(formeLibre);
-    console.log('forme libre sans container')
+  for (let i = 0; i < nbPages; i++) {
+    const ctx = new PIXI.GraphicsContext();
+    const graphic = new PIXI.Graphics(ctx);
+    formesLibresContextes.push(ctx);
+    formesLibres.push(graphic);
+
+    if(pixiContainer) {
+      pixiContainer.addChild(graphic);
+      graphic.visible = false;
+
+    }
+    else {
+      console.log ("pas de pixiContainer lors de l'initialisation des formesLibres");
+    }
+    
   }
-  return formeLibre;
+  console.log('formesLibres', formesLibres);
+  return formesLibres;
 }   
 
-export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCallback) {
+export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCallback, formeLibre, formeLibreContext) {
   const stage = app.stage;
   let lastPath; //pour sauvegarder les coordonnées après dessin de la forme libre.
 

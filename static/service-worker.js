@@ -10,7 +10,6 @@ const APP_SHELL_URLS = [
   "/audio.js",
   "/network.js",
   "/graphics.js",
-  "/mlp.js",
   "/style.css",
   "/pixi.min.js",
   "/icons/icon-192.png",
@@ -49,6 +48,7 @@ self.addEventListener("activate", event => {
 // Met également en cache les nouvelles ressources demandées.
 self.addEventListener("fetch", event => {
 
+ 
   event.respondWith(
     caches.open(CACHE_NAME).then(cache => {
       return cache.match(event.request).then(response => {
@@ -56,7 +56,11 @@ self.addEventListener("fetch", event => {
         // Sinon, on va la chercher sur le réseau, on la met en cache ET on la retourne.
         const fetchPromise = fetch(event.request).then(networkResponse => {
           // On ne met en cache que les requêtes valides (pas les erreurs 404, 500 etc.)
-          if (networkResponse && networkResponse.status === 200 && event.request.method === 'GET') {
+          if (networkResponse && 
+            networkResponse.status === 200 && 
+            event.request.method === 'GET'  &&
+            !event.request.url.startsWith('chrome-extension://')
+          ) {
             cache.put(event.request, networkResponse.clone());
           }
           return networkResponse;

@@ -3,7 +3,7 @@
 
 import { playGrain,initEffect, feedbackGain } from "./audio.js";
 import { initSocket, setupSocketAndHandlers, sendOSC, loadJsonPoints, loadAudioBuffers } from "./network.js";
-import { drawPixiPoints, setupFormeLibre, createCursor, updateCenter, DessinFormeLibre, ReDessinFormeLibre, pixiContainer } from "./graphics.js";
+import { drawPixiPoints, setupFormesLibres, createCursor, updateCenter, DessinFormeLibre, ReDessinFormeLibre, pixiContainer, formesLibres, formesLibresContextes } from "./graphics.js";
 
 
 export let app; // app pixi
@@ -13,12 +13,12 @@ export let drawingEnabled = false; // pour activer/désactiver le dessin libre
 // AudioContext pour gérer l'audio
 export const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-
-
 let isInitialized = false;
 
 let pointsData = [];  // les données des points à afficher, chargées depuis le serveur
 let currentPage = 1;
+
+let nbPages = 0; // le nombre de pages qui correspond au nombres de buffers
 
 let buffers;
 let points;
@@ -30,7 +30,8 @@ const selectorDiv = document.getElementById("page-selector"); // selecteur de pa
 const init = document.getElementById("init"); // bouton d'initialistion globale.
 
 
-let formeLibre; //layer pour le dessin libre de la zone effet audio
+//let formesLibres = []; // array de layers pour le dessin libre de la zone effet audio
+
 let lastFormeLibrePath; //sauvegarde des coordo de la forme libre.
 
 let zoomFactor = 1.0 // facteur zoom affichage des points
@@ -61,8 +62,14 @@ function createPageSelector(bufferNames, onPageChange) {
   bufferNames.forEach((name, idx) => {
     const btn = document.createElement("button");
     btn.textContent = (idx + 1).toString();
-    btn.onclick = () => onPageChange(idx);
+    btn.onclick = () => {
+      onPageChange(idx);
+      createPageSelector(bufferNames, onPageChange);
+    };
     btn.style.margin = "0 4px";
+    if (idx === currentPage) {
+      btn.style.backgroundColor = "#0f0"; // bouton sel vert
+    }
     selectorDiv.appendChild(btn);
   });
 }
@@ -95,6 +102,8 @@ async function initializeAudioAndNetwork() {
     buffers = await loadAudioBuffers();// { "enr1.wav": AudioBuffer, ... }
     points = await loadJsonPoints();  // { "enr1.json": [ ... ], ... }
 
+    nbPages = Object.keys(buffers).length; // mise à jour du nb de pages
+
     console.log('4) buffers : ', buffers, 'points', points);
 
     const bufferNames = Object.keys(buffers);  // ["enr1.wav", "enr2.wav", ...]
@@ -107,8 +116,6 @@ async function initializeAudioAndNetwork() {
       buffer = buffers[bufferName];
 
       drawPixiPoints(pointsData, app, pixiPoints);
-
-
     });
 
     // Affiche la première page par défaut
@@ -159,15 +166,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }, { passive: false });
 
 
-  // *** initialisation de tous les éléments ***
+  // *** click INIT initialisation de tous les éléments ***
   init.addEventListener("click", async () => {
-
 
     await setupPixi();
     console.log("setupPixi terminé !", app);
 
     await initializeAudioAndNetwork();
-
 
     console.log('pointsData : ', pointsData);
 
@@ -175,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     console.log('pixiPoints : ', pixiPoints);
     
-    formeLibre = setupFormeLibre(app);
+    setupFormesLibres(app, nbPages); // init nb de formesLibres = nb de pages
 
   });
 
@@ -190,7 +195,10 @@ document.addEventListener('DOMContentLoaded', () => {
       drawToggleButton.textContent = 'Désactiver mode dessin';
       drawToggleButton.style.backgroundColor = "#f00";
 
-      DessinFormeLibre(app, drawingEnabled, pixiPoints, onFormeLibreComplete);
+      let formeLibre = formesLibres[currentPage];
+      let formeLibreContext = formesLibresContextes[currentPage];
+
+      DessinFormeLibre(app, drawingEnabled, pixiPoints, onFormeLibreComplete, formeLibre, formeLibreContext);
       console.log ("lastFormeLibrePath :", lastFormeLibrePath);
       console.log("formeLibre", formeLibre);
       if (formeLibre) formeLibre.visible = true; // rend la forme libre visible
