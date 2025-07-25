@@ -18,6 +18,19 @@ let isInitialized = false;
 let pointsData = [];  // les données des points à afficher, chargées depuis le serveur
 let currentPage = 1;
 
+const pageBackgroundColors = [
+   0x1a237e, // bleu profond
+  0x263238, // bleu-gris foncé
+  0x004d40, // vert canard foncé
+  0x880e4f, // bordeaux vif
+  0x212121, // noir intense
+  0x3e2723, // brun foncé
+  0x0d47a1, // bleu roi foncé
+  0x1b5e20, // vert forêt foncé
+  0x311b92, // violet foncé
+  0xb71c1c  // rouge foncé
+];
+
 let nbPages = 0; // le nombre de pages qui correspond au nombres de buffers
 
 let buffers;
@@ -64,6 +77,11 @@ function createPageSelector(bufferNames, onPageChange) {
     btn.textContent = (idx + 1).toString();
     btn.onclick = () => {
       onPageChange(idx);
+
+      if (app && pageBackgroundColors[idx] !== undefined) {
+        app.renderer.background.color = pageBackgroundColors[idx];
+      }
+
       createPageSelector(bufferNames, onPageChange);
     };
     btn.style.margin = "0 4px";
