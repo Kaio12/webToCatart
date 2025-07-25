@@ -67,6 +67,25 @@ app.post('/delete', (req, res) => {
   res.sendFile(path.join(STATIC_FOLDER, 'index.html'));
 });
 
+
+// sert la liste des fichiers de type audio => audiofiles
+app.get('/api/listaudiofiles', (req, res) => {
+  fs.readdir(PUBLIC_FOLDER, (err, files) => {
+    if (err) return res.status(500).json({ error: 'Erreur lecture dossier' });
+    // Filtre les fichiers audio (wav, mp3, etc.)
+    const audioFiles = files.filter(f => /\.(wav|mp3|ogg)$/i.test(f));
+    res.json(audioFiles);
+  });
+});
+// sert la liste des fichiers json (points) => jsonfiles
+app.get('/api/listjsonfiles', (req,res) => {
+  fs.readdir(PUBLIC_FOLDER, (err, files) => {
+    if (err) return res.status(500).json({ error: 'Erreur lecture dossier json' });
+    const jsonFiles = files.filter(f => /\.(json)$/i.test(f));
+    res.json(jsonFiles);
+  });
+});
+
 // API: Serve audio
 app.get('/audio/:filename', (req, res) => {
   res.sendFile(path.join(UPLOAD_FOLDER, req.params.filename));

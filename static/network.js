@@ -1,8 +1,10 @@
 export let socket;
 
 import {DessinFormeLibre} from "./graphics.js";
-import {app, pixiPoints, drawingEnabled, onFormeLibreComplete, enableDrawing} from "./main.js";
+import {app, pixiPoints, drawingEnabled, onFormeLibreComplete, enableDrawing, audioContext} from "./main.js";
 
+export let audioFiles;// liste des fichiers audio au format json
+export let jsonFiles;// liste des fichiers analyse au format json
 
 // Envoie messages OSC via socket.io ===
 export function sendOSC (address, ...args) {
@@ -16,8 +18,7 @@ export function sendOSC (address, ...args) {
   } else {
     console.error("Socket not connected.");
   }
-};
-
+}
 
 export function initSocket() {
   const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -60,9 +61,8 @@ export function setupSocketAndHandlers(effectNode, feedbackGain) {
   };
 }
 
-
 function mapOSCToEffect(address, args, effectNode, feedbackGain) {
-   if (!effectNode) {
+  if (!effectNode) {
     console.warn("EffectNode non initialisé", effectNode);
     return;
   }
@@ -84,43 +84,92 @@ function mapOSCToEffect(address, args, effectNode, feedbackGain) {
     feedbackGain.gain.value = args[0];
     effectNode.delayTime.value = args[1];
   }
-  }
+}
 
-
-
-
-// fonction pour charger les points via HTTP
-export async function loadPoints() {
+// charge la liste des fichiers audio sous forme JSON
+async function loadListAudioFiles() {
   try {
-    const response = await fetch("/api/points");
+    const response = await fetch('/api/listaudiofiles');
     if (!response.ok) {
       if (response.status === 404) {
-        console.warn("Le fichier points.json n'existe pas encore.");
+        console.warn("Le fichier listaudiofiles n'existe pas.");
         return []; // Retourne un tableau vide si le fichier n'est pas trouvé
       }
       console.error("Erreur HTTP:", response.status);
       return;
     }
-    const rawData = await response.json();
-
-    if (rawData.type === "points" && Array.isArray(rawData.points)) {
-
-      console.log("Points reçus :", rawData.points.length);
-
-      const parsed = rawData.points.map(point => ({
-        x: parseFloat(point.x),
-        y: parseFloat(point.y),
-        sampleId: point.sampleId,
-        loudnessMax: parseFloat(point.loudnessmax),
-        energyMax: parseFloat(point.energymax),
-        time: parseFloat(point.time),
-        duration: parseFloat(point.duration)
-      })).filter(p => !isNaN(p.x) && !isNaN(p.y));
-      
-      return parsed;
-    }  
-  } catch (error) {
-    console.error("Erreur de chargement des points:", error);
+    const liste = await response.json();
+    return liste;
+  } catch (e) {
+    console.log("Erreur de chargement de la liste des fichiers audio:", e);
   }
+}
+
+export async function loadAudioBuffers() {
+  const listAudioFiles = await loadListAudioFiles();
+  const buffers = {};
+  for (const fileName of listAudioFiles) {
+    try {
+      const response = await fetch(`/public/${fileName}`);
+      const arrayBuffer = await response.arrayBuffer();
+      buffers[fileName] = await audioContext.decodeAudioData(arrayBuffer);
+    } catch (e) {
+      console.error(`Erreur de chargement des fichiers audio ${fileName}:`, e);
+    }
+  }
+  return buffers; // { "enr1.wav": AudioBuffer, ... }
+}
+
+// charge la liste des fichiers json analyse sous forme JSON
+async function loadListJsonFiles() {
+  try {
+    const response = await fetch('/api/listjsonfiles');
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.warn("Le fichier listjsonfiles n'existe pas.");
+        return []; // Retourne un tableau vide si le fichier n'est pas trouvé
+      }
+      console.error("Erreur HTTP:", response.status);
+      return;
+    }
+    const liste = await response.json();
+    return liste;
+  } catch (e) {
+    console.log("Erreur de chargement de la liste des fichiers audio:", e);
+  }
+}
+
+export async function loadJsonPoints() {
+  const listJsonFiles = await loadListJsonFiles();
+  const pointsByFile = {};
+  for (const fileName of listJsonFiles) {
+    try {
+      const response = await fetch(`/public/${fileName}`);
+      if (!response.ok) {
+        console.warn(`le fichier ${fileName} n'a pas pu être chargé.`);
+        continue;
+      }
+      const rawData = await response.json();
+
+      if (rawData.type === "points" && Array.isArray(rawData.points)) {
+        pointsByFile[fileName] = rawData.points.map(point => ({
+          x: parseFloat(point.x),
+          y : parseFloat(point.y),
+          sampleId: point.sampleId,
+          loudnessMax: parseFloat(point.loudnessmax),
+          energyMax: parseFloat(point.energymax),
+          time: parseFloat(point.time),
+          duration: parseFloat(point.duration)
+        })).filter(p => !isNaN(p.x)  && !isNaN(p.y));
+      } else {
+        pointsByFile[fileName] = [];
+      }
+
+    }catch (e) {
+      console.error(`erreur de chargement du fichier JSON ${fileName}:`, e);
+      pointsByFile[fileName] = [];
+    }
+  }
+  return pointsByFile; // { "enr1.json": [...], ... }
 }
 

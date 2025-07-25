@@ -1,7 +1,7 @@
 outlets = 2;
 
 // exporte de max vers browser les coordonnées de chaque grain
-    function exportPoints() {
+    function exportPoints(fileName) {
     var mubu = new MubuJS("echantillons");
     mubu.refer("echantillons"); 
 
@@ -17,7 +17,7 @@ outlets = 2;
 
             try {
                 var folderPath = "/Users/philippecaillot/Documents/programmation/geste/public";
-                var fileName = "points.json";
+                //var fileName = "points.json";
                 
 
                 var filePath = folderPath + "/" + fileName;
@@ -69,7 +69,7 @@ outlets = 2;
 }
 
 // exporte le son enregistré dans mubu vers un fichier wav
-function exportSound()
+function exportSound(fileName)
     {
        var mubu = new MubuJS("echantillons");
         mubu.refer("echantillons");
@@ -80,7 +80,7 @@ function exportSound()
             var audio = mubu.gettrack(1, "audio");
             
             if(audio != null){
-                audio.write("/Users/philippecaillot/Documents/programmation/geste/public/enr.wav");
+                audio.write(`/Users/philippecaillot/Documents/programmation/geste/public/${fileName}`);
             }
             } catch (error) {
                 post("Erreur lors de l'exportation du son :", error.message, "\n");

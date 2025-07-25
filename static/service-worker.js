@@ -8,22 +8,14 @@ const APP_SHELL_URLS = [
   "/manifest.json",
   "/main.js",
   "/audio.js",
-  "/midi.js",
   "/network.js",
   "/graphics.js",
-  "/gestion-touch.js",
   "/mlp.js",
   "/style.css",
-  "/NexusUI.js",
   "/pixi.min.js",
-  "/swipe.min.js",
-  "/socket.io.min.js",
-  "/faust/multi_Ef_dsp_wasm/faustwasm/index.js",
-  "/faust/multi_Ef_dsp_wasm/create-node.js",
-  "/faust/multi_Ef_dsp_wasm/dsp-meta.json",
-  "/faust/multi_Ef_dsp_wasm/dsp-module.wasm",
   "/icons/icon-192.png",
-  "/icons/icon-512.png"
+  "/icons/icon-512.png",
+  "/icons/icon-180.png"
 ];
 
 // Événement d'installation : met en cache l'App Shell.

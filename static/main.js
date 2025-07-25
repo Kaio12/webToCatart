@@ -1,8 +1,8 @@
 //*** script coté browser ***/
 // script.js - Gère l'interaction entre le navigateur, Pixi.js, l'audio et le MIDI
 
-import {audioContext, loadAudioBuffer, playGrain,initEffect, feedbackGain} from "./audio.js";
-import {   initSocket, loadPoints, setupSocketAndHandlers, sendOSC} from "./network.js";
+import { playGrain,initEffect, feedbackGain } from "./audio.js";
+import { initSocket, setupSocketAndHandlers, sendOSC, loadJsonPoints, loadAudioBuffers } from "./network.js";
 import { drawPixiPoints, setupFormeLibre, createCursor, updateCenter, DessinFormeLibre, ReDessinFormeLibre, pixiContainer } from "./graphics.js";
 
 
@@ -10,10 +10,25 @@ export let app; // app pixi
 export let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
 export let drawingEnabled = false; // pour activer/désactiver le dessin libre
 
+// AudioContext pour gérer l'audio
+export const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+
 
 let isInitialized = false;
 
 let pointsData = [];  // les données des points à afficher, chargées depuis le serveur
+let currentPage = 1;
+
+let buffers;
+let points;
+
+let buffer;
+
+let pages;
+const selectorDiv = document.getElementById("page-selector"); // selecteur de page.
+const init = document.getElementById("init"); // bouton d'initialistion globale.
+
 
 let formeLibre; //layer pour le dessin libre de la zone effet audio
 let lastFormeLibrePath; //sauvegarde des coordo de la forme libre.
@@ -22,7 +37,6 @@ let zoomFactor = 1.0 // facteur zoom affichage des points
 
 let cursorGraphic; // le curseur.
 let pointerPos = { x: -9999, y: -9999 } //pointer position doigt
-
 
 // nécessaire pour pwa
 if ('serviceWorker' in navigator) {
@@ -37,37 +51,79 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+
+// crée un selecteur pour sélectionner la page/buffer à jouer.
+function createPageSelector(bufferNames, onPageChange) {
+
+  
+  selectorDiv.innerHTML = ""; //efface le contenu précédent
+
+  bufferNames.forEach((name, idx) => {
+    const btn = document.createElement("button");
+    btn.textContent = (idx + 1).toString();
+    btn.onclick = () => onPageChange(idx);
+    btn.style.margin = "0 4px";
+    selectorDiv.appendChild(btn);
+  });
+}
+
 async function initializeAudioAndNetwork() {
 
   if (isInitialized) return;
-
   isInitialized = true;
 
+
   try {
+    // 1) on initialise le contexte audio
     if (audioContext && audioContext.state === "suspended") {
         await audioContext.resume();
     }
+    console.log("1) audioContext.state:", audioContext.state);
 
-    await loadAudioBuffer();
-
-
-    //*** pour l'instant, on utilise pas faust, pb garbage collection */
-    
-    //const result = await initFaustEffect();
+    // 2) on init l'effet audio
     const result = await initEffect();
-
     let effectNode = null;
     effectNode = result.effectNode;
+    console.log("2) effectNode init: ", effectNode);
 
-
-    console.log("effectNode init: ", effectNode);
-
+    // 3) on init le socket
     initSocket();
     setupSocketAndHandlers(effectNode, feedbackGain);
-    } catch (error) {
+    console.log ('3) initsocket OK');
+
+    // 4) on charge les buffers et fichiers d'analyse
+    buffers = await loadAudioBuffers();// { "enr1.wav": AudioBuffer, ... }
+    points = await loadJsonPoints();  // { "enr1.json": [ ... ], ... }
+
+    console.log('4) buffers : ', buffers, 'points', points);
+
+    const bufferNames = Object.keys(buffers);  // ["enr1.wav", "enr2.wav", ...]
+
+    createPageSelector(bufferNames, (pageIdx) => {
+      currentPage = pageIdx;
+      const bufferName = bufferNames[pageIdx]; // ex; "enr1.wav"
+      const jsonName = bufferName.replace(/\.wav$/i, ".json"); // obtient ex "enr1.json"
+      pointsData = points[jsonName] || [];
+      buffer = buffers[bufferName];
+
+      drawPixiPoints(pointsData, app, pixiPoints);
+
+
+    });
+
+    // Affiche la première page par défaut
+    if (bufferNames.length > 0) {
+      currentPage = 0;
+      const bufferName = bufferNames[0];
+      const jsonName = bufferName.replace(/\.wav$/i, ".json");
+      pointsData = points[jsonName] || [];
+      buffer = buffers[bufferName];
+    }
+
+  } catch (error) {
         console.error("erreur lors de l'init post-interaction: ", error);
       
-      }
+    }
 }
 
 export function onFormeLibreComplete(path) {
@@ -102,9 +158,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, { passive: false });
 
-  const init = document.getElementById("init");
-  init.addEventListener("click", () => {
-    initializeAudioAndNetwork();
+
+  // *** initialisation de tous les éléments ***
+  init.addEventListener("click", async () => {
+
+
+    await setupPixi();
+    console.log("setupPixi terminé !", app);
+
+    await initializeAudioAndNetwork();
+
+
+    console.log('pointsData : ', pointsData);
+
+    drawPixiPoints(pointsData, app, pixiPoints);
+
+    console.log('pixiPoints : ', pixiPoints);
+    
+    formeLibre = setupFormeLibre(app);
+
   });
 
 
@@ -154,51 +226,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.exitFullscreen();
       }
     });
-
-    // Séquence d'initialisation principale
-    async function initializeApplication() {
-      await setupPixi();
-      console.log("setupPixi terminé !");
-
-      const points = await loadPointsWithFallback();
-      if (points && points.length > 0) {
-        pointsData = points;
-        drawPixiPoints(pointsData, app, pixiPoints);
-      } else {
-        console.error("Échec du chargement des points depuis le réseau et le cache.");
-      }
-
-      formeLibre = setupFormeLibre(app);
-    }
-
-    // Fonction dédiée pour charger les points
-    async function loadPointsWithFallback() {
-      try {
-        // 1. Essayer de charger depuis le réseau
-        const networkPoints = await loadPoints();
-        if (networkPoints && networkPoints.length > 0) {
-          console.log("Points chargés depuis le réseau.");
-          localStorage.setItem("points", JSON.stringify(networkPoints));
-          console.log("Points mis à jour dans le localStorage.");
-          return networkPoints;
-        }
-      } catch (error) {
-        console.warn("Échec du chargement des points depuis le réseau, tentative depuis le cache.", error);
-      }
-
-      // 2. Si le réseau échoue, essayer de charger depuis le localStorage
-      const offlinePoints = localStorage.getItem("points");
-      if (offlinePoints) {
-        console.log("Points chargés depuis le localStorage (mode hors-ligne).");
-        return JSON.parse(offlinePoints);
-      }
-
-      // 3. Si tout échoue, retourner null
-      return null;
-    }
-
-    // Lancer l'initialisation
-    initializeApplication();
 });
 
 //*********   FONCTION QUI JOUE LES GRAINS, ENVOIE LES INFOS OSC */
@@ -221,7 +248,7 @@ function triggerGrainsOnProximity() {
     if (isInside && !wasInside) {
       
       console.log(point.isEffectEnabled);
-      playGrain(point.startTime, point.duration, point.isEffectEnabled);
+      playGrain(point.startTime, point.duration, point.isEffectEnabled, buffer);
       sendOSC("/hover", point.sampleId);
     }
 
@@ -250,7 +277,7 @@ async function setupPixi() {
   app = new PIXI.Application();
   await app.init({
     resizeTo: window,
-    backgroundColor: 0xffffff // couleur du fond
+    backgroundColor: 0x000000 // couleur du fond
   });
 
   const container = document.getElementById("pixi-container");
