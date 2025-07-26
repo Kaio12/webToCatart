@@ -10,7 +10,6 @@ export let app; // app pixi
 export let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
 export let drawingEnabled = false; // pour activer/désactiver le dessin libre
 
-// AudioContext pour gérer l'audio
 export const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
 let isInitialized = false;
@@ -39,11 +38,11 @@ let points;
 let buffer;
 let bufferNames;
 
-// let pages;
+let effectNode;
+
 const selectorDiv = document.getElementById("page-selector"); // selecteur de page.
 const init = document.getElementById("init"); // bouton d'initialistion globale.
-
-//let formesLibres = []; // array de layers pour le dessin libre de la zone effet audio
+const drawToggleButton = document.getElementById("draw-toggle");
 
 let lastFormeLibrePath; //sauvegarde des coordo de la forme libre.
 
@@ -65,7 +64,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// *** Initialise et configure l'application Pixi.js ****
+// **** Initialise et configure l'application Pixi.js ****
 async function setupPixi() {
 
   app = new PIXI.Application();
@@ -84,7 +83,7 @@ async function setupPixi() {
   app.canvas.addEventListener('touchend', e => e.preventDefault(), { passive: false });
   app.canvas.addEventListener('wheel', e => e.preventDefault(), { passive: false });
 
-  // stage : The root display container that's rendered.
+  // stage : Le conteneur racine d’affichage.
   app.stage.eventMode = 'static';
   app.stage.hitArea = app.screen;
 
@@ -207,6 +206,8 @@ async function setupPixi() {
     triggerGrainsOnProximity();
   });
 
+  console.log("1) SetupPixi terminé : ", app);
+
 }
 
 // crée un selecteur pour sélectionner la page/buffer à jouer.
@@ -240,7 +241,7 @@ async function initialiseContexteAudio() {
     if (audioContext && audioContext.state === "suspended") {
         await audioContext.resume();
     }
-    console.log("1) audioContext.state:", audioContext.state);
+    console.log("2) audioContext.state:", audioContext.state);
   } catch (e) {
     console.log("erreur initialisation contexte audio", e);
   }
@@ -249,9 +250,9 @@ async function initialiseContexteAudio() {
 async function initialiseEffetAudio() {
   try {
     const result = await initEffect();
-    let effectNode = null;
+    effectNode = null;
     effectNode = result.effectNode;
-    console.log("2) effectNode init: ", effectNode);
+    console.log("3) effectNode initialisé: ", effectNode);
   } catch (e) {
     console.log("erreur initialisation effet audio", e);
   }
@@ -262,9 +263,11 @@ async function chargeFichiersAudioEtJson() {
     // 4) on charge les buffers et fichiers d'analyse
     buffers = await loadAudioBuffers();// { "enr1.wav": AudioBuffer, ... }
     points = await loadJsonPoints();  // { "enr1.json": [ ... ], ... }
+
+    console.log("4) Fichiers audio et fichiers JSON chargés. buffers :", buffers, "points : ", points);
   }
   catch (e) {
-    console.log("erreur chargement des fichiers audio et json",e);
+    console.log("Erreur chargement des fichiers audio et json",e);
   }
 }
 
@@ -273,7 +276,7 @@ async function initialiseSocket() {
     // 3) on init le socket
     initSocket();
     setupSocketAndHandlers(effectNode, feedbackGain);
-    console.log ('3) initsocket OK');
+    console.log ('5) Initialisation socket OK');
   } catch (e) {
     console.log("erreur initialisation du socket et handler",e);
   }
@@ -284,9 +287,6 @@ async function initialiseSelecteurDePage() {
     
     bufferNames = Object.keys(buffers);  // ["enr1.wav", "enr2.wav", ...]
     nbPages = bufferNames.length; // mise à jour du nb de pages
-
-    console.log('4) buffers : ', buffers, 'points', points);
-
     
     createPageSelector(bufferNames, (pageIdx) => {
       currentPage = pageIdx;
@@ -296,6 +296,9 @@ async function initialiseSelecteurDePage() {
       buffer = buffers[bufferName];
 
       drawPixiPoints(pointsData, app, pixiPoints);
+      // manque le redessin de la formelibre;
+
+      console.log("6) Sélecteur de page initialisé");
     });
 
     // Affiche la première page par défaut
@@ -309,7 +312,7 @@ async function initialiseSelecteurDePage() {
 
   }
   catch(e){
-
+    console.log("erreur pendant l'initialisation du selecteur de pages", e);
   }
 }
 
@@ -333,7 +336,7 @@ function getProximityThreshold() {
   return base / zoomFactor;
 }
 
-// =======  après le chargement du DOM ==========
+// =======  INITIALISATION ==========
 document.addEventListener('DOMContentLoaded', () => {
 
   console.log("DOM chargé, initialisation des éléments...");
@@ -353,7 +356,6 @@ document.addEventListener('DOMContentLoaded', () => {
     isInitialized = true;
 
     await setupPixi();
-    console.log("1) SetupPixi terminé : ", app);
 
     await initialiseContexteAudio();
 
@@ -364,8 +366,6 @@ document.addEventListener('DOMContentLoaded', () => {
     await initialiseSocket();
 
     await initialiseSelecteurDePage()
-
-    //await initializeAudioAndNetwork();
 
     console.log('pointsData : ', pointsData);
 
@@ -378,7 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
 
-  const drawToggleButton = document.getElementById("draw-toggle");
+  
 
   // ****** pour dessiner la forme libre *******
   drawToggleButton.addEventListener("click", () => {

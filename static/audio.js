@@ -76,8 +76,6 @@ export async function initEffect() {
     effectNode.connect(feedbackGain);
     feedbackGain.connect(effectNode);
 
-
-    console.log("effectNode chargé");
     return {effectNode };
   } catch (e) {
     console.error("erreur lors de l'init de effectNode");
