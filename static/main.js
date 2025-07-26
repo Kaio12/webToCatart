@@ -37,11 +37,11 @@ let buffers;
 let points;
 
 let buffer;
+let bufferNames;
 
-let pages;
+// let pages;
 const selectorDiv = document.getElementById("page-selector"); // selecteur de page.
 const init = document.getElementById("init"); // bouton d'initialistion globale.
-
 
 //let formesLibres = []; // array de layers pour le dessin libre de la zone effet audio
 
@@ -65,6 +65,149 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// *** Initialise et configure l'application Pixi.js ****
+async function setupPixi() {
+
+  app = new PIXI.Application();
+  await app.init({
+    resizeTo: window,
+    backgroundColor: 0x000000 // couleur du fond
+  });
+
+  const container = document.getElementById("pixi-container");
+  if (container) container.appendChild(app.canvas);
+
+
+  // === blocage des gestes natifs ===
+  app.canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+  app.canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+  app.canvas.addEventListener('touchend', e => e.preventDefault(), { passive: false });
+  app.canvas.addEventListener('wheel', e => e.preventDefault(), { passive: false });
+
+  // stage : The root display container that's rendered.
+  app.stage.eventMode = 'static';
+  app.stage.hitArea = app.screen;
+
+  const activePointers = new Map();
+  let lastPinchDistance = null;
+
+  const onPointerDown = async (event) => {
+    if (drawingEnabled) return;
+
+    pointerPos = { x: event.global.x, y: event.global.y }; // met à jour la position du pointeur
+    activePointers.set(event.pointerId, event.global.clone());
+
+    if (activePointers.size === 1) {
+      if (cursorGraphic) {
+        cursorGraphic.position.set(event.global.x, event.global.y);
+        cursorGraphic.visible = true; // rend le curseur visible
+      } else {
+        if (cursorGraphic) cursorGraphic.visible = false; // cache le curseur si pas de pointeur unique
+      }
+    }
+  };
+
+  const onPointerMove = (event) => {
+    if (drawingEnabled) return; // Ne rien faire si on dessine
+    if (!activePointers.has(event.pointerId)) return;
+
+    activePointers.set(event.pointerId, event.global.clone());
+    if (activePointers.size === 1) {
+      pointerPos = { x: event.global.x, y: event.global.y };
+      
+      if (cursorGraphic) {
+        cursorGraphic.position.set(event.global.x, event.global.y);
+        cursorGraphic.visible = true;
+      }
+
+    } else if (activePointers.size === 2) {
+      pointerPos = { x:-9999, y: -9999 }; // désactive le pointeur unique
+      if (cursorGraphic) cursorGraphic.visible = false; // cache le curseur
+      
+      const pointers = Array.from(activePointers.values());
+      const p1 = pointers[0];
+      const p2 = pointers[1];
+      const currentDistance = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+
+
+      if (lastPinchDistance === null) {
+        //point central entre les deux doigts
+        const pinchCenterGlobal = new PIXI.Point((p1.x + p2.x)/2, (p1.y + p2.y)/2);
+        const pinchCenterLocal = pixiContainer.toLocal(pinchCenterGlobal);
+
+        //on déplace le pivot du conteneur vers ce nouveau centre:
+        pixiContainer.pivot.copyFrom(pinchCenterLocal);
+
+        //on ajuste sa position pour que le nouveau pivot apparaisse au m endroit que l'ancien
+        pixiContainer.position.copyFrom(pinchCenterGlobal);
+      }
+
+      if (lastPinchDistance !== null) {
+        const delta = currentDistance - lastPinchDistance;
+        const sensitivity = 0.005;
+        zoomFactor = Math.max(0.5, Math.min(2.5, zoomFactor + delta * sensitivity));
+      }
+      lastPinchDistance = currentDistance;
+    }
+  };
+
+  const onPointerUp = (event) => {
+
+    if (drawingEnabled) return; // Ne rien faire si on dessine
+
+    activePointers.delete(event.pointerId);
+    if (activePointers.size < 2) {
+      lastPinchDistance = null;
+    }
+
+    if (activePointers.size === 0) {
+      pointerPos = { x: -9999, y: -9999 };
+      if (cursorGraphic) cursorGraphic.visible = false; // cache le curseur
+
+      // Réinitialise l'état de proximité de tous les points
+      for (const point of pixiPoints) {
+        point.isInside = false;
+      }
+    }
+  };
+
+  app.stage.on("pointerdown", onPointerDown);
+  app.stage.on("pointermove", onPointerMove);
+  app.stage.on("pointerup", onPointerUp);
+  app.stage.on("pointerupoutside", onPointerUp);
+
+  // au cas ou la fenêtre change de taille, on redessine les points
+  window.addEventListener('resize', () => {
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    updateCenter();
+    
+    drawPixiPoints(pointsData, app, pixiPoints);// on redessine les points
+    
+    if (lastFormeLibrePath) {
+      ReDessinFormeLibre(lastFormeLibrePath, pixiPoints);
+      console.log('formelibre dessinée de resize');
+    }
+  });
+
+  
+  cursorGraphic = createCursor(app); // Crée le curseur.
+
+  // ***** TICKER : actualisation de l'app sur chaque frame ******
+  app.ticker.add(() => {
+
+    if (cursorGraphic && cursorGraphic.visible) {
+      cursorGraphic.position.set(pointerPos.x, pointerPos.y);
+    }
+    
+    //** mais a jour l'echelle du zoom à chaque frame */
+    if (pixiContainer) {
+    pixiContainer.scale.set(zoomFactor);
+    }
+
+    triggerGrainsOnProximity();
+  });
+
+}
 
 // crée un selecteur pour sélectionner la page/buffer à jouer.
 function createPageSelector(bufferNames, onPageChange) {
@@ -92,40 +235,59 @@ function createPageSelector(bufferNames, onPageChange) {
   });
 }
 
-async function initializeAudioAndNetwork() {
-
-  if (isInitialized) return;
-  isInitialized = true;
-
-
+async function initialiseContexteAudio() {
   try {
-    // 1) on initialise le contexte audio
     if (audioContext && audioContext.state === "suspended") {
         await audioContext.resume();
     }
     console.log("1) audioContext.state:", audioContext.state);
+  } catch (e) {
+    console.log("erreur initialisation contexte audio", e);
+  }
+} 
 
-    // 2) on init l'effet audio
+async function initialiseEffetAudio() {
+  try {
     const result = await initEffect();
     let effectNode = null;
     effectNode = result.effectNode;
     console.log("2) effectNode init: ", effectNode);
+  } catch (e) {
+    console.log("erreur initialisation effet audio", e);
+  }
+}
 
+async function chargeFichiersAudioEtJson() {
+  try {
+    // 4) on charge les buffers et fichiers d'analyse
+    buffers = await loadAudioBuffers();// { "enr1.wav": AudioBuffer, ... }
+    points = await loadJsonPoints();  // { "enr1.json": [ ... ], ... }
+  }
+  catch (e) {
+    console.log("erreur chargement des fichiers audio et json",e);
+  }
+}
+
+async function initialiseSocket() {
+  try {
     // 3) on init le socket
     initSocket();
     setupSocketAndHandlers(effectNode, feedbackGain);
     console.log ('3) initsocket OK');
+  } catch (e) {
+    console.log("erreur initialisation du socket et handler",e);
+  }
+}
 
-    // 4) on charge les buffers et fichiers d'analyse
-    buffers = await loadAudioBuffers();// { "enr1.wav": AudioBuffer, ... }
-    points = await loadJsonPoints();  // { "enr1.json": [ ... ], ... }
-
-    nbPages = Object.keys(buffers).length; // mise à jour du nb de pages
+async function initialiseSelecteurDePage() {
+  try {
+    
+    bufferNames = Object.keys(buffers);  // ["enr1.wav", "enr2.wav", ...]
+    nbPages = bufferNames.length; // mise à jour du nb de pages
 
     console.log('4) buffers : ', buffers, 'points', points);
 
-    const bufferNames = Object.keys(buffers);  // ["enr1.wav", "enr2.wav", ...]
-
+    
     createPageSelector(bufferNames, (pageIdx) => {
       currentPage = pageIdx;
       const bufferName = bufferNames[pageIdx]; // ex; "enr1.wav"
@@ -145,10 +307,10 @@ async function initializeAudioAndNetwork() {
       buffer = buffers[bufferName];
     }
 
-  } catch (error) {
-        console.error("erreur lors de l'init post-interaction: ", error);
-      
-    }
+  }
+  catch(e){
+
+  }
 }
 
 export function onFormeLibreComplete(path) {
@@ -171,7 +333,7 @@ function getProximityThreshold() {
   return base / zoomFactor;
 }
 
-// les opérations interviennent après le chargement du DOM
+// =======  après le chargement du DOM ==========
 document.addEventListener('DOMContentLoaded', () => {
 
   console.log("DOM chargé, initialisation des éléments...");
@@ -186,11 +348,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // *** click INIT initialisation de tous les éléments ***
   init.addEventListener("click", async () => {
+    
+    if (isInitialized) return;
+    isInitialized = true;
 
     await setupPixi();
-    console.log("setupPixi terminé !", app);
+    console.log("1) SetupPixi terminé : ", app);
 
-    await initializeAudioAndNetwork();
+    await initialiseContexteAudio();
+
+    await initialiseEffetAudio();
+
+    await chargeFichiersAudioEtJson();
+
+    await initialiseSocket();
+
+    await initialiseSelecteurDePage()
+
+    //await initializeAudioAndNetwork();
 
     console.log('pointsData : ', pointsData);
 
@@ -295,147 +470,4 @@ function triggerGrainsOnProximity() {
     point.currentRadius += (point.targetRadius - point.currentRadius) * speed;
     point.drawSelf();
   }
-}
-
-// Initialise et configure l'application Pixi.js
-async function setupPixi() {
-
-  app = new PIXI.Application();
-  await app.init({
-    resizeTo: window,
-    backgroundColor: 0x000000 // couleur du fond
-  });
-
-  const container = document.getElementById("pixi-container");
-  if (container) container.appendChild(app.canvas);
-
-  cursorGraphic = createCursor(app); // Crée le curseur.
-
-  // === BLOCAGE DES GESTES NATIFS ===
-  // Empêche le navigateur de gérer les gestes tactiles (scroll, zoom, multitâche) sur notre canvas
-  app.canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
-  app.canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
-  app.canvas.addEventListener('touchend', e => e.preventDefault(), { passive: false });
-  // On bloque aussi la molette pour éviter le zoom du navigateur sur les trackpads
-  app.canvas.addEventListener('wheel', e => e.preventDefault(), { passive: false });
-  // ===================================
-
-  // stage : The root display container that's rendered.
-  app.stage.eventMode = 'static';
-  app.stage.hitArea = app.screen;
-
-  const activePointers = new Map();
-  let lastPinchDistance = null;
-
-  app.stage.on("pointerdown", async (event) => {
-    if (drawingEnabled) return;
-
-    pointerPos = { x: event.global.x, y: event.global.y }; // met à jour la position du pointeur
-    activePointers.set(event.pointerId, event.global.clone());
-
-    if (activePointers.size === 1) {
-      if (cursorGraphic) {
-        cursorGraphic.position.set(event.global.x, event.global.y);
-        cursorGraphic.visible = true; // rend le curseur visible
-      } else {
-        if (cursorGraphic) cursorGraphic.visible = false; // cache le curseur si pas de pointeur unique
-      }
-    }
-  });
-
-  app.stage.on("pointermove", (event) => {
-    if (drawingEnabled) return; // Ne rien faire si on dessine
-    if (!activePointers.has(event.pointerId)) return;
-
-    activePointers.set(event.pointerId, event.global.clone());
-    if (activePointers.size === 1) {
-      pointerPos = { x: event.global.x, y: event.global.y };
-      
-      if (cursorGraphic) {
-        cursorGraphic.position.set(event.global.x, event.global.y);
-        cursorGraphic.visible = true;
-      }
-
-    } else if (activePointers.size === 2) {
-      pointerPos = { x:-9999, y: -9999 }; // désactive le pointeur unique
-      if (cursorGraphic) cursorGraphic.visible = false; // cache le curseur
-      
-      const pointers = Array.from(activePointers.values());
-      const p1 = pointers[0];
-      const p2 = pointers[1];
-      const currentDistance = Math.hypot(p1.x - p2.x, p1.y - p2.y);
-
-
-      if (lastPinchDistance === null) {
-        //point central entre les deux doigts
-        const pinchCenterGlobal = new PIXI.Point((p1.x + p2.x)/2, (p1.y + p2.y)/2);
-        const pinchCenterLocal = pixiContainer.toLocal(pinchCenterGlobal);
-
-        //on déplace le pivot du conteneur vers ce nouveau centre:
-        pixiContainer.pivot.copyFrom(pinchCenterLocal);
-
-        //on ajuste sa position pour que le nouveau pivot apparaisse au m endroit que l'ancien
-        pixiContainer.position.copyFrom(pinchCenterGlobal);
-      }
-
-      if (lastPinchDistance !== null) {
-        const delta = currentDistance - lastPinchDistance;
-        const sensitivity = 0.005;
-        zoomFactor = Math.max(0.5, Math.min(2.5, zoomFactor + delta * sensitivity));
-      }
-      lastPinchDistance = currentDistance;
-    }
-  });
-
-  const onPointerUp = (event) => {
-
-    if (drawingEnabled) return; // Ne rien faire si on dessine
-
-    activePointers.delete(event.pointerId);
-    if (activePointers.size < 2) {
-      lastPinchDistance = null;
-    }
-    if (activePointers.size === 0) {
-      pointerPos = { x: -9999, y: -9999 };
-      if (cursorGraphic) cursorGraphic.visible = false; // cache le curseur
-
-      // Réinitialise l'état de proximité de tous les points
-  for (const point of pixiPoints) {
-    point.isInside = false;
-  }
-    }
-  };
-
-    app.stage.on("pointerup", onPointerUp);
-    app.stage.on("pointerupoutside", onPointerUp);
-
-
-  // au cas ou la fenêtre change de taille, on redessine les points
-  window.addEventListener('resize', () => {
-    app.renderer.resize(window.innerWidth, window.innerHeight);
-    updateCenter();
-    
-    drawPixiPoints(pointsData, app, pixiPoints);// on redessine les points
-    
-    if (lastFormeLibrePath) {
-      ReDessinFormeLibre(lastFormeLibrePath, pixiPoints);
-      console.log('formelibre dessinée de resize');
-    }
-  });
-
-  // ticker : actualisation de l'app sur chaque frame
-  app.ticker.add(() => {
-
-    if (cursorGraphic && cursorGraphic.visible) {
-      cursorGraphic.position.set(pointerPos.x, pointerPos.y);
-    }
-    
-    //** mais a jour l'echelle du zoom à chaque frame */
-    if (pixiContainer) {
-    pixiContainer.scale.set(zoomFactor);
-    }
-
-    triggerGrainsOnProximity();
-  });
-
 }
