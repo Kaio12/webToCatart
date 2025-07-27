@@ -15,7 +15,7 @@ export const audioContext = new (window.AudioContext || window.webkitAudioContex
 let isInitialized = false;
 
 let pointsData = [];  // les données des points à afficher, chargées depuis le serveur
-let currentPage = 1;
+let currentPage = 0;
 
 const pageBackgroundColors = [
    0x1a237e, // bleu profond
@@ -218,7 +218,7 @@ function createPageSelector(bufferNames, onPageChange) {
 
   bufferNames.forEach((name, idx) => {
     const btn = document.createElement("button");
-    btn.textContent = (idx + 1).toString();
+    btn.textContent = name.replace(".wav", "");
     btn.onclick = () => {
       onPageChange(idx);
 
@@ -303,11 +303,14 @@ async function initialiseSelecteurDePage() {
 
     // Affiche la première page par défaut
     if (bufferNames.length > 0) {
-      currentPage = 0;
+      //currentPage = 0;
       const bufferName = bufferNames[0];
       const jsonName = bufferName.replace(/\.wav$/i, ".json");
       pointsData = points[jsonName] || [];
       buffer = buffers[bufferName];
+      if (app && pageBackgroundColors[0] !== undefined) {
+        app.renderer.background.color = pageBackgroundColors[0];
+      }
     }
 
   }
