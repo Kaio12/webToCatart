@@ -3,12 +3,16 @@
 
 import { playGrain,initEffect, feedbackGain } from "./audio.js";
 import { initSocket, setupSocketAndHandlers, sendOSC, loadJsonPoints, loadAudioBuffers } from "./network.js";
-import { drawPixiPoints, setupFormesLibres, createCursor, updateCenter, DessinFormeLibre, ReDessinFormeLibre, pixiContainer, formesLibres, formesLibresContextes } from "./graphics.js";
+import { drawPixiPoints, setupFormesLibres, createCursor, updateCenter, DessinFormeLibre, ReDessinFormeLibre, formesLibres, formesLibresContextes } from "./graphics.js";
 
+export let pixiContainer = null; // conteneur Pixi pour les points
 
 export let app; // app pixi
 export let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
 export let drawingEnabled = false; // pour activer/désactiver le dessin libre
+
+export let centerX = window.innerWidth / 2;
+export let centerY = window.innerHeight / 2;
 
 export const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -44,7 +48,7 @@ const selectorDiv = document.getElementById("page-selector"); // selecteur de pa
 const init = document.getElementById("init"); // bouton d'initialistion globale.
 const drawToggleButton = document.getElementById("draw-toggle");
 
-let lastFormeLibrePath; //sauvegarde des coordo de la forme libre.
+let lastFormesLibresPath = []; //sauvegarde des coordo des formes libres.
 
 let zoomFactor = 1.0 // facteur zoom affichage des points
 
@@ -76,6 +80,13 @@ async function setupPixi() {
   const container = document.getElementById("pixi-container");
   if (container) container.appendChild(app.canvas);
 
+  // Création du container principal pour les points et formes libres
+  if (!pixiContainer) {
+    pixiContainer = new PIXI.Container();
+    pixiContainer.pivot.set(centerX, centerY); // Centre le conteneur
+    pixiContainer.position.set(centerX, centerY); 
+    app.stage.addChild(pixiContainer);
+  }
 
   // === blocage des gestes natifs ===
   app.canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
@@ -180,10 +191,10 @@ async function setupPixi() {
     app.renderer.resize(window.innerWidth, window.innerHeight);
     updateCenter();
     
-    drawPixiPoints(pointsData, app, pixiPoints);// on redessine les points
+    drawPixiPoints(pointsData, app, pixiPoints, pixiContainer);// on redessine les points
     
-    if (lastFormeLibrePath) {
-      ReDessinFormeLibre(lastFormeLibrePath, pixiPoints);
+    if (lastFormesLibresPath[currentPage]) {
+      ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints);
       console.log('formelibre dessinée de resize');
     }
   });
@@ -295,7 +306,7 @@ async function initialiseSelecteurDePage() {
       pointsData = points[jsonName] || [];
       buffer = buffers[bufferName];
 
-      drawPixiPoints(pointsData, app, pixiPoints);
+      drawPixiPoints(pointsData, app, pixiPoints, pixiContainer);
       // manque le redessin de la formelibre;
 
       console.log("6) Sélecteur de page initialisé");
@@ -321,7 +332,7 @@ async function initialiseSelecteurDePage() {
 
 export function onFormeLibreComplete(path) {
 
-  lastFormeLibrePath = path; // stocke le chemin pour le resize/redessin
+  lastFormesLibresPath[currentPage] = path; // stocke le chemin pour le resize/redessin
   drawingEnabled = false;
   const drawToggleButton = document.getElementById("draw-toggle");
   drawToggleButton.textContent = "Activer le dessin";
@@ -342,7 +353,7 @@ function getProximityThreshold() {
 // =======  INITIALISATION ==========
 document.addEventListener('DOMContentLoaded', () => {
 
-  console.log("DOM chargé, initialisation des éléments...");
+  console.log("DOM chargé, initialisation des éléments");
 
   // Empêche le zoom natif du navigateur (pinch sur trackpad)
   window.addEventListener('wheel', function(e) {
@@ -372,16 +383,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     console.log('pointsData : ', pointsData);
 
-    drawPixiPoints(pointsData, app, pixiPoints);
+    drawPixiPoints(pointsData, app, pixiPoints, pixiContainer);
 
     console.log('pixiPoints : ', pixiPoints);
     
-    setupFormesLibres(app, nbPages); // init nb de formesLibres = nb de pages
+    setupFormesLibres(app, nbPages, pixiContainer); // init nb de formesLibres = nb de pages
 
   });
-
-
-  
 
   // ****** pour dessiner la forme libre *******
   drawToggleButton.addEventListener("click", () => {
@@ -391,13 +399,10 @@ document.addEventListener('DOMContentLoaded', () => {
       drawToggleButton.textContent = 'Désactiver mode dessin';
       drawToggleButton.style.backgroundColor = "#f00";
 
-      let formeLibre = formesLibres[currentPage];
-      let formeLibreContext = formesLibresContextes[currentPage];
-
-      DessinFormeLibre(app, drawingEnabled, pixiPoints, onFormeLibreComplete, formeLibre, formeLibreContext);
-      console.log ("lastFormeLibrePath :", lastFormeLibrePath);
-      console.log("formeLibre", formeLibre);
-      if (formeLibre) formeLibre.visible = true; // rend la forme libre visible
+      DessinFormeLibre(app, drawingEnabled, pixiPoints, onFormeLibreComplete, formesLibres[currentPage], formesLibresContextes[currentPage], pixiContainer);
+      console.log ("lastFormesLibresPath :", lastFormesLibresPath[currentPage]);
+      console.log("formesLibres[currentPage]", formesLibres[currentPage]);
+      if (formesLibres[currentPage]) formesLibres[currentPage].visible = true; // rend la forme libre visible
       console.log("Dessin activé");
     } 
   });
@@ -407,20 +412,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen();
         updateCenter(); // met à jour le centre de la vue
-        drawPixiPoints(pointsData, app, pixiPoints);// on redessine les points
+        drawPixiPoints(pointsData, app, pixiPoints, pixiContainer);// on redessine les points
 
         if (pixiContainer && formeLibre && !pixiContainer.children.includes(formeLibre)) {pixiContainer.addChild(formeLibre);}
 
-        console.log('Log fullscreen : lastFormeLibrePath', lastFormeLibrePath, 
-                  'pixicontainer: ', pixiContainer, 
-                  'formelibre:', formeLibre, 
-                  '!pixiContainer.children.includes(formeLibre)', !pixiContainer.children.includes(formeLibre), 
-                  'pixiContainer.children: ', pixiContainer.children);
-
-        if (lastFormeLibrePath) {
+        if (lastFormesLibresPath[currentPage]) {
         console.log("fullscreen redessine");
 
-        ReDessinFormeLibre(lastFormeLibrePath, pixiPoints);
+        ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints);
 
         if (formeLibre) formeLibre.visible = true;
         } else {

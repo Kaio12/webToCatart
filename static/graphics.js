@@ -7,9 +7,7 @@ let isCurrentlyDrawing = false; // Indique si le dessin est en cours
 let startDrawPoint;
 let currentPath = [];
 
-export let pixiContainer = null; // conteneur Pixi pour les points
-export let centerX = window.innerWidth / 2;
-export let centerY = window.innerHeight / 2;
+
 
 // Fonction pour mettre à jour le centre lors du resize
 export function updateCenter() {
@@ -17,7 +15,7 @@ export function updateCenter() {
   centerY = window.innerHeight / 2;
 }
 
-export function drawPixiPoints(pointsData, app, pixiPoints) {
+export function drawPixiPoints(pointsData, app, pixiPoints, pixiContainer) {
 
   if (!app) {console.error("L'app pixi n'est pas initialisée");
     return;}
@@ -25,13 +23,6 @@ export function drawPixiPoints(pointsData, app, pixiPoints) {
       console.warn("Aucune donnée à afficher.");
       return;
     }
-
-  if (!pixiContainer) {
-    pixiContainer = new PIXI.Container();
-    pixiContainer.pivot.set(centerX, centerY); // Centre le conteneur
-    pixiContainer.position.set(centerX, centerY); 
-    app.stage.addChild(pixiContainer);
-  }
 
   pixiContainer.removeChildren(); // Efface les anciens points
   pixiPoints.length = 0;
@@ -84,7 +75,7 @@ export function drawPixiPoints(pointsData, app, pixiPoints) {
   });
 }
   
-export function setupFormesLibres (app,  nbPages) {
+export function setupFormesLibres (app,  nbPages, pixiContainer) {
   formesLibres = [];
   formesLibresContextes = [];
 
@@ -108,7 +99,7 @@ export function setupFormesLibres (app,  nbPages) {
   return formesLibres;
 }   
 
-export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCallback, formeLibre, formeLibreContext) {
+export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCallback, formeLibre, formeLibreContext, pixiContainer) {
   const stage = app.stage;
   let lastPath; //pour sauvegarder les coordonnées après dessin de la forme libre.
 
@@ -171,6 +162,7 @@ export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCall
         }));
       onCompleteCallback(normPath);
       }
+
 
       // on nettoie les écouteurs après le dessin de la forme libre.
       if (onDrawStart) stage.off("pointerdown", onDrawStart);
