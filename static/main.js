@@ -77,6 +77,7 @@ async function setupPixi() {
     backgroundColor: 0x000000 // couleur du fond
   });
 
+  // on ajout l'app canvas à la partie pixi-contianer de la page
   const container = document.getElementById("pixi-container");
   if (container) container.appendChild(app.canvas);
 
@@ -194,7 +195,7 @@ async function setupPixi() {
     drawPixiPoints(pointsData, app, pixiPoints, pixiContainer);// on redessine les points
     
     if (lastFormesLibresPath[currentPage]) {
-      ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints);
+        ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints, formesLibres[currentPage], formesLibresContextes[currentPage], pixiContainer );
       console.log('formelibre dessinée de resize');
     }
   });
@@ -209,10 +210,18 @@ async function setupPixi() {
       cursorGraphic.position.set(pointerPos.x, pointerPos.y);
     }
     
-    //** mais a jour l'echelle du zoom à chaque frame */
+    // met à jour l'echelle du zoom à chaque frame */
     if (pixiContainer) {
     pixiContainer.scale.set(zoomFactor);
     }
+
+
+  // S'assure que la forme libre courante est visible si on est en mode dessin
+  if (drawingEnabled && formesLibres[currentPage]) {
+    formesLibres[currentPage].visible = true;
+  }
+
+ 
 
     triggerGrainsOnProximity();
   });
@@ -307,9 +316,11 @@ async function initialiseSelecteurDePage() {
       buffer = buffers[bufferName];
 
       drawPixiPoints(pointsData, app, pixiPoints, pixiContainer);
-      // manque le redessin de la formelibre;
+      if (lastFormesLibresPath[currentPage]) {
+        ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints, formesLibres[currentPage], formesLibresContextes[currentPage], pixiContainer );
+      }
 
-      console.log("6) Sélecteur de page initialisé");
+      console.log("Sélecteur de page initialisé");
     });
 
     // Affiche la première page par défaut
@@ -381,14 +392,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     await initialiseSelecteurDePage()
 
-    console.log('pointsData : ', pointsData);
-
     drawPixiPoints(pointsData, app, pixiPoints, pixiContainer);
-
-    console.log('pixiPoints : ', pixiPoints);
     
     setupFormesLibres(app, nbPages, pixiContainer); // init nb de formesLibres = nb de pages
-
   });
 
   // ****** pour dessiner la forme libre *******
@@ -419,7 +425,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (lastFormesLibresPath[currentPage]) {
         console.log("fullscreen redessine");
 
-        ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints);
+        ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints, pixiContainer);
 
         if (formeLibre) formeLibre.visible = true;
         } else {
@@ -430,6 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 });
+
 
 //*********   FONCTION QUI JOUE LES GRAINS, ENVOIE LES INFOS OSC */
 function triggerGrainsOnProximity() {

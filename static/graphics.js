@@ -80,14 +80,14 @@ export function setupFormesLibres (app,  nbPages, pixiContainer) {
   formesLibresContextes = [];
 
   for (let i = 0; i < nbPages; i++) {
-    const ctx = new PIXI.GraphicsContext();
-    const graphic = new PIXI.Graphics(ctx);
+    const ctx = new PIXI.GraphicsContext(); 
+    const graphic = new PIXI.Graphics(ctx); 
     formesLibresContextes.push(ctx);
     formesLibres.push(graphic);
 
     if(pixiContainer) {
       pixiContainer.addChild(graphic);
-      graphic.visible = false;
+      //graphic.visible = false;
 
     }
     else {
@@ -181,8 +181,8 @@ export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCall
   } 
 }
 
-// après un zoom ou un redimensionnement de fenetre
-export function ReDessinFormeLibre(normPath, pixiPoints) {
+// après un zoom ou un redimensionnement de fenetre, ou le choix d'un corpus
+export function ReDessinFormeLibre(normPath, pixiPoints, formeLibre, formeLibreContext, pixiContainer) {
   formeLibreContext.clear();
   const pxPath = normPath.map(pt => ({
     x: pt.x * window.innerWidth,
