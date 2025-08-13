@@ -46,6 +46,7 @@ let effectNode;
 
 const selectorDiv = document.getElementById("page-selector"); // selecteur de page.
 const init = document.getElementById("init"); // bouton d'initialistion globale.
+const deleteEffect = document.getElementById("efface-formelibre"); // pour effacer la forme libre et l'effet afférent
 const drawToggleButton = document.getElementById("draw-toggle");
 
 let lastFormesLibresPath = []; //sauvegarde des coordo des formes libres.
@@ -395,6 +396,17 @@ document.addEventListener('DOMContentLoaded', () => {
     drawPixiPoints(pointsData, app, pixiPoints, pixiContainer);
     
     setupFormesLibres(app, nbPages, pixiContainer); // init nb de formesLibres = nb de pages
+  });
+
+  deleteEffect.addEventListener("click", async () => {
+    if (formesLibresContextes[currentPage]) {
+      formesLibresContextes[currentPage].clear();
+       // On met à jour la propriété des points pour l'effet
+      pixiPoints.forEach(point => {
+        point.isEffectEnabled = formesLibres[currentPage].containsPoint(point.position);
+  });
+
+    }
   });
 
   // ****** pour dessiner la forme libre *******
