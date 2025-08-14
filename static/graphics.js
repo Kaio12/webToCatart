@@ -15,7 +15,7 @@ export function updateCenter() {
   centerY = window.innerHeight / 2;
 }
 
-export function drawPixiPoints(pointsData, app, pixiPoints, pixiContainer) {
+export function drawPixiPoints(pointsData, app, pixiPoints, pixiPointsContainer) {
 
   if (!app) {console.error("L'app pixi n'est pas initialisée");
     return;}
@@ -24,7 +24,7 @@ export function drawPixiPoints(pointsData, app, pixiPoints, pixiContainer) {
       return;
     }
 
-  pixiContainer.removeChildren(); // Efface les anciens points
+  pixiPointsContainer.removeChildren(); // Efface les anciens points
   pixiPoints.length = 0;
 
   const bounds = getBounds(pointsData);
@@ -70,12 +70,12 @@ export function drawPixiPoints(pointsData, app, pixiPoints, pixiContainer) {
 
     pointGraphic.drawSelf();
 
-    pixiContainer.addChild(pointGraphic); // Ajoute au container dédié
+    pixiPointsContainer.addChild(pointGraphic); // Ajoute au container dédié
     pixiPoints.push(pointGraphic);
   });
 }
   
-export function setupFormesLibres (app,  nbPages, pixiContainer) {
+export function setupFormesLibres (app,  nbPages, formesLibresContainer) {
   formesLibres = [];
   formesLibresContextes = [];
 
@@ -85,10 +85,8 @@ export function setupFormesLibres (app,  nbPages, pixiContainer) {
     formesLibresContextes.push(ctx);
     formesLibres.push(graphic);
 
-    if(pixiContainer) {
-      pixiContainer.addChild(graphic);
-      //graphic.visible = false;
-
+    if(formesLibresContainer) {
+      formesLibresContainer.addChild(graphic);
     }
     else {
       console.log ("pas de pixiContainer lors de l'initialisation des formesLibres");

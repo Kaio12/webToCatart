@@ -5,7 +5,10 @@ import { playGrain,initEffect, feedbackGain } from "./audio.js";
 import { initSocket, setupSocketAndHandlers, sendOSC, loadJsonPoints, loadAudioBuffers } from "./network.js";
 import { drawPixiPoints, setupFormesLibres, createCursor, updateCenter, DessinFormeLibre, ReDessinFormeLibre, formesLibres, formesLibresContextes } from "./graphics.js";
 
-export let pixiContainer = null; // conteneur Pixi pour les points
+export let pixiContainer = null; // conteneur Pixi global
+export let pixiPointsContainer = null; // pour les points
+export let formesLibresContainer = null; // pour les formes libres
+
 
 export let app; // app pixi
 export let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
@@ -89,6 +92,18 @@ async function setupPixi() {
     pixiContainer.position.set(centerX, centerY); 
     app.stage.addChild(pixiContainer);
   }
+
+  // Sous conteneurs
+  pixiPointsContainer = new PIXI.Container();
+  formesLibresContainer = new PIXI.Container();
+  pixiContainer.addChild(pixiPointsContainer);
+  pixiContainer.addChild(formesLibresContainer);
+    // Définir les zIndex
+  pixiPointsContainer.zIndex = 1; // Les points en dessous
+  formesLibresContainer.zIndex = 2; // Les formes libres au-dessus
+
+    // Activer le tri par zIndex
+  pixiContainer.sortableChildren = true;
 
   // === blocage des gestes natifs ===
   app.canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
@@ -193,7 +208,7 @@ async function setupPixi() {
     app.renderer.resize(window.innerWidth, window.innerHeight);
     updateCenter();
     
-    drawPixiPoints(pointsData, app, pixiPoints, pixiContainer);// on redessine les points
+    drawPixiPoints(pointsData, app, pixiPoints, pixiPointsContainer);// on redessine les points
     
     if (lastFormesLibresPath[currentPage]) {
         ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints, formesLibres[currentPage], formesLibresContextes[currentPage], pixiContainer );
@@ -215,14 +230,7 @@ async function setupPixi() {
     if (pixiContainer) {
     pixiContainer.scale.set(zoomFactor);
     }
-
-
-  // S'assure que la forme libre courante est visible si on est en mode dessin
-  if (drawingEnabled && formesLibres[currentPage]) {
-    formesLibres[currentPage].visible = true;
-  }
-
- 
+    
 
     triggerGrainsOnProximity();
   });
@@ -234,7 +242,6 @@ async function setupPixi() {
 // crée un selecteur pour sélectionner la page/buffer à jouer.
 function createPageSelector(bufferNames, onPageChange) {
 
-  
   selectorDiv.innerHTML = ""; //efface le contenu précédent
 
   bufferNames.forEach((name, idx) => {
@@ -316,9 +323,10 @@ async function initialiseSelecteurDePage() {
       pointsData = points[jsonName] || [];
       buffer = buffers[bufferName];
 
-      drawPixiPoints(pointsData, app, pixiPoints, pixiContainer);
+      drawPixiPoints(pointsData, app, pixiPoints, pixiPointsContainer);
       if (lastFormesLibresPath[currentPage]) {
         ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints, formesLibres[currentPage], formesLibresContextes[currentPage], pixiContainer );
+          if (formesLibres[currentPage]) formesLibres[currentPage].visible = true;
       }
 
       console.log("Sélecteur de page initialisé");
@@ -382,20 +390,15 @@ document.addEventListener('DOMContentLoaded', () => {
     isInitialized = true;
 
     await setupPixi();
-
     await initialiseContexteAudio();
-
     await initialiseEffetAudio();
-
     await chargeFichiersAudioEtJson();
-
     await initialiseSocket();
-
     await initialiseSelecteurDePage()
 
-    drawPixiPoints(pointsData, app, pixiPoints, pixiContainer);
+    drawPixiPoints(pointsData, app, pixiPoints, pixiPointsContainer);
     
-    setupFormesLibres(app, nbPages, pixiContainer); // init nb de formesLibres = nb de pages
+    setupFormesLibres(app, nbPages, formesLibresContainer); // init nb de formesLibres = nb de pages
   });
 
   deleteEffect.addEventListener("click", async () => {
@@ -404,8 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
        // On met à jour la propriété des points pour l'effet
       pixiPoints.forEach(point => {
         point.isEffectEnabled = formesLibres[currentPage].containsPoint(point.position);
-  });
-
+      });
     }
   });
 
@@ -418,8 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
       drawToggleButton.style.backgroundColor = "#f00";
 
       DessinFormeLibre(app, drawingEnabled, pixiPoints, onFormeLibreComplete, formesLibres[currentPage], formesLibresContextes[currentPage], pixiContainer);
-      console.log ("lastFormesLibresPath :", lastFormesLibresPath[currentPage]);
-      console.log("formesLibres[currentPage]", formesLibres[currentPage]);
+      
       if (formesLibres[currentPage]) formesLibres[currentPage].visible = true; // rend la forme libre visible
       console.log("Dessin activé");
     } 
@@ -430,7 +431,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen();
         updateCenter(); // met à jour le centre de la vue
-        drawPixiPoints(pointsData, app, pixiPoints, pixiContainer);// on redessine les points
+        drawPixiPoints(pointsData, app, pixiPoints, pixiPointsContainer);// on redessine les points
 
         if (pixiContainer && formeLibre && !pixiContainer.children.includes(formeLibre)) {pixiContainer.addChild(formeLibre);}
 
@@ -448,7 +449,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 });
-
 
 //*********   FONCTION QUI JOUE LES GRAINS, ENVOIE LES INFOS OSC */
 function triggerGrainsOnProximity() {
