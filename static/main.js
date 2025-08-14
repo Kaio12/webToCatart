@@ -85,25 +85,13 @@ async function setupPixi() {
   const container = document.getElementById("pixi-container");
   if (container) container.appendChild(app.canvas);
 
-  // Création du container principal pour les points et formes libres
+  // Création du container principal PIXI
   if (!pixiContainer) {
     pixiContainer = new PIXI.Container();
     pixiContainer.pivot.set(centerX, centerY); // Centre le conteneur
     pixiContainer.position.set(centerX, centerY); 
     app.stage.addChild(pixiContainer);
   }
-
-  // Sous conteneurs
-  pixiPointsContainer = new PIXI.Container();
-  formesLibresContainer = new PIXI.Container();
-  pixiContainer.addChild(pixiPointsContainer);
-  pixiContainer.addChild(formesLibresContainer);
-    // Définir les zIndex
-  pixiPointsContainer.zIndex = 1; // Les points en dessous
-  formesLibresContainer.zIndex = 2; // Les formes libres au-dessus
-
-    // Activer le tri par zIndex
-  pixiContainer.sortableChildren = true;
 
   // === blocage des gestes natifs ===
   app.canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
@@ -310,6 +298,25 @@ async function initialiseSocket() {
   }
 }
 
+async function initSousConteneurs() {
+  try {
+  // Sous conteneurs
+  pixiPointsContainer = new PIXI.Container();
+  formesLibresContainer = new PIXI.Container();
+  pixiContainer.addChild(pixiPointsContainer);
+  pixiContainer.addChild(formesLibresContainer);
+    // Définir les zIndex
+  pixiPointsContainer.zIndex = 1; // Les points en dessous
+  formesLibresContainer.zIndex = 2; // Les formes libres au-dessus
+
+    // Activer le tri par zIndex
+  pixiContainer.sortableChildren = true;
+  } catch (e) {
+    console.log("erreur init sous conteneurs PIXI",e);
+  }
+}
+
+
 async function initialiseSelecteurDePage() {
   try {
     
@@ -323,6 +330,7 @@ async function initialiseSelecteurDePage() {
       pointsData = points[jsonName] || [];
       buffer = buffers[bufferName];
 
+      // gestion des objets graphiques PIXI à dessiner
       drawPixiPoints(pointsData, app, pixiPoints, pixiPointsContainer);
       if (lastFormesLibresPath[currentPage]) {
         ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints, formesLibres[currentPage], formesLibresContextes[currentPage], pixiContainer );
@@ -394,7 +402,8 @@ document.addEventListener('DOMContentLoaded', () => {
     await initialiseEffetAudio();
     await chargeFichiersAudioEtJson();
     await initialiseSocket();
-    await initialiseSelecteurDePage()
+    await initialiseSelecteurDePage();
+    await initSousConteneurs();
 
     drawPixiPoints(pointsData, app, pixiPoints, pixiPointsContainer);
     
