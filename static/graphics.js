@@ -15,7 +15,7 @@ export function updateCenter() {
   centerY = window.innerHeight / 2;
 }
 
-export function drawPixiPoints(pointsData, app, pixiPoints, pixiPointsContainer) {
+export function drawPixiPoints(pointsData, app, pixiPoints, Container) {
 
   if (!app) {console.error("L'app pixi n'est pas initialisée");
     return;}
@@ -24,7 +24,7 @@ export function drawPixiPoints(pointsData, app, pixiPoints, pixiPointsContainer)
       return;
     }
 
-  pixiPointsContainer.removeChildren(); // Efface les anciens points
+  Container.removeChildren(); // Efface les anciens points
   pixiPoints.length = 0;
 
   const bounds = getBounds(pointsData);
@@ -70,12 +70,12 @@ export function drawPixiPoints(pointsData, app, pixiPoints, pixiPointsContainer)
 
     pointGraphic.drawSelf();
 
-    pixiPointsContainer.addChild(pointGraphic); // Ajoute au container dédié
+    Container.addChild(pointGraphic); // Ajoute au container dédié
     pixiPoints.push(pointGraphic);
   });
 }
   
-export function setupFormesLibres (app,  nbPages, formesLibresContainer) {
+export function setupFormesLibres (app,  nbPages, formesLibresConteneurs) {
   formesLibres = [];
   formesLibresContextes = [];
 
@@ -85,11 +85,11 @@ export function setupFormesLibres (app,  nbPages, formesLibresContainer) {
     formesLibresContextes.push(ctx);
     formesLibres.push(graphic);
 
-    if(formesLibresContainer) {
-      formesLibresContainer.addChild(graphic);
+    if(formesLibresConteneurs) {
+      formesLibresConteneurs[i].addChild(graphic);
     }
     else {
-      console.log ("pas de pixiContainer lors de l'initialisation des formesLibres");
+      console.log ("pas de formesLibresConteneurs lors de l'initialisation des formesLibres");
     }
     
   }
@@ -97,7 +97,7 @@ export function setupFormesLibres (app,  nbPages, formesLibresContainer) {
   return formesLibres;
 }   
 
-export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCallback, formeLibre, formeLibreContext, pixiContainer) {
+export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCallback, formeLibre, formeLibreContext, Container) {
   const stage = app.stage;
   let lastPath; //pour sauvegarder les coordonnées après dessin de la forme libre.
 
@@ -105,7 +105,7 @@ export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCall
 
     onDrawStart = (event) => {
       isCurrentlyDrawing = true;
-      startDrawPoint = pixiContainer.toLocal(event.global);
+      startDrawPoint = Container.toLocal(event.global);
       currentPath = [startDrawPoint];
 
       formeLibreContext.clear()
@@ -113,7 +113,7 @@ export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCall
 
     onDrawMove = (event) => {
       if (isCurrentlyDrawing) {
-        const movePoint = pixiContainer.toLocal(event.global);
+        const movePoint = Container.toLocal(event.global);
         currentPath.push(movePoint);
         
         formeLibreContext.clear();
@@ -180,7 +180,7 @@ export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCall
 }
 
 // après un zoom ou un redimensionnement de fenetre, ou le choix d'un corpus
-export function ReDessinFormeLibre(normPath, pixiPoints, formeLibre, formeLibreContext, pixiContainer) {
+export function ReDessinFormeLibre(normPath, pixiPoints, formeLibre, formeLibreContext, Container) {
   formeLibreContext.clear();
   const pxPath = normPath.map(pt => ({
     x: pt.x * window.innerWidth,
@@ -203,7 +203,7 @@ export function ReDessinFormeLibre(normPath, pixiPoints, formeLibre, formeLibreC
       point.isEffectEnabled = formeLibre.containsPoint(point.position);
   });
 
-  if (pixiContainer && formeLibre && !pixiContainer.children.includes(formeLibre)) {pixiContainer.addChild(formeLibre);}
+  if (Container && formeLibre && !Container.children.includes(formeLibre)) {Container.addChild(formeLibre);}
 
 }
 

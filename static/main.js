@@ -10,6 +10,10 @@ export let pixiPointsContainer = null; // pour les points
 export let formesLibresContainer = null; // pour les formes libres
 
 
+export let pointsConteneurs = [];
+export let formesLibresConteneurs = [];
+export let sequenceursConteneurs = [];
+
 export let app; // app pixi
 export let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
 export let drawingEnabled = false; // pour activer/désactiver le dessin libre
@@ -196,10 +200,10 @@ async function setupPixi() {
     app.renderer.resize(window.innerWidth, window.innerHeight);
     updateCenter();
     
-    drawPixiPoints(pointsData, app, pixiPoints, pixiPointsContainer);// on redessine les points
+    drawPixiPoints(pointsData, app, pixiPoints, pointsConteneurs[currentPage]);// on redessine les points
     
     if (lastFormesLibresPath[currentPage]) {
-        ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints, formesLibres[currentPage], formesLibresContextes[currentPage], pixiContainer );
+        ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
       console.log('formelibre dessinée de resize');
     }
   });
@@ -298,8 +302,37 @@ async function initialiseSocket() {
   }
 }
 
-async function initSousConteneurs() {
+// nbPages bufferNames
+async function initSousConteneurs(bufferNames) {
   try {
+
+bufferNames.forEach((name, idx) => {
+
+  // Crée un conteneur pour chaque page
+  const pageContainer = new PIXI.Container();
+  pixiContainer.addChild(pageContainer);
+
+  // Crée des sous-conteneurs pour les points, formes libres et séquenceurs
+  const pointsContainer = new PIXI.Container();
+  const formesLibresContainer = new PIXI.Container();
+  const sequenceursContainer = new PIXI.Container();
+
+  // Ajoute les sous-conteneurs au conteneur de la page
+  pageContainer.addChild(pointsContainer);
+  pageContainer.addChild(formesLibresContainer);
+  pageContainer.addChild(sequenceursContainer);
+
+  // Gestion Zindex
+  pointsContainer.zIndex = 1;
+  formesLibresContainer.zIndex = 2;
+  sequenceursContainer.zIndex = 3;
+
+  // Stocke les conteneurs dans des structures accessibles si nécessaire
+  pointsConteneurs[idx] = pointsContainer;
+  formesLibresConteneurs[idx] = formesLibresContainer;
+  sequenceursConteneurs[idx] = sequenceursContainer;
+});
+/*
   // Sous conteneurs
   pixiPointsContainer = new PIXI.Container();
   formesLibresContainer = new PIXI.Container();
@@ -308,14 +341,13 @@ async function initSousConteneurs() {
     // Définir les zIndex
   pixiPointsContainer.zIndex = 1; // Les points en dessous
   formesLibresContainer.zIndex = 2; // Les formes libres au-dessus
-
+*/
     // Activer le tri par zIndex
   pixiContainer.sortableChildren = true;
   } catch (e) {
     console.log("erreur init sous conteneurs PIXI",e);
   }
 }
-
 
 async function initialiseSelecteurDePage() {
   try {
@@ -325,15 +357,27 @@ async function initialiseSelecteurDePage() {
     
     createPageSelector(bufferNames, (pageIdx) => {
       currentPage = pageIdx;
+      
+      // rend tous les conteneurs invisibles sauf celui de la page courante
+      pointsConteneurs.forEach((container, idx) => {
+        container.visible = (idx === currentPage);
+      });
+      formesLibresConteneurs.forEach((container, idx) => {
+        container.visible = (idx === currentPage);
+      });
+      sequenceursConteneurs.forEach((container, idx) => {
+        container.visible = (idx === currentPage);
+      });
+      
       const bufferName = bufferNames[pageIdx]; // ex; "enr1.wav"
       const jsonName = bufferName.replace(/\.wav$/i, ".json"); // obtient ex "enr1.json"
       pointsData = points[jsonName] || [];
       buffer = buffers[bufferName];
 
       // gestion des objets graphiques PIXI à dessiner
-      drawPixiPoints(pointsData, app, pixiPoints, pixiPointsContainer);
+      drawPixiPoints(pointsData, app, pixiPoints, pointsConteneurs[currentPage]);
       if (lastFormesLibresPath[currentPage]) {
-        ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints, formesLibres[currentPage], formesLibresContextes[currentPage], pixiContainer );
+        ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
           if (formesLibres[currentPage]) formesLibres[currentPage].visible = true;
       }
 
@@ -403,11 +447,11 @@ document.addEventListener('DOMContentLoaded', () => {
     await chargeFichiersAudioEtJson();
     await initialiseSocket();
     await initialiseSelecteurDePage();
-    await initSousConteneurs();
+    await initSousConteneurs(bufferNames);
 
-    drawPixiPoints(pointsData, app, pixiPoints, pixiPointsContainer);
+    drawPixiPoints(pointsData, app, pixiPoints, pointsConteneurs[currentPage]);
     
-    setupFormesLibres(app, nbPages, formesLibresContainer); // init nb de formesLibres = nb de pages
+    setupFormesLibres(app, nbPages, formesLibresConteneurs); // init nb de formesLibres = nb de pages
   });
 
   deleteEffect.addEventListener("click", async () => {
@@ -428,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
       drawToggleButton.textContent = 'Désactiver mode dessin';
       drawToggleButton.style.backgroundColor = "#f00";
 
-      DessinFormeLibre(app, drawingEnabled, pixiPoints, onFormeLibreComplete, formesLibres[currentPage], formesLibresContextes[currentPage], pixiContainer);
+      DessinFormeLibre(app, drawingEnabled, pixiPoints, onFormeLibreComplete, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage]);
       
       if (formesLibres[currentPage]) formesLibres[currentPage].visible = true; // rend la forme libre visible
       console.log("Dessin activé");
@@ -440,14 +484,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen();
         updateCenter(); // met à jour le centre de la vue
-        drawPixiPoints(pointsData, app, pixiPoints, pixiPointsContainer);// on redessine les points
+        drawPixiPoints(pointsData, app, pixiPoints, pointsConteurs[currentPage]);// on redessine les points
 
         if (pixiContainer && formeLibre && !pixiContainer.children.includes(formeLibre)) {pixiContainer.addChild(formeLibre);}
 
         if (lastFormesLibresPath[currentPage]) {
         console.log("fullscreen redessine");
 
-        ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints, pixiContainer);
+        ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints, formesLibresConteneurs[currentPage]);
 
         if (formeLibre) formeLibre.visible = true;
         } else {
