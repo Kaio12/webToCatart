@@ -7,10 +7,6 @@ let isCurrentlyDrawing = false; // Indique si le dessin est en cours
 let startDrawPoint;
 let currentPath = [];
 
-import {centerX, centerY} from "./main.js";
-
-
-
 export function drawPixiPoints(pointsData, app, pixiPoints, Container) {
 
   if (!app) {console.error("L'app pixi n'est pas initialisée");
@@ -93,7 +89,7 @@ export function setupFormesLibres (app,  nbPages, formesLibresConteneurs) {
   return formesLibres;
 }   
 
-export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCallback, formeLibre, formeLibreContext, Container) {
+export function DessinFormeLibre(app, drawingEnabled, currentPoints, onCompleteCallback, formeLibre, formeLibreContext, Container) {
   const stage = app.stage;
   let lastPath; //pour sauvegarder les coordonnées après dessin de la forme libre.
 
@@ -144,7 +140,7 @@ export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCall
       currentPath = [];
 
       // gestion de l'effet: on marque les points concernés, à l'intérieur de la forme libre.
-      pixiPoints.forEach(point => {
+      currentPoints.forEach(point => {
         point.isEffectEnabled = formeLibre.containsPoint(point.position);
       });
 
@@ -176,7 +172,7 @@ export function DessinFormeLibre(app, drawingEnabled, pixiPoints, onCompleteCall
 }
 
 // après un zoom ou un redimensionnement de fenetre, ou le choix d'un corpus
-export function ReDessinFormeLibre(normPath, pixiPoints, formeLibre, formeLibreContext, Container) {
+export function ReDessinFormeLibre(normPath, currentPoints, formeLibre, formeLibreContext, Container) {
   formeLibreContext.clear();
   const pxPath = normPath.map(pt => ({
     x: pt.x * window.innerWidth,
@@ -195,7 +191,7 @@ export function ReDessinFormeLibre(normPath, pixiPoints, formeLibre, formeLibreC
   formeLibreContext.stroke({ width: 4, color: 0xff0000, alpha: 1 });
 
   // On met à jour la propriété des points pour l'effet
-  pixiPoints.forEach(point => {
+  currentPoints.forEach(point => {
       point.isEffectEnabled = formeLibre.containsPoint(point.position);
   });
 

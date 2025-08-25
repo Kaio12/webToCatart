@@ -27,6 +27,7 @@ let isInitialized = false;
 
 let pointsData = [];  // les données des points à afficher, chargées depuis le serveur
 let currentPage = 0;
+let currentPoints; // les points de la page courante
 
 const pageBackgroundColors = [
    0x1a237e, // bleu profond
@@ -210,7 +211,7 @@ async function setupPixi() {
     drawPixiPoints(pointsData, app, pixiPoints, pointsConteneurs[currentPage]);// on redessine les points
     
     if (lastFormesLibresPath[currentPage]) {
-        ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
+        ReDessinFormeLibre(lastFormesLibresPath[currentPage], currentPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
       console.log('formelibre dessinée de resize');
     }
   });
@@ -337,12 +338,41 @@ async function initSousConteneurs(bufferNames) {
       pointsConteneurs[idx] = pointsContainer;
       formesLibresConteneurs[idx] = formesLibresContainer;
       sequenceursConteneurs[idx] = sequenceursContainer;
+
       });
 
     // Activer le tri par zIndex
     pixiContainer.sortableChildren = true;
   } catch (e) {
     console.log("erreur init sous conteneurs PIXI",e);
+  }
+}
+
+async function dessinePoints(bufferNames) {
+  try {
+    bufferNames.forEach((name, idx) => {
+      // dessine les points dans chaque conteneur
+      const bufferName = bufferNames[idx];
+      const jsonName = bufferName.replace(/\.wav$/i, ".json");
+      const pointsDataForPage = points[jsonName] || [];
+      drawPixiPoints(pointsDataForPage, app, pixiPoints, pointsConteneurs[idx]);
+    });
+
+    // affiche la premiere page uniquement.
+    pointsConteneurs.forEach((container, idx) => {
+        container.visible = (idx === 0);
+      });
+      formesLibresConteneurs.forEach((container, idx) => {
+        container.visible = (idx === 0);
+      });
+      sequenceursConteneurs.forEach((container, idx) => {
+        container.visible = (idx === 0);
+      });
+
+      currentPoints = pointsConteneurs[0].children; // init currentPoints sur la première page
+
+  } catch (e) {
+    console.log("erreur dans le dessin des points", e);
   }
 }
 
@@ -354,6 +384,8 @@ async function initialiseSelecteurDePage() {
     
     createPageSelector(bufferNames, (pageIdx) => {
       currentPage = pageIdx;
+
+      currentPoints = pointsConteneurs[currentPage].children; // mise à jour des points courants
       
       // rend tous les conteneurs invisibles sauf celui de la page courante
       pointsConteneurs.forEach((container, idx) => {
@@ -372,9 +404,9 @@ async function initialiseSelecteurDePage() {
       buffer = buffers[bufferName];
 
       // gestion des objets graphiques PIXI à dessiner
-      drawPixiPoints(pointsData, app, pixiPoints, pointsConteneurs[currentPage]);
+      //drawPixiPoints(pointsData, app, pixiPoints, pointsConteneurs[currentPage]);
       if (lastFormesLibresPath[currentPage]) {
-        ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
+        ReDessinFormeLibre(lastFormesLibresPath[currentPage], currentPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
           if (formesLibres[currentPage]) formesLibres[currentPage].visible = true;
       }
 
@@ -445,8 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
     await initialiseSocket();
     await initialiseSelecteurDePage();
     await initSousConteneurs(bufferNames);
-
-    drawPixiPoints(pointsData, app, pixiPoints, pointsConteneurs[currentPage]);
+    await dessinePoints(bufferNames);
     
     setupFormesLibres(app, nbPages, formesLibresConteneurs); // init nb de formesLibres = nb de pages
   });
@@ -455,7 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (formesLibresContextes[currentPage]) {
       formesLibresContextes[currentPage].clear();
        // On met à jour la propriété des points pour l'effet
-      pixiPoints.forEach(point => {
+      currentPoints.forEach(point => {
         point.isEffectEnabled = formesLibres[currentPage].containsPoint(point.position);
       });
     }
@@ -469,7 +500,7 @@ document.addEventListener('DOMContentLoaded', () => {
       drawToggleButton.textContent = 'Désactiver mode dessin';
       drawToggleButton.style.backgroundColor = "#0f0";
 
-      DessinFormeLibre(app, drawingEnabled, pixiPoints, onFormeLibreComplete, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage]);
+      DessinFormeLibre(app, drawingEnabled, currentPoints, onFormeLibreComplete, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage]);
       
       if (formesLibres[currentPage]) formesLibres[currentPage].visible = true; // rend la forme libre visible
       console.log("Dessin activé");
@@ -486,7 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
         drawPixiPoints(pointsData, app, pixiPoints, pointsConteneurs[currentPage]);// on redessine les points
     
     if (lastFormesLibresPath[currentPage]) {
-        ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
+        ReDessinFormeLibre(lastFormesLibresPath[currentPage], currentPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
       console.log('formelibre dessinée de fulscreen');
     }
 
@@ -496,7 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-//*********   FONCTION QUI JOUE LES GRAINS, ENVOIE LES INFOS OSC */
+//======= FONCTION QUI JOUE LES GRAINS, ENVOIE LES INFOS OSC =======/
 function triggerGrainsOnProximity() {
 
   if (drawingEnabled || (pointerPos.x === -9999 && pointerPos.y === -9999)) {
@@ -506,7 +537,7 @@ function triggerGrainsOnProximity() {
   // On convertit la position globale du pointeur en coordonnées locales au conteneur des points.
   const localPointerPos = pixiContainer.toLocal(pointerPos);
 
-  for (const point of pixiPoints) {
+  for (const point of currentPoints) {
     const dist = Math.hypot(point.x - localPointerPos.x, point.y - localPointerPos.y);
     const wasInside = point.isInside || false; // L'état à la frame précédente
     const isInside = dist < getProximityThreshold(); // Le nouvel état
