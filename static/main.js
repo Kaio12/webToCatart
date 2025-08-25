@@ -475,19 +475,28 @@ document.addEventListener('DOMContentLoaded', () => {
   // *** click INIT initialisation de tous les éléments ***
   init.addEventListener("click", async () => {
     
-    if (isInitialized) return;
-    isInitialized = true;
+    if (!isInitialized) {
+      isInitialized = true;
 
-    await setupPixi();
-    await initialiseContexteAudio();
-    await initialiseEffetAudio();
-    await chargeFichiersAudioEtJson();
-    await initialiseSocket();
-    await initialiseSelecteurDePage();
-    await initSousConteneurs(bufferNames);
-    await dessinePoints(bufferNames);
+      await setupPixi();
+      await initialiseContexteAudio();
+      await initialiseEffetAudio();
+      await chargeFichiersAudioEtJson();
+      await initialiseSocket();
+      await initialiseSelecteurDePage();
+      await initSousConteneurs(bufferNames);
+      await dessinePoints(bufferNames);
     
-    setupFormesLibres(app, nbPages, formesLibresConteneurs); // init nb de formesLibres = nb de pages
+      setupFormesLibres(app, nbPages, formesLibresConteneurs); // init nb de formesLibres = nb de pages
+      }
+
+    zoomFactor = 1.0;
+    if (pixiContainer) {
+      updateCenter(); // S'assure que le centre est à jour
+      pixiContainer.pivot.set(centerX, centerY);
+      pixiContainer.position.set(centerX, centerY);
+    }
+   
   });
 
   deleteEffect.addEventListener("click", async () => {
