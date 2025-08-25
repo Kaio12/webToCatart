@@ -7,13 +7,9 @@ let isCurrentlyDrawing = false; // Indique si le dessin est en cours
 let startDrawPoint;
 let currentPath = [];
 
+import {centerX, centerY} from "./main.js";
 
 
-// Fonction pour mettre à jour le centre lors du resize
-export function updateCenter() {
-  centerX = window.innerWidth / 2;
-  centerY = window.innerHeight / 2;
-}
 
 export function drawPixiPoints(pointsData, app, pixiPoints, Container) {
 

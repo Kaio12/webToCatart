@@ -3,7 +3,7 @@
 
 import { playGrain,initEffect, feedbackGain } from "./audio.js";
 import { initSocket, setupSocketAndHandlers, sendOSC, loadJsonPoints, loadAudioBuffers } from "./network.js";
-import { drawPixiPoints, setupFormesLibres, createCursor, updateCenter, DessinFormeLibre, ReDessinFormeLibre, formesLibres, formesLibresContextes } from "./graphics.js";
+import { drawPixiPoints, setupFormesLibres, createCursor, DessinFormeLibre, ReDessinFormeLibre, formesLibres, formesLibresContextes } from "./graphics.js";
 
 export let pixiContainer = null; // conteneur Pixi global
 export let pixiPointsContainer = null; // pour les points
@@ -74,6 +74,13 @@ if ('serviceWorker' in navigator) {
         console.error('Échec de l’enregistrement du Service Worker :', error);
       });
   });
+}
+
+
+// Fonction pour mettre à jour le centre lors du resize
+export function updateCenter() {
+  centerX = window.innerWidth / 2;
+  centerY = window.innerHeight / 2;
 }
 
 // **** Initialise et configure l'application Pixi.js ****
@@ -302,48 +309,38 @@ async function initialiseSocket() {
   }
 }
 
-// nbPages bufferNames
 async function initSousConteneurs(bufferNames) {
   try {
 
-bufferNames.forEach((name, idx) => {
+    bufferNames.forEach((name, idx) => {
 
-  // Crée un conteneur pour chaque page
-  const pageContainer = new PIXI.Container();
-  pixiContainer.addChild(pageContainer);
+      // Crée un conteneur pour chaque page
+      const pageContainer = new PIXI.Container();
+      pixiContainer.addChild(pageContainer);
 
-  // Crée des sous-conteneurs pour les points, formes libres et séquenceurs
-  const pointsContainer = new PIXI.Container();
-  const formesLibresContainer = new PIXI.Container();
-  const sequenceursContainer = new PIXI.Container();
+      // Crée des sous-conteneurs pour les points, formes libres et séquenceurs
+      const pointsContainer = new PIXI.Container();
+      const formesLibresContainer = new PIXI.Container();
+      const sequenceursContainer = new PIXI.Container();
 
-  // Ajoute les sous-conteneurs au conteneur de la page
-  pageContainer.addChild(pointsContainer);
-  pageContainer.addChild(formesLibresContainer);
-  pageContainer.addChild(sequenceursContainer);
+      // Ajoute les sous-conteneurs au conteneur de la page
+      pageContainer.addChild(pointsContainer);
+      pageContainer.addChild(formesLibresContainer);
+      pageContainer.addChild(sequenceursContainer);
 
-  // Gestion Zindex
-  pointsContainer.zIndex = 1;
-  formesLibresContainer.zIndex = 2;
-  sequenceursContainer.zIndex = 3;
+      // Gestion Zindex
+      pointsContainer.zIndex = 1;
+      formesLibresContainer.zIndex = 2;
+      sequenceursContainer.zIndex = 3;
 
-  // Stocke les conteneurs dans des structures accessibles si nécessaire
-  pointsConteneurs[idx] = pointsContainer;
-  formesLibresConteneurs[idx] = formesLibresContainer;
-  sequenceursConteneurs[idx] = sequenceursContainer;
-});
-/*
-  // Sous conteneurs
-  pixiPointsContainer = new PIXI.Container();
-  formesLibresContainer = new PIXI.Container();
-  pixiContainer.addChild(pixiPointsContainer);
-  pixiContainer.addChild(formesLibresContainer);
-    // Définir les zIndex
-  pixiPointsContainer.zIndex = 1; // Les points en dessous
-  formesLibresContainer.zIndex = 2; // Les formes libres au-dessus
-*/
+      // Stocke les conteneurs dans des structures accessibles si nécessaire
+      pointsConteneurs[idx] = pointsContainer;
+      formesLibresConteneurs[idx] = formesLibresContainer;
+      sequenceursConteneurs[idx] = sequenceursContainer;
+      });
+
     // Activer le tri par zIndex
-  pixiContainer.sortableChildren = true;
+    pixiContainer.sortableChildren = true;
   } catch (e) {
     console.log("erreur init sous conteneurs PIXI",e);
   }
