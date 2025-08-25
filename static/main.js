@@ -481,19 +481,15 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen();
         updateCenter(); // met à jour le centre de la vue
-        drawPixiPoints(pointsData, app, pixiPoints, pointsConteurs[currentPage]);// on redessine les points
 
-        if (pixiContainer && formeLibre && !pixiContainer.children.includes(formeLibre)) {pixiContainer.addChild(formeLibre);}
+        
+        drawPixiPoints(pointsData, app, pixiPoints, pointsConteneurs[currentPage]);// on redessine les points
+    
+    if (lastFormesLibresPath[currentPage]) {
+        ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
+      console.log('formelibre dessinée de fulscreen');
+    }
 
-        if (lastFormesLibresPath[currentPage]) {
-        console.log("fullscreen redessine");
-
-        ReDessinFormeLibre(lastFormesLibresPath[currentPage], pixiPoints, formesLibresConteneurs[currentPage]);
-
-        if (formeLibre) formeLibre.visible = true;
-        } else {
-          if(formeLibre) formeLibre.visible = false;
-        }
       } else {
         document.exitFullscreen();
       }
