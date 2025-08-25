@@ -207,8 +207,7 @@ async function setupPixi() {
   window.addEventListener('resize', () => {
     app.renderer.resize(window.innerWidth, window.innerHeight);
     updateCenter();
-    
-    drawPixiPoints(pointsData, app, pixiPoints, pointsConteneurs[currentPage]);// on redessine les points
+    dessinePoints(bufferNames);
     
     if (lastFormesLibresPath[currentPage]) {
         ReDessinFormeLibre(lastFormesLibresPath[currentPage], currentPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
@@ -512,10 +511,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen();
         updateCenter(); // met à jour le centre de la vue
+        dessinePoints(bufferNames);
 
-        
-        drawPixiPoints(pointsData, app, pixiPoints, pointsConteneurs[currentPage]);// on redessine les points
-    
     if (lastFormesLibresPath[currentPage]) {
         ReDessinFormeLibre(lastFormesLibresPath[currentPage], currentPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
       console.log('formelibre dessinée de fulscreen');
