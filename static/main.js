@@ -405,7 +405,7 @@ export function onFormeLibreComplete(path) {
   drawingEnabled = false;
   const drawToggleButton = document.getElementById("draw-toggle");
   drawToggleButton.textContent = "Activer le dessin";
-  drawToggleButton.style.backgroundColor = "#0f0";
+  drawToggleButton.style.backgroundColor = "";
 }
 
 //pour activer drawingEnabled depuis network.js
@@ -467,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!drawingEnabled) {
       drawingEnabled = true;
       drawToggleButton.textContent = 'Désactiver mode dessin';
-      drawToggleButton.style.backgroundColor = "#f00";
+      drawToggleButton.style.backgroundColor = "#0f0";
 
       DessinFormeLibre(app, drawingEnabled, pixiPoints, onFormeLibreComplete, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage]);
       
