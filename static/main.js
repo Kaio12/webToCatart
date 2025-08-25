@@ -147,14 +147,23 @@ async function setupPixi() {
         cursorGraphic.visible = true;
       }
 
-    } else if (activePointers.size === 2) {
+    } else if (activePointers.size === 3) {
       pointerPos = { x:-9999, y: -9999 }; // désactive le pointeur unique
       if (cursorGraphic) cursorGraphic.visible = false; // cache le curseur
       
       const pointers = Array.from(activePointers.values());
       const p1 = pointers[0];
       const p2 = pointers[1];
-      const currentDistance = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+      const p3 = pointers[2];
+
+      const centroidX = (p1.x + p2.x + p3.x) / 3;
+      const centroidY = (p1.y + p2.y + p3.y) / 3;
+
+      const dist1 = Math.hypot(p1.x - centroidX, p1.y - centroidY);
+      const dist2 = Math.hypot(p2.x - centroidX, p2.y - centroidY);
+      const dist3 = Math.hypot(p3.x - centroidX, p3.y - centroidY);
+
+      const currentDistance = (dist1 + dist2 + dist3) / 3;
 
 
       if (lastPinchDistance === null) {
@@ -183,7 +192,7 @@ async function setupPixi() {
     if (drawingEnabled) return; // Ne rien faire si on dessine
 
     activePointers.delete(event.pointerId);
-    if (activePointers.size < 2) {
+    if (activePointers.size < 3) {
       lastPinchDistance = null;
     }
 
@@ -513,10 +522,10 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCenter(); // met à jour le centre de la vue
         dessinePoints(bufferNames);
 
-    if (lastFormesLibresPath[currentPage]) {
+      if (lastFormesLibresPath[currentPage]) {
         ReDessinFormeLibre(lastFormesLibresPath[currentPage], currentPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
-      console.log('formelibre dessinée de fulscreen');
-    }
+        console.log('formelibre dessinée de fulscreen');
+      }
 
       } else {
         document.exitFullscreen();
