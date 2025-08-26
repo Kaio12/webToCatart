@@ -107,6 +107,7 @@ async function setupPixi() {
     app.stage.addChild(pixiContainer);
   }
 
+  // pour le dessin de la forme libre
   pixiContainer.hitArea = new PIXI.Rectangle(0, 0, window.innerWidth, window.innerHeight);
   pixiContainer.eventMode = 'static';
 
@@ -351,7 +352,7 @@ async function gestionPoints(bufferNames) {
           console.log(`pointerover, Survol du point ${point.sampleId}. Utilisation du buffer:`, currentBufferForPage);
 
           point.targetRadius = point.baseRadius * 1.8;
-          playGrain(point.startTime, point.duration, point.isEffectEnabled, currentBufferForPage);
+          if (!drawingEnabled) playGrain(point.startTime, point.duration, point.isEffectEnabled, currentBufferForPage);
           sendOSC("/hover", point.sampleId);
         });
 
