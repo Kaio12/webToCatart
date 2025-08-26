@@ -23,7 +23,14 @@ body {
     user-select: none; /* Empêche la sélection */
 }
 
-
+#page-selector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 48px;
+    margin-top: 16px;
+    gap: 8px;
+}
 
 .main-content {
     flex-grow: 1;

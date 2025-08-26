@@ -239,13 +239,24 @@ function createPageSelector(bufferNames, onPageChange) {
   bufferNames.forEach((name, idx) => {
     const btn = document.createElement("button");
     btn.textContent = name.replace(".wav", "");
+    btn.style.width = "36px";
+    btn.style.height = "36px";
+    btn.style.margin = "8px 0";
+    btn.style.borderRadius = "50%";
+    btn.style.border = "none";
+    btn.style.background = idx === currentPage ? "#0f0" : "#444";
+    btn.style.color = "#fff";
+    btn.style.fontWeight = "bold";
+    btn.style.fontSize = "16px";
+    btn.style.cursor = "pointer";
+    btn.style.boxShadow = idx === currentPage ? "0 0 8px #0f0" : "none";
+    btn.textContent = idx + 1; // Affiche le numéro de page
+
     btn.onclick = () => {
       onPageChange(idx);
-
       if (app && pageBackgroundColors[idx] !== undefined) {
         app.renderer.background.color = pageBackgroundColors[idx];
       }
-
       createPageSelector(bufferNames, onPageChange);
     };
     btn.style.margin = "0 4px";
