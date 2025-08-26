@@ -29,7 +29,9 @@ let pointsData = [];  // les données des points à afficher, chargées depuis l
 let currentPage = 0;
 let currentPoints; // les points de la page courante
 
-let fondPourDessinFormeLibre;
+//let fondPourDessinFormeLibre;
+
+let estEnTrainDeZoomer = false;
 
 const pageBackgroundColors = [
    0x1a237e, // bleu profond
@@ -58,6 +60,7 @@ const selectorDiv = document.getElementById("page-selector"); // selecteur de pa
 const init = document.getElementById("init"); // bouton d'initialistion globale.
 const deleteEffect = document.getElementById("efface-formelibre"); // pour effacer la forme libre et l'effet afférent
 const drawToggleButton = document.getElementById("draw-toggle");
+const zoomToggleButton = document.getElementById("zoom");
 
 let lastFormesLibresPath = []; //sauvegarde des coordo des formes libres.
 
@@ -129,11 +132,15 @@ async function setupPixi() {
 
   const onPointerMove = (event) => {
     if (drawingEnabled) return; // Ne rien faire si on dessine
+    if (!estEnTrainDeZoomer) return; // vérifie si le bouton zoom a été activé
     if (!activePointers.has(event.pointerId)) return;
 
     activePointers.set(event.pointerId, event.global.clone());
 
     if (activePointers.size === 3) {
+
+      console.log('en train de zoomer');
+
       const pointers = Array.from(activePointers.values());
       const p1 = pointers[0];
       const p2 = pointers[1];
@@ -173,17 +180,17 @@ async function setupPixi() {
   const onPointerUp = (event) => {
 
     if (drawingEnabled) return; // Ne rien faire si on dessine
-
+    estEnTrainDeZoomer = false;
     activePointers.delete(event.pointerId);
     if (activePointers.size < 3) {
       lastPinchDistance = null;
     }
   };
 
-  app.stage.on("pointerdown", onPointerDown);
-  app.stage.on("pointermove", onPointerMove);
-  app.stage.on("pointerup", onPointerUp);
-  app.stage.on("pointerupoutside", onPointerUp);
+  pixiContainer.on("pointerdown", onPointerDown);
+  pixiContainer.on("pointermove", onPointerMove);
+  pixiContainer.on("pointerup", onPointerUp);
+  pixiContainer.on("pointerupoutside", onPointerUp);
 
   // au cas ou la fenêtre change de taille, on redessine les points
   window.addEventListener('resize', () => {
@@ -496,6 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
    
   });
 
+  // delete effect
   deleteEffect.addEventListener("click", async () => {
     if (formesLibresContextes[currentPage]) {
       formesLibresContextes[currentPage].clear();
@@ -505,6 +513,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
   });
+
+  zoomToggleButton.addEventListener("click", () => {
+    estEnTrainDeZoomer = true;
+    console.log("appel du zoom");
+  })
 
   // ****** pour dessiner la forme libre *******
   drawToggleButton.addEventListener("click", () => {
