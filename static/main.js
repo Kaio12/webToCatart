@@ -29,6 +29,8 @@ let pointsData = [];  // les données des points à afficher, chargées depuis l
 let currentPage = 0;
 let currentPoints; // les points de la page courante
 
+let fondPourDessinFormeLibre;
+
 const pageBackgroundColors = [
    0x1a237e, // bleu profond
   0x263238, // bleu-gris foncé
@@ -62,7 +64,7 @@ let lastFormesLibresPath = []; //sauvegarde des coordo des formes libres.
 let zoomFactor = 1.0 // facteur zoom affichage des points
 
 let cursorGraphic; // le curseur.
-let pointerPos = { x: -9999, y: -9999 } //pointer position doigt
+//let pointerPos = { x: -9999, y: -9999 } //pointer position doigt
 
 // nécessaire pour pwa
 if ('serviceWorker' in navigator) {
@@ -93,7 +95,7 @@ async function setupPixi() {
     backgroundColor: 0x000000 // couleur du fond
   });
 
-  // on ajout l'app canvas à la partie pixi-contianer de la page
+  // on ajout l'app canvas à la partie pixi-container de la page
   const container = document.getElementById("pixi-container");
   if (container) container.appendChild(app.canvas);
 
@@ -105,33 +107,23 @@ async function setupPixi() {
     app.stage.addChild(pixiContainer);
   }
 
+  pixiContainer.hitArea = new PIXI.Rectangle(0, 0, window.innerWidth, window.innerHeight);
+  pixiContainer.eventMode = 'static';
+
+
   // === blocage des gestes natifs ===
   app.canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
   app.canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
   app.canvas.addEventListener('touchend', e => e.preventDefault(), { passive: false });
   app.canvas.addEventListener('wheel', e => e.preventDefault(), { passive: false });
 
-  // stage : Le conteneur racine d’affichage.
-  app.stage.eventMode = 'static';
-  app.stage.hitArea = app.screen;
 
   const activePointers = new Map();
   let lastPinchDistance = null;
 
   const onPointerDown = async (event) => {
     if (drawingEnabled) return;
-
-    pointerPos = { x: event.global.x, y: event.global.y }; // met à jour la position du pointeur
     activePointers.set(event.pointerId, event.global.clone());
-
-    if (activePointers.size === 1) {
-      if (cursorGraphic) {
-        cursorGraphic.position.set(event.global.x, event.global.y);
-        cursorGraphic.visible = true; // rend le curseur visible
-      } else {
-        if (cursorGraphic) cursorGraphic.visible = false; // cache le curseur si pas de pointeur unique
-      }
-    }
   };
 
   const onPointerMove = (event) => {
@@ -139,18 +131,8 @@ async function setupPixi() {
     if (!activePointers.has(event.pointerId)) return;
 
     activePointers.set(event.pointerId, event.global.clone());
-    if (activePointers.size === 1) {
-      pointerPos = { x: event.global.x, y: event.global.y };
-      
-      if (cursorGraphic) {
-        cursorGraphic.position.set(event.global.x, event.global.y);
-        cursorGraphic.visible = true;
-      }
 
-    } else if (activePointers.size === 3) {
-      pointerPos = { x:-9999, y: -9999 }; // désactive le pointeur unique
-      if (cursorGraphic) cursorGraphic.visible = false; // cache le curseur
-      
+    if (activePointers.size === 3) {
       const pointers = Array.from(activePointers.values());
       const p1 = pointers[0];
       const p2 = pointers[1];
@@ -167,8 +149,8 @@ async function setupPixi() {
 
 
       if (lastPinchDistance === null) {
-        //point central entre les deux doigts
-        const pinchCenterGlobal = new PIXI.Point((p1.x + p2.x)/2, (p1.y + p2.y)/2);
+        //point central entre les trois doigts
+        const pinchCenterGlobal = new PIXI.Point(centroidX, centroidY);
         const pinchCenterLocal = pixiContainer.toLocal(pinchCenterGlobal);
 
         //on déplace le pivot du conteneur vers ce nouveau centre:
@@ -180,7 +162,7 @@ async function setupPixi() {
 
       if (lastPinchDistance !== null) {
         const delta = currentDistance - lastPinchDistance;
-        const sensitivity = 0.005;
+        const sensitivity = 0.01;
         zoomFactor = Math.max(0.5, Math.min(2.5, zoomFactor + delta * sensitivity));
       }
       lastPinchDistance = currentDistance;
@@ -195,16 +177,6 @@ async function setupPixi() {
     if (activePointers.size < 3) {
       lastPinchDistance = null;
     }
-
-    if (activePointers.size === 0) {
-      pointerPos = { x: -9999, y: -9999 };
-      if (cursorGraphic) cursorGraphic.visible = false; // cache le curseur
-
-      // Réinitialise l'état de proximité de tous les points
-      for (const point of pixiPoints) {
-        point.isInside = false;
-      }
-    }
   };
 
   app.stage.on("pointerdown", onPointerDown);
@@ -216,7 +188,7 @@ async function setupPixi() {
   window.addEventListener('resize', () => {
     app.renderer.resize(window.innerWidth, window.innerHeight);
     updateCenter();
-    dessinePoints(bufferNames);
+    gestionPoints(bufferNames);
     
     if (lastFormesLibresPath[currentPage]) {
         ReDessinFormeLibre(lastFormesLibresPath[currentPage], currentPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
@@ -230,17 +202,21 @@ async function setupPixi() {
   // ***** TICKER : actualisation de l'app sur chaque frame ******
   app.ticker.add(() => {
 
-    if (cursorGraphic && cursorGraphic.visible) {
-      cursorGraphic.position.set(pointerPos.x, pointerPos.y);
+    if (cursorGraphic) {
+     if (activePointers.size === 1 && !drawingEnabled) {
+        const singlePointer = activePointers.values().next().value;
+        cursorGraphic.position.set(singlePointer.x, singlePointer.y);
+        cursorGraphic.visible = true;
+      } else {
+        cursorGraphic.visible = false;
+      }
     }
     
     // met à jour l'echelle du zoom à chaque frame */
     if (pixiContainer) {
     pixiContainer.scale.set(zoomFactor);
     }
-    
 
-    triggerGrainsOnProximity();
   });
 
   console.log("1) SetupPixi terminé : ", app);
@@ -356,16 +332,37 @@ async function initSousConteneurs(bufferNames) {
   }
 }
 
-async function dessinePoints(bufferNames) {
+async function gestionPoints(bufferNames) {
   try {
-    bufferNames.forEach((name, idx) => {
-      // dessine les points dans chaque conteneur
-      const bufferName = bufferNames[idx];
-      const jsonName = bufferName.replace(/\.wav$/i, ".json");
-      const pointsDataForPage = points[jsonName] || [];
-      drawPixiPoints(pointsDataForPage, app, pixiPoints, pointsConteneurs[idx]);
-    });
+    pixiPoints = [];
 
+    bufferNames.forEach((name, idx) => {
+
+      const jsonName = name.replace(/\.wav$/i, ".json");
+      const pointsDataForPage = points[jsonName] || [];
+      const currentBufferForPage = buffers[name]; 
+
+      const newPagePoints = drawPixiPoints(pointsDataForPage, app, pointsConteneurs[idx], getProximityThreshold);
+
+      newPagePoints.forEach(point => {
+       // console.log(`Attachement de l'écouteur au point ${point.sampleId} de la page ${name}`);
+        
+        point.on('pointerover', () => {
+          console.log(`pointerover, Survol du point ${point.sampleId}. Utilisation du buffer:`, currentBufferForPage);
+
+          point.targetRadius = point.baseRadius * 1.8;
+          playGrain(point.startTime, point.duration, point.isEffectEnabled, currentBufferForPage);
+          sendOSC("/hover", point.sampleId);
+        });
+
+        point.on('pointerout', () => {
+          point.targetRadius = point.baseRadius;
+        });
+
+      });
+
+      pixiPoints.push(...newPagePoints);
+    });
     // affiche la premiere page uniquement.
     pointsConteneurs.forEach((container, idx) => {
         container.visible = (idx === 0);
@@ -412,7 +409,6 @@ async function initialiseSelecteurDePage() {
       buffer = buffers[bufferName];
 
       // gestion des objets graphiques PIXI à dessiner
-      //drawPixiPoints(pointsData, app, pixiPoints, pointsConteneurs[currentPage]);
       if (lastFormesLibresPath[currentPage]) {
         ReDessinFormeLibre(lastFormesLibresPath[currentPage], currentPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
           if (formesLibres[currentPage]) formesLibres[currentPage].visible = true;
@@ -485,7 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
       await initialiseSocket();
       await initialiseSelecteurDePage();
       await initSousConteneurs(bufferNames);
-      await dessinePoints(bufferNames);
+      await gestionPoints(bufferNames);
     
       setupFormesLibres(app, nbPages, formesLibresConteneurs); // init nb de formesLibres = nb de pages
       }
@@ -517,7 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
       drawToggleButton.textContent = 'Désactiver mode dessin';
       drawToggleButton.style.backgroundColor = "#0f0";
 
-      DessinFormeLibre(app, drawingEnabled, currentPoints, onFormeLibreComplete, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage]);
+      DessinFormeLibre(pixiContainer, drawingEnabled, currentPoints, onFormeLibreComplete, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage]);
       
       if (formesLibres[currentPage]) formesLibres[currentPage].visible = true; // rend la forme libre visible
       console.log("Dessin activé");
@@ -529,7 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen();
         updateCenter(); // met à jour le centre de la vue
-        dessinePoints(bufferNames);
+        gestionPoints(bufferNames);
 
       if (lastFormesLibresPath[currentPage]) {
         ReDessinFormeLibre(lastFormesLibresPath[currentPage], currentPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
@@ -541,46 +537,3 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 });
-
-//======= FONCTION QUI JOUE LES GRAINS, ENVOIE LES INFOS OSC =======/
-function triggerGrainsOnProximity() {
-
-  if (drawingEnabled || (pointerPos.x === -9999 && pointerPos.y === -9999)) {
-    return; // Ne rien faire si on dessine, ou si le pointeur n'est pas actif (pinch ou aucun doigt)
-  }
-
-  // On convertit la position globale du pointeur en coordonnées locales au conteneur des points.
-  const localPointerPos = pixiContainer.toLocal(pointerPos);
-
-  for (const point of currentPoints) {
-    const dist = Math.hypot(point.x - localPointerPos.x, point.y - localPointerPos.y);
-    const wasInside = point.isInside || false; // L'état à la frame précédente
-    const isInside = dist < getProximityThreshold(); // Le nouvel état
-   
-    
-    // 1. Détecter un changement d'état : quand le pointeur ENTRE dans la zone
-    if (isInside && !wasInside) {
-      
-      console.log(point.isEffectEnabled);
-      playGrain(point.startTime, point.duration, point.isEffectEnabled, buffer);
-      sendOSC("/hover", point.sampleId);
-    }
-
-    // 2. Gérer la logique visuelle en continu
-    if (isInside) {
-      // Si on est à l'intérieur, on grossit le point
-      point.targetRadius = point.baseRadius * 1.8;
-    } else {
-      // Si on est à l'extérieur, on le remet à sa taille normale
-      point.targetRadius = point.baseRadius;
-    }
-
-    // 3. Mettre à jour l'état pour la prochaine frame
-    point.isInside = isInside;
-
-    // 4. Animer le rayon et redessiner le point à chaque frame
-    const speed = 0.2;
-    point.currentRadius += (point.targetRadius - point.currentRadius) * speed;
-    point.drawSelf();
-  }
-}

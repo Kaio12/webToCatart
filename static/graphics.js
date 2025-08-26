@@ -7,7 +7,7 @@ let isCurrentlyDrawing = false; // Indique si le dessin est en cours
 let startDrawPoint;
 let currentPath = [];
 
-export function drawPixiPoints(pointsData, app, pixiPoints, Container) {
+export function drawPixiPoints(pointsData, app, container, getProximityThreshold) {
 
   if (!app) {console.error("L'app pixi n'est pas initialisée");
     return;}
@@ -16,11 +16,11 @@ export function drawPixiPoints(pointsData, app, pixiPoints, Container) {
       return;
     }
 
-  Container.removeChildren(); // Efface les anciens points
-  pixiPoints.length = 0;
+  container.removeChildren(); // Efface les anciens points
+  const newPoints = [];
 
+  
   const bounds = getBounds(pointsData);
-  //console.log("BOUNDS calculés :", bounds);
 
   pointsData.forEach((pointData) => {
 
@@ -62,9 +62,15 @@ export function drawPixiPoints(pointsData, app, pixiPoints, Container) {
 
     pointGraphic.drawSelf();
 
-    Container.addChild(pointGraphic); // Ajoute au container dédié
-    pixiPoints.push(pointGraphic);
+    pointGraphic.eventMode = 'static';
+    pointGraphic.cursor = 'pointer';
+    pointGraphic.hitArea = new PIXI.Circle(0, 0, getProximityThreshold());
+
+    container.addChild(pointGraphic); // Ajoute au container dédié
+    newPoints.push(pointGraphic);
   });
+
+  return newPoints;
 }
   
 export function setupFormesLibres (app,  nbPages, formesLibresConteneurs) {
@@ -89,8 +95,8 @@ export function setupFormesLibres (app,  nbPages, formesLibresConteneurs) {
   return formesLibres;
 }   
 
-export function DessinFormeLibre(app, drawingEnabled, currentPoints, onCompleteCallback, formeLibre, formeLibreContext, Container) {
-  const stage = app.stage;
+export function DessinFormeLibre(fondPourDessinFormeLibre, drawingEnabled, currentPoints, onCompleteCallback, formeLibre, formeLibreContext, Container) {
+  const stage = fondPourDessinFormeLibre;
   let lastPath; //pour sauvegarder les coordonnées après dessin de la forme libre.
 
   if(drawingEnabled) {
@@ -155,18 +161,18 @@ export function DessinFormeLibre(app, drawingEnabled, currentPoints, onCompleteC
 
 
       // on nettoie les écouteurs après le dessin de la forme libre.
-      if (onDrawStart) stage.off("pointerdown", onDrawStart);
-      if (onDrawMove) stage.off("pointermove", onDrawMove);
+      if (onDrawStart) fondPourDessinFormeLibre.off("pointerdown", onDrawStart);
+      if (onDrawMove) fondPourDessinFormeLibre.off("pointermove", onDrawMove);
       if (onDrawEnd) {
-        stage.off("pointerup", onDrawEnd);
-        stage.off("pointerupoutside", onDrawEnd);
+        fondPourDessinFormeLibre.off("pointerup", onDrawEnd);
+        fondPourDessinFormeLibre.off("pointerupoutside", onDrawEnd);
       }
     };
 
-    stage.on("pointerdown", onDrawStart);
-    stage.on("pointermove", onDrawMove);
-    stage.on("pointerup", onDrawEnd);
-    stage.on("pointerupoutside", onDrawEnd);
+    fondPourDessinFormeLibre.on("pointerdown", onDrawStart);
+    fondPourDessinFormeLibre.on("pointermove", onDrawMove);
+    fondPourDessinFormeLibre.on("pointerup", onDrawEnd);
+    fondPourDessinFormeLibre.on("pointerupoutside", onDrawEnd);
 
   } 
 }
