@@ -1,4 +1,4 @@
-// *** script définit le comportement d'une page destinée à un Iphone controlant un effet faust ***
+// *** script définit le comportement d'une page destinée à un Iphone controlant un effet  ***
 
 // empeche le touché
 document.addEventListener('touchmove', function(e) {

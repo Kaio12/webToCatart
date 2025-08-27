@@ -4,6 +4,7 @@
 import { playGrain,initEffect, feedbackGain } from "./audio.js";
 import { initSocket, setupSocketAndHandlers, sendOSC, loadJsonPoints, loadAudioBuffers } from "./network.js";
 import { drawPixiPoints, setupFormesLibres, createCursor, DessinFormeLibre, ReDessinFormeLibre, formesLibres, formesLibresContextes } from "./graphics.js";
+import { ClockWidget } from "./clock.js"
 
 export let pixiContainer = null; // conteneur Pixi global
 export let pixiPointsContainer = null; // pour les points
@@ -55,6 +56,8 @@ let buffer;
 let bufferNames;
 
 let effectNode;
+let clockWidget;
+
 
 const selectorDiv = document.getElementById("page-selector"); // selecteur de page.
 const init = document.getElementById("init"); // bouton d'initialistion globale.
@@ -214,6 +217,14 @@ async function setupPixi() {
     if (pixiContainer) {
     pixiContainer.scale.set(zoomFactor);
     }
+  // Animation et redraw des points
+  for (const point of pixiPoints) {
+    const speed = 0.2;
+    point.currentRadius += (point.targetRadius - point.currentRadius) * speed;
+    if (typeof point.drawSelf === "function") point.drawSelf();
+  }
+
+
 
   });
 
@@ -322,6 +333,7 @@ async function initSousConteneurs(bufferNames) {
       pageContainer.addChild(sequenceursContainer);
 
       // Gestion Zindex
+      pageContainer.sortableChildren = true; // Active le tri pour les enfants de chaque page
       pointsContainer.zIndex = 1;
       formesLibresContainer.zIndex = 2;
       sequenceursContainer.zIndex = 3;
@@ -448,7 +460,7 @@ export function onFormeLibreComplete(path) {
   lastFormesLibresPath[currentPage] = path; // stocke le chemin pour le resize/redessin
   drawingEnabled = false;
   const drawToggleButton = document.getElementById("draw-toggle");
-  drawToggleButton.textContent = "Activer le dessin";
+  drawToggleButton.textContent = "Ef";
   drawToggleButton.style.backgroundColor = "";
 }
 
@@ -495,23 +507,22 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
     zoomFactor = 1.0;
+
     if (pixiContainer) {
       updateCenter(); // S'assure que le centre est à jour
       pixiContainer.pivot.set(centerX, centerY);
       pixiContainer.position.set(centerX, centerY);
     }
-   
-  });
 
-  // delete effect
-  deleteEffect.addEventListener("click", async () => {
-    if (formesLibresContextes[currentPage]) {
-      formesLibresContextes[currentPage].clear();
-       // On met à jour la propriété des points pour l'effet
-      currentPoints.forEach(point => {
-        point.isEffectEnabled = formesLibres[currentPage].containsPoint(point.position);
-      });
-    }
+    // ======= séquenceur =======
+    clockWidget = new ClockWidget(currentPoints, buffer, { radius: 80, speed: 0.04 });
+    sequenceursConteneurs[currentPage].addChild(clockWidget);
+    clockWidget.position.set(centerX, centerY); // position initiale
+   
+    app.ticker.add(() => {
+      clockWidget.update();
+    });
+
   });
 
   // Zoom toggle button
@@ -525,7 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!drawingEnabled) {
       drawingEnabled = true;
-      drawToggleButton.textContent = 'Désactiver mode dessin';
+      drawToggleButton.textContent = 'Stop';
       drawToggleButton.style.backgroundColor = "#0f0";
 
       DessinFormeLibre(pixiContainer, drawingEnabled, currentPoints, onFormeLibreComplete, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage]);
@@ -535,6 +546,16 @@ document.addEventListener('DOMContentLoaded', () => {
     } 
   });
 
+  // delete effect
+  deleteEffect.addEventListener("click", async () => {
+    if (formesLibresContextes[currentPage]) {
+      formesLibresContextes[currentPage].clear();
+       // On met à jour la propriété des points pour l'effet
+      currentPoints.forEach(point => {
+        point.isEffectEnabled = formesLibres[currentPage].containsPoint(point.position);
+      });
+    }
+  });
     // bouton Fullscreen
     document.getElementById("fullscreen-btn").addEventListener("click", () => {
       if (!document.fullscreenElement) {
