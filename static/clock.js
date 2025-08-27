@@ -74,9 +74,12 @@ export class ClockWidget extends PIXI.Container {
       if (dist < (point.currentRadius || 12)) {
         if (this.lastPlayedPointId !== point.sampleId) {
           this.lastPlayedPointId = point.sampleId;
+
+          point.targetRadius = point.baseRadius * 1.8; // si un point est touché, il augmente brièvement de taille
+
           playGrain(point.startTime, point.duration, point.isEffectEnabled, this.buffer);
           sendOSC("/clock", point.sampleId);
-        }
+        } else point.targetRadius = point.baseRadius;
         return;
       }
     }
