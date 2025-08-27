@@ -180,7 +180,7 @@ async function setupPixi() {
   const onPointerUp = (event) => {
 
     if (drawingEnabled) return; // Ne rien faire si on dessine
-    estEnTrainDeZoomer = false;
+    estEnTrainDeZoomer = false; // fin du zoom
     activePointers.delete(event.pointerId);
     if (activePointers.size < 3) {
       lastPinchDistance = null;
@@ -210,16 +210,6 @@ async function setupPixi() {
   // ***** TICKER : actualisation de l'app sur chaque frame ******
   app.ticker.add(() => {
 
-    if (cursorGraphic) {
-     if (activePointers.size === 1 && !drawingEnabled) {
-        const singlePointer = activePointers.values().next().value;
-        cursorGraphic.position.set(singlePointer.x, singlePointer.y);
-        cursorGraphic.visible = true;
-      } else {
-        cursorGraphic.visible = false;
-      }
-    }
-    
     // met à jour l'echelle du zoom à chaque frame */
     if (pixiContainer) {
     pixiContainer.scale.set(zoomFactor);
@@ -238,7 +228,6 @@ function createPageSelector(bufferNames, onPageChange) {
 
   bufferNames.forEach((name, idx) => {
     const btn = document.createElement("button");
-    btn.textContent = name.replace(".wav", "");
     btn.style.width = "36px";
     btn.style.height = "36px";
     btn.style.margin = "8px 0";
@@ -259,7 +248,7 @@ function createPageSelector(bufferNames, onPageChange) {
       }
       createPageSelector(bufferNames, onPageChange);
     };
-    btn.style.margin = "0 4px";
+   
     if (idx === currentPage) {
       btn.style.backgroundColor = "#0f0"; // bouton sel vert
     }
@@ -525,6 +514,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Zoom toggle button
   zoomToggleButton.addEventListener("click", () => {
     estEnTrainDeZoomer = true;
     console.log("appel du zoom");
