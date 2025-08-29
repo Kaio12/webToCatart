@@ -64,6 +64,9 @@ const init = document.getElementById("init"); // bouton d'initialistion globale.
 const deleteEffect = document.getElementById("efface-formelibre"); // pour effacer la forme libre et l'effet afférent
 const drawToggleButton = document.getElementById("draw-toggle");
 const zoomToggleButton = document.getElementById("zoom");
+const addClock = document.getElementById("clock+");
+const delClock = document.getElementById("clock-");
+
 
 let lastFormesLibresPath = []; //sauvegarde des coordo des formes libres.
 
@@ -513,16 +516,6 @@ document.addEventListener('DOMContentLoaded', () => {
       pixiContainer.pivot.set(centerX, centerY);
       pixiContainer.position.set(centerX, centerY);
     }
-
-    // ======= séquenceur =======
-    clockWidget = new ClockWidget(currentPoints, buffer, { radius: 80, speed: 0.04 });
-    sequenceursConteneurs[currentPage].addChild(clockWidget);
-    clockWidget.position.set(centerX, centerY); // position initiale
-   
-    app.ticker.add(() => {
-      clockWidget.update();
-    });
-
   });
 
   // Zoom toggle button
@@ -572,4 +565,23 @@ document.addEventListener('DOMContentLoaded', () => {
         document.exitFullscreen();
       }
     });
+
+    addClock.addEventListener("click", () => {
+      const clockWidget = new ClockWidget(currentPoints, buffer, { radius: 80, speed: 0.04 });
+    sequenceursConteneurs[currentPage].addChild(clockWidget);
+    clockWidget.position.set(centerX, centerY); // position initiale
+    clockWidget.addTicker(app);
+    });
+
+    delClock.addEventListener("click", () => {
+      const children = sequenceursConteneurs[currentPage].children;
+      const lastChild = children[children.length - 1];
+      if (lastChild instanceof ClockWidget) {
+      sequenceursConteneurs[currentPage].removeChild(lastChild);
+      lastChild.removeTicker(app);
+      }
+    });
+
+    
+    
 });

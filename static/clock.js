@@ -12,7 +12,17 @@ export class ClockWidget extends PIXI.Container {
     this.center = new PIXI.Point(0, 0);
 
     // Dessin du cercle
-    this.circle = new PIXI.Graphics();
+    this.circle = new PIXI.Graphics()
+      .circle(0, 0, this.radius)
+      .fill({
+        color: 0xffffff,
+        alpha: 0.3
+      })
+      .stroke({
+        width: 5,
+        color: 0xffffff
+    });
+      
     this.addChild(this.circle);
 
     // Dessin de l'aiguille
@@ -20,8 +30,8 @@ export class ClockWidget extends PIXI.Container {
     this.addChild(this.hand);
 
     // Pour le drag
-    this.eventMode = 'static';
-    this.cursor = 'pointer';
+    this.eventMode = 'dynamic';
+    this.cursor = 'grab';
     this.interactive = true;
     this.dragging = false;
 
@@ -35,55 +45,56 @@ export class ClockWidget extends PIXI.Container {
   }
 
   draw() {
-    // Cercle
-     this.circle.clear();
-    this.circle.beginFill(0xffffff, 0.3); // Blanc semi-transparent
-    this.circle.lineStyle(2, 0xffffff); // Ligne blanche
-    this.circle.drawCircle(0, 0, this.radius);
-    this.circle.endFill();
-
-  // Aiguille (forme remplie noire pour visibilité maximale)
+  // Aiguille triangulaire
   this.hand.clear();
-  const x = Math.cos(this.angle) * this.radius;
-  const y = Math.sin(this.angle) * this.radius;
-  
-  // Dessine une forme remplie (triangle pointant vers l'extrémité)
-  this.hand.beginFill(0x000000); // Noir pour contraste
-  this.hand.lineStyle(2, 0x000000);
-  this.hand.moveTo(0, 0);
-  this.hand.lineTo(x, y);
-  this.hand.lineTo(x * 0.9, y * 0.9); // Pointe légèrement en arrière pour un triangle
-  this.hand.lineTo(0, 0);
+  const angle = this.angle;
+  const r = this.radius;
+  const w = 15; // largeur de la base de l'aiguille
+
+  // Trois points du triangle
+  const tipX = Math.cos(angle) * r;
+  const tipY = Math.sin(angle) * r;
+  const baseAngle = angle + Math.PI / 2;
+  const baseX1 = Math.cos(baseAngle) * (w / 2);
+  const baseY1 = Math.sin(baseAngle) * (w / 2);
+  const baseX2 = Math.cos(baseAngle) * (-w / 2);
+  const baseY2 = Math.sin(baseAngle) * (-w / 2);
+
+  const poly = [
+    [0 + baseX1, 0 + baseY1],
+    [0 + baseX2, 0 + baseY2],
+    [tipX, tipY]
+  ];
+
+  this.hand.beginFill(0x000000);
+  this.hand.drawPolygon(poly.flat());
   this.hand.endFill();
-    }
 
+  // Stocke la forme pour la collision
+  this._needlePolygon = new PIXI.Polygon(poly.map(([x, y]) => new PIXI.Point(this.x + x, this.y + y)));
+}
   update() {
-    // Tourne l'aiguille
     this.angle += this.speed;
-    if (this.angle > Math.PI * 2) this.angle -= Math.PI * 2;
-    this.draw();
+if (this.angle > Math.PI * 2) this.angle -= Math.PI * 2;
+this.draw();
 
-    // Test collision avec les points
-    const handX = this.x + Math.cos(this.angle) * this.radius;
-    const handY = this.y + Math.sin(this.angle) * this.radius;
-
-    for (const point of this.points) {
-      const px = point.parent.toGlobal(point.position).x;
-      const py = point.parent.toGlobal(point.position).y;
-      const dist = Math.hypot(handX - px, handY - py);
-      if (dist < (point.currentRadius || 12)) {
-        if (this.lastPlayedPointId !== point.sampleId) {
-          this.lastPlayedPointId = point.sampleId;
-
-          point.targetRadius = point.baseRadius * 1.8; // si un point est touché, il augmente brièvement de taille
-
-          playGrain(point.startTime, point.duration, point.isEffectEnabled, this.buffer);
-          sendOSC("/clock", point.sampleId);
-        } else point.targetRadius = point.baseRadius;
-        return;
+if (this._needlePolygon) {
+  for (const point of this.points) {
+    const px = point.parent.toGlobal(point.position).x;
+    const py = point.parent.toGlobal(point.position).y;
+    if (this._needlePolygon.contains(px, py)) {
+      if (this.lastPlayedPointId !== point.sampleId) {
+        this.lastPlayedPointId = point.sampleId;
+        point.targetRadius = point.baseRadius * 1.8;
+        playGrain(point.startTime, point.duration, point.isEffectEnabled, this.buffer);
+        sendOSC("/clock", point.sampleId);
       }
+      return;
     }
-    this.lastPlayedPointId = null;
+     else point.targetRadius = point.baseRadius;
+  }
+}
+this.lastPlayedPointId = null;
   }
 
   onDragStart(event) {
@@ -104,4 +115,18 @@ export class ClockWidget extends PIXI.Container {
       this.y = event.global.y - this.dragOffset.y;
     }
   }
-}
+
+  addTicker(app) {
+    this._tickerFn = (delta) => this.update(delta);
+    app.ticker.add(this._tickerFn);
+    }
+
+  removeTicker(app) {
+    if (this._tickerFn) {
+      app.ticker.remove(this._tickerFn);
+      this._tickerFn = null;
+    }
+  }
+
+  }
+
