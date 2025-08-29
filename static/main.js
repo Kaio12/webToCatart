@@ -56,7 +56,7 @@ let buffer;
 let bufferNames;
 
 let effectNode;
-let clockWidget;
+//let clockWidget;
 
 
 const selectorDiv = document.getElementById("page-selector"); // selecteur de page.
@@ -103,6 +103,8 @@ async function setupPixi() {
     resizeTo: window,
     backgroundColor: 0x000000 // couleur du fond
   });
+
+  app.ticker.maxFPS = 60; // will not tick faster than 60fps
 
   // on ajout l'app canvas à la partie pixi-container de la page
   const container = document.getElementById("pixi-container");
@@ -567,7 +569,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     addClock.addEventListener("click", () => {
-      const clockWidget = new ClockWidget(currentPoints, buffer, { radius: 80, speed: 0.04 });
+      const clockWidget = new ClockWidget(currentPoints, buffer, { radius: 80, speed: 0.03 });
     sequenceursConteneurs[currentPage].addChild(clockWidget);
     clockWidget.position.set(centerX, centerY); // position initiale
     clockWidget.addTicker(app);

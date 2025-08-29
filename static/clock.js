@@ -7,9 +7,11 @@ export class ClockWidget extends PIXI.Container {
     this.points = points; // tableau de points Pixi
     this.buffer = buffer; // AudioBuffer
     this.radius = options.radius || 80;
-    this.angle = 0; // angle en radians
-    this.speed = options.speed || 0.03; // vitesse de rotation
+    this.rotation = 0; // angle en radians
+    this.speed = options.speed || 0.03; // degres / seconde
     this.center = new PIXI.Point(0, 0);
+    this.thickness = options.thickness ?? 6;
+
 
     // Dessin du cercle
     this.circle = new PIXI.Graphics()
@@ -22,11 +24,15 @@ export class ClockWidget extends PIXI.Container {
         width: 5,
         color: 0xffffff
     });
-      
     this.addChild(this.circle);
 
     // Dessin de l'aiguille
-    this.hand = new PIXI.Graphics();
+    this.hand = new PIXI.Graphics()
+      .rect(0, -this.thickness / 2, this.radius, this.thickness)
+      .fill({
+        color: 0xffffff,
+        alpha: 0.8
+      });
     this.addChild(this.hand);
 
     // Pour le drag
@@ -41,61 +47,52 @@ export class ClockWidget extends PIXI.Container {
     this.on('pointermove', this.onDragMove.bind(this));
 
     this.lastPlayedPointId = null;
-    this.draw();
   }
 
-  draw() {
-  // Aiguille triangulaire
-  this.hand.clear();
-  const angle = this.angle;
-  const r = this.radius;
-  const w = 15; // largeur de la base de l'aiguille
 
-  // Trois points du triangle
-  const tipX = Math.cos(angle) * r;
-  const tipY = Math.sin(angle) * r;
-  const baseAngle = angle + Math.PI / 2;
-  const baseX1 = Math.cos(baseAngle) * (w / 2);
-  const baseY1 = Math.sin(baseAngle) * (w / 2);
-  const baseX2 = Math.cos(baseAngle) * (-w / 2);
-  const baseY2 = Math.sin(baseAngle) * (-w / 2);
+  update(delta = 1) {
+  
+  
+  this.rotation = (this.rotation + this.speed * delta) % (2 * Math.PI);
+  //this.hand.angle = this.angle;
 
-  const poly = [
-    [0 + baseX1, 0 + baseY1],
-    [0 + baseX2, 0 + baseY2],
-    [tipX, tipY]
-  ];
+  const cx = this.x;
+  const cy = this.y;
+  const needleRotation = this.rotation;
+  let hit = false;
 
-  this.hand.beginFill(0x000000);
-  this.hand.drawPolygon(poly.flat());
-  this.hand.endFill();
-
-  // Stocke la forme pour la collision
-  this._needlePolygon = new PIXI.Polygon(poly.map(([x, y]) => new PIXI.Point(this.x + x, this.y + y)));
-}
-  update() {
-    this.angle += this.speed;
-if (this.angle > Math.PI * 2) this.angle -= Math.PI * 2;
-this.draw();
-
-if (this._needlePolygon) {
   for (const point of this.points) {
-    const px = point.parent.toGlobal(point.position).x;
-    const py = point.parent.toGlobal(point.position).y;
-    if (this._needlePolygon.contains(px, py)) {
+    const gp = point.parent.toGlobal(point.position);
+    const dx = gp.x - cx;
+    const dy = gp.y - cy;
+    const dist2 = dx * dx + dy * dy;
+    if (dist2 > this.radius * this.radius) continue;
+
+    // Angle du point (radians)
+    let pa = Math.atan2(dy, dx);
+    if (pa < 0) pa += Math.PI * 2;
+
+    // Différence angulaire minimale (-PI, PI]
+    let diff = pa - needleRotation;
+    diff = (diff + Math.PI) % (Math.PI * 2) - Math.PI;
+
+    // Tolérance angulaire (ajuste 0.03 ≈ 1.7°)
+    if (Math.abs(diff) < 0.03) {
       if (this.lastPlayedPointId !== point.sampleId) {
         this.lastPlayedPointId = point.sampleId;
-        point.targetRadius = point.baseRadius * 1.8;
+        if (point.baseRadius) point.targetRadius = point.baseRadius * 1.8;
         playGrain(point.startTime, point.duration, point.isEffectEnabled, this.buffer);
         sendOSC("/clock", point.sampleId);
       }
-      return;
+      hit = true;
+      break;
+    } else if (point.baseRadius) {
+      point.targetRadius = point.baseRadius;
     }
-     else point.targetRadius = point.baseRadius;
   }
+
+  if (!hit) this.lastPlayedPointId = null;
 }
-this.lastPlayedPointId = null;
-  }
 
   onDragStart(event) {
     this.dragging = true;
@@ -117,7 +114,7 @@ this.lastPlayedPointId = null;
   }
 
   addTicker(app) {
-    this._tickerFn = (delta) => this.update(delta);
+    this._tickerFn = (ticker) => this.update(ticker.deltaTime);
     app.ticker.add(this._tickerFn);
     }
 
