@@ -11,7 +11,10 @@ export class ClockWidget extends PIXI.Container {
     this.speed = options.speed || 0.03; // degres / seconde
     this.center = new PIXI.Point(0, 0);
     this.thickness = options.thickness ?? 6;
-
+    this.resizing = false;
+    this.resizeStartRadius = null;
+    this.resizeStartPos = null;
+    this.running = true;
 
     // Dessin du cercle
     this.circle = new PIXI.Graphics()
@@ -41,10 +44,11 @@ export class ClockWidget extends PIXI.Container {
     this.interactive = true;
     this.dragging = false;
 
-    this.on('pointerdown', this.onDragStart.bind(this));
-    this.on('pointerup', this.onDragEnd.bind(this));
-    this.on('pointerupoutside', this.onDragEnd.bind(this));
-    this.on('pointermove', this.onDragMove.bind(this));
+    this.on('pointerdown', this.onPointerDown.bind(this));
+    this.on('pointerup', this.onPointerUp.bind(this));
+    this.on('pointerupoutside', this.onPointerUp.bind(this));
+    this.on('pointermove', this.onPointerMove.bind(this));
+    this.on('pointertap', this.onPointerTap.bind(this));
 
     this.lastPlayedPointId = null;
   }
@@ -52,7 +56,7 @@ export class ClockWidget extends PIXI.Container {
 
   update(delta = 1) {
   
-  
+    if (this.running) {
   this.rotation = (this.rotation + this.speed * delta) % (2 * Math.PI);
   //this.hand.angle = this.angle;
 
@@ -93,25 +97,60 @@ export class ClockWidget extends PIXI.Container {
 
   if (!hit) this.lastPlayedPointId = null;
 }
+  }
 
-  onDragStart(event) {
+onPointerDown(event) {
+  const local = this.toLocal(event.global);
+  const dist = Math.hypot(local.x, local.y);
+  // Si clic proche du bord du cercle (±10px)
+  if (Math.abs(dist - this.radius) < 12) {
+    this.resizing = true;
+    this.resizeStartRadius = this.radius;
+    this.resizeStartPos = { x: event.global.x, y: event.global.y };
+    this.cursor = 'nwse-resize';
+  } else {
+    // Drag normal
     this.dragging = true;
     this.dragOffset = {
       x: event.global.x - this.x,
       y: event.global.y - this.y
     };
+    this.cursor = 'grabbing';
   }
+}
 
-  onDragEnd() {
-    this.dragging = false;
-  }
+onPointerUp() {
+  this.dragging = false;
+  this.resizing = false;
+  this.cursor = 'grab';
+}
 
-  onDragMove(event) {
-    if (this.dragging) {
-      this.x = event.global.x - this.dragOffset.x;
-      this.y = event.global.y - this.dragOffset.y;
-    }
+onPointerMove(event) {
+  if (this.resizing) {
+    const local = this.toLocal(event.global);
+    const newRadius = Math.max(20, Math.hypot(local.x, local.y));
+    this.radius = newRadius;
+    // Redessine le cercle et l'aiguille
+    this.circle.clear()
+      .circle(0, 0, this.radius)
+      .fill({ color: 0xffffff, alpha: 0.3 })
+      .stroke({ width: 5, color: 0xffffff });
+    this.hand.clear()
+      .rect(0, -this.thickness / 2, this.radius, this.thickness)
+      .fill({ color: 0xffffff, alpha: 0.8 });
+  } else if (this.dragging) {
+    this.x = event.global.x - this.dragOffset.x;
+    this.y = event.global.y - this.dragOffset.y;
   }
+}
+
+onPointerTap(event) {
+  if (event.detail === 2) { // double-clic
+    this.running = !this.running;
+    this.cursor = this.running ? 'grab' : 'not-allowed';
+    console.log ("pointertap");
+  }
+}
 
   addTicker(app) {
     this._tickerFn = (ticker) => this.update(ticker.deltaTime);

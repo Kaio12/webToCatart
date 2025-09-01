@@ -10,7 +10,6 @@ export let pixiContainer = null; // conteneur Pixi global
 export let pixiPointsContainer = null; // pour les points
 export let formesLibresContainer = null; // pour les formes libres
 
-
 export let pointsConteneurs = [];
 export let formesLibresConteneurs = [];
 export let sequenceursConteneurs = [];
@@ -29,8 +28,6 @@ let isInitialized = false;
 let pointsData = [];  // les données des points à afficher, chargées depuis le serveur
 let currentPage = 0;
 let currentPoints; // les points de la page courante
-
-//let fondPourDessinFormeLibre;
 
 let estEnTrainDeZoomer = false;
 
@@ -56,8 +53,6 @@ let buffer;
 let bufferNames;
 
 let effectNode;
-//let clockWidget;
-
 
 const selectorDiv = document.getElementById("page-selector"); // selecteur de page.
 const init = document.getElementById("init"); // bouton d'initialistion globale.
@@ -67,13 +62,11 @@ const zoomToggleButton = document.getElementById("zoom");
 const addClock = document.getElementById("clock+");
 const delClock = document.getElementById("clock-");
 
-
 let lastFormesLibresPath = []; //sauvegarde des coordo des formes libres.
 
 let zoomFactor = 1.0 // facteur zoom affichage des points
 
 let cursorGraphic; // le curseur.
-//let pointerPos = { x: -9999, y: -9999 } //pointer position doigt
 
 // nécessaire pour pwa
 if ('serviceWorker' in navigator) {
@@ -87,7 +80,6 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
-
 
 // Fonction pour mettre à jour le centre lors du resize
 export function updateCenter() {
@@ -122,13 +114,11 @@ async function setupPixi() {
   pixiContainer.hitArea = new PIXI.Rectangle(0, 0, window.innerWidth, window.innerHeight);
   pixiContainer.eventMode = 'static';
 
-
   // === blocage des gestes natifs ===
   app.canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
   app.canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
   app.canvas.addEventListener('touchend', e => e.preventDefault(), { passive: false });
   app.canvas.addEventListener('wheel', e => e.preventDefault(), { passive: false });
-
 
   const activePointers = new Map();
   let lastPinchDistance = null;
@@ -145,24 +135,21 @@ async function setupPixi() {
 
     activePointers.set(event.pointerId, event.global.clone());
 
-    if (activePointers.size === 3) {
+    if (activePointers.size === 2) {
 
       console.log('en train de zoomer');
 
       const pointers = Array.from(activePointers.values());
       const p1 = pointers[0];
       const p2 = pointers[1];
-      const p3 = pointers[2];
 
-      const centroidX = (p1.x + p2.x + p3.x) / 3;
-      const centroidY = (p1.y + p2.y + p3.y) / 3;
+      const centroidX = (p1.x + p2.x ) / 2;
+      const centroidY = (p1.y + p2.y ) / 2;
 
       const dist1 = Math.hypot(p1.x - centroidX, p1.y - centroidY);
       const dist2 = Math.hypot(p2.x - centroidX, p2.y - centroidY);
-      const dist3 = Math.hypot(p3.x - centroidX, p3.y - centroidY);
 
-      const currentDistance = (dist1 + dist2 + dist3) / 3;
-
+      const currentDistance = (dist1 + dist2 ) / 2;
 
       if (lastPinchDistance === null) {
         //point central entre les trois doigts
@@ -212,29 +199,23 @@ async function setupPixi() {
     }
   });
 
-  
   cursorGraphic = createCursor(app); // Crée le curseur.
 
   // ***** TICKER : actualisation de l'app sur chaque frame ******
   app.ticker.add(() => {
-
     // met à jour l'echelle du zoom à chaque frame */
     if (pixiContainer) {
     pixiContainer.scale.set(zoomFactor);
     }
-  // Animation et redraw des points
-  for (const point of pixiPoints) {
-    const speed = 0.2;
-    point.currentRadius += (point.targetRadius - point.currentRadius) * speed;
-    if (typeof point.drawSelf === "function") point.drawSelf();
-  }
-
-
-
+    // Animation et redraw des points
+    for (const point of pixiPoints) {
+      const speed = 0.2;
+      point.currentRadius += (point.targetRadius - point.currentRadius) * speed;
+      if (typeof point.drawSelf === "function") point.drawSelf();
+    }
   });
 
   console.log("1) SetupPixi terminé : ", app);
-
 }
 
 // crée un selecteur pour sélectionner la page/buffer à jouer.
@@ -388,6 +369,7 @@ async function gestionPoints(bufferNames) {
 
       pixiPoints.push(...newPagePoints);
     });
+    
     // affiche la premiere page uniquement.
     pointsConteneurs.forEach((container, idx) => {
         container.visible = (idx === 0);
@@ -492,7 +474,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, { passive: false });
 
-
   // *** click INIT initialisation de tous les éléments ***
   init.addEventListener("click", async () => {
     
@@ -568,13 +549,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
+    // bouton ajout clock
     addClock.addEventListener("click", () => {
       const clockWidget = new ClockWidget(currentPoints, buffer, { radius: 80, speed: 0.03 });
-    sequenceursConteneurs[currentPage].addChild(clockWidget);
-    clockWidget.position.set(centerX, centerY); // position initiale
-    clockWidget.addTicker(app);
+      sequenceursConteneurs[currentPage].addChild(clockWidget);
+      clockWidget.position.set(centerX, centerY); // position initiale
+      clockWidget.addTicker(app);
     });
 
+      // bouton delete clock
     delClock.addEventListener("click", () => {
       const children = sequenceursConteneurs[currentPage].children;
       const lastChild = children[children.length - 1];
@@ -582,8 +565,5 @@ document.addEventListener('DOMContentLoaded', () => {
       sequenceursConteneurs[currentPage].removeChild(lastChild);
       lastChild.removeTicker(app);
       }
-    });
-
-    
-    
+    }); 
 });
