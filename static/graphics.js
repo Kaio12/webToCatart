@@ -95,87 +95,71 @@ export function setupFormesLibres (app,  nbPages, formesLibresConteneurs) {
   return formesLibres;
 }   
 
-export function DessinFormeLibre(fondPourDessinFormeLibre, drawingEnabled, currentPoints, onCompleteCallback, formeLibre, formeLibreContext, Container) {
+export function DessinFormeLibre(fondPourDessinFormeLibre, drawingEnabled, currentPoints, onCompleteCallback, formesLibresContainer) {
   const stage = fondPourDessinFormeLibre;
-  let lastPath; //pour sauvegarder les coordonnées après dessin de la forme libre.
+  let currentPath = [];
+  let isCurrentlyDrawing = false;
 
-  if(drawingEnabled) {
+  const formeLibre = new PIXI.Graphics();
+  formesLibresContainer.addChild(formeLibre);
 
-    onDrawStart = (event) => {
+  const  onDrawStart = (event) => {
       isCurrentlyDrawing = true;
-      startDrawPoint = Container.toLocal(event.global);
-      currentPath = [startDrawPoint];
-
-      formeLibreContext.clear()
+      const startPoint = formesLibresContainer.toLocal(event.global);
+      currentPath = [startPoint];
   };
 
-    onDrawMove = (event) => {
-      if (isCurrentlyDrawing) {
-        const movePoint = Container.toLocal(event.global);
+  const  onDrawMove = (event) => {
+      if (!isCurrentlyDrawing) return;
+        const movePoint = formesLibresContainer.toLocal(event.global);
         currentPath.push(movePoint);
         
-        formeLibreContext.clear();
-        formeLibreContext.moveTo(currentPath[0].x, currentPath[0].y);
+        formeLibre.clear();
+        formeLibre.lineStyle(4, 0xff0000, 1);
+        formeLibre.moveTo(currentPath[0].x, currentPath[0].y);
         for (let i = 1; i< currentPath.length; i++) {
-          formeLibreContext.lineTo(currentPath[i].x, currentPath[i].y);
+          formeLibre.lineTo(currentPath[i].x, currentPath[i].y);
           }
-        formeLibreContext.stroke({ width: 4, color: 0xff0000, alpha: 1});
-        }
-    };
+        };
 
-    onDrawEnd = () => {
+  const onDrawEnd = () => {
       if(!isCurrentlyDrawing) return;
       isCurrentlyDrawing = false;
 
-      formeLibreContext.clear();
-      if (currentPath.length > 1) {
-        formeLibreContext.moveTo(currentPath[0].x, currentPath[0].y);
+      formeLibre.beginFill(0x0000ff, 0.2);
+      formeLibre.moveTo(currentPath[0].x, currentPath[0].y);
         for (let i = 1; i < currentPath.length; i++) {
-          formeLibreContext.lineTo(currentPath[i].x, currentPath[i].y);
+          formeLibre.lineTo(currentPath[i].x, currentPath[i].y);
         }
-        // On ferme le chemin en revenant au premier point
-        formeLibreContext.lineTo(currentPath[0].x, currentPath[0].y);
-      }
+        formeLibre.closePath();
+        formeLibre.endFill();
 
-      // On peut maintenant remplir ET tracer le contour
-      formeLibreContext.fill({ color: 0x0000ff, alpha: 0.2 });
-      formeLibreContext.stroke({ width: 4, color: 0xff0000, alpha: 1 });
-      
-      // On réinitialise pour le prochain dessin, on sauvegarde dans lastPath
-      lastPath = currentPath;
-      currentPath = [];
-
-      // gestion de l'effet: on marque les points concernés, à l'intérieur de la forme libre.
-      currentPoints.forEach(point => {
-        point.isEffectEnabled = formeLibre.containsPoint(point.position);
-      });
+      // Met à jour les points pour l'effet
+    currentPoints.forEach(point => {
+      point.isEffectEnabled = formesLibresContainer.children.some(forme => forme.containsPoint(point.position));
+    });
 
       if (onCompleteCallback) {
         // coordonnées normalisés
-        const normPath = lastPath.map(pt => ({
+        const normPath = currentPath.map(pt => ({
           x: pt.x / window.innerWidth,
           y: pt.y / window.innerHeight
         }));
       onCompleteCallback(normPath);
       }
+ // Nettoie les événements
+    fondPourDessinFormeLibre.off("pointerdown", onDrawStart);
+    fondPourDessinFormeLibre.off("pointermove", onDrawMove);
+    fondPourDessinFormeLibre.off("pointerup", onDrawEnd);
+    fondPourDessinFormeLibre.off("pointerupoutside", onDrawEnd);
+  };
 
-
-      // on nettoie les écouteurs après le dessin de la forme libre.
-      if (onDrawStart) fondPourDessinFormeLibre.off("pointerdown", onDrawStart);
-      if (onDrawMove) fondPourDessinFormeLibre.off("pointermove", onDrawMove);
-      if (onDrawEnd) {
-        fondPourDessinFormeLibre.off("pointerup", onDrawEnd);
-        fondPourDessinFormeLibre.off("pointerupoutside", onDrawEnd);
-      }
-    };
-
-    fondPourDessinFormeLibre.on("pointerdown", onDrawStart);
-    fondPourDessinFormeLibre.on("pointermove", onDrawMove);
-    fondPourDessinFormeLibre.on("pointerup", onDrawEnd);
-    fondPourDessinFormeLibre.on("pointerupoutside", onDrawEnd);
-
-  } 
-}
+  fondPourDessinFormeLibre.on("pointerdown", onDrawStart);
+  fondPourDessinFormeLibre.on("pointermove", onDrawMove);
+  fondPourDessinFormeLibre.on("pointerup", onDrawEnd);
+  fondPourDessinFormeLibre.on("pointerupoutside", onDrawEnd);
+      
+};
 
 // après un zoom ou un redimensionnement de fenetre, ou le choix d'un corpus
 export function ReDessinFormeLibre(normPath, currentPoints, formeLibre, formeLibreContext, Container) {

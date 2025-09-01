@@ -120,8 +120,6 @@ async function setupPixi() {
   app.canvas.addEventListener('touchend', e => e.preventDefault(), { passive: false });
   app.canvas.addEventListener('wheel', e => e.preventDefault(), { passive: false });
 
-  
-
   // au cas ou la fenêtre change de taille, on redessine les points
   window.addEventListener('resize', () => {
     app.renderer.resize(window.innerWidth, window.innerHeight);
@@ -452,7 +450,7 @@ export function onFormeLibreComplete(path) {
   lastFormesLibresPath[currentPage] = path; // stocke le chemin pour le resize/redessin
   drawingEnabled = false;
   const drawToggleButton = document.getElementById("draw-toggle");
-  drawToggleButton.textContent = "Ef";
+  drawToggleButton.textContent = "Eff+s";
   drawToggleButton.style.backgroundColor = "";
 }
 
@@ -521,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
       drawToggleButton.textContent = 'Stop';
       drawToggleButton.style.backgroundColor = "#0f0";
 
-      DessinFormeLibre(pixiContainer, drawingEnabled, currentPoints, onFormeLibreComplete, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage]);
+      DessinFormeLibre(pixiContainer, drawingEnabled, currentPoints, onFormeLibreComplete, formesLibresConteneurs[currentPage]);
       
       if (formesLibres[currentPage]) formesLibres[currentPage].visible = true; // rend la forme libre visible
       console.log("Dessin activé");
@@ -529,15 +527,25 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // delete effect
-  deleteEffect.addEventListener("click", async () => {
-    if (formesLibresContextes[currentPage]) {
-      formesLibresContextes[currentPage].clear();
-       // On met à jour la propriété des points pour l'effet
-      currentPoints.forEach(point => {
-        point.isEffectEnabled = formesLibres[currentPage].containsPoint(point.position);
-      });
-    }
-  });
+deleteEffect.addEventListener("click", async () => {
+  const formesLibresContainer = formesLibresConteneurs[currentPage];
+
+  if (formesLibresContainer && formesLibresContainer.children.length > 0) {
+    // Supprime uniquement la dernière forme libre
+    const lastFormeLibre = formesLibresContainer.children.pop();
+    formesLibresContainer.removeChild(lastFormeLibre);
+
+    // Met à jour les propriétés des points pour l'effet
+    currentPoints.forEach(point => {
+      point.isEffectEnabled = formesLibresContainer.children.some(forme => forme.containsPoint(point.position));
+    });
+
+    console.log("Dernière forme libre supprimée.");
+  } else {
+    console.log("Aucune forme libre à supprimer.");
+  }
+});
+
     // bouton Fullscreen
     document.getElementById("fullscreen-btn").addEventListener("click", () => {
       if (!document.fullscreenElement) {
