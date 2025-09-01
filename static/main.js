@@ -120,6 +120,44 @@ async function setupPixi() {
   app.canvas.addEventListener('touchend', e => e.preventDefault(), { passive: false });
   app.canvas.addEventListener('wheel', e => e.preventDefault(), { passive: false });
 
+  
+
+  // au cas ou la fenêtre change de taille, on redessine les points
+  window.addEventListener('resize', () => {
+    app.renderer.resize(window.innerWidth, window.innerHeight);
+    updateCenter();
+    gestionPoints(bufferNames);
+    
+    if (lastFormesLibresPath[currentPage]) {
+        ReDessinFormeLibre(lastFormesLibresPath[currentPage], currentPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
+      console.log('formelibre dessinée de resize');
+    }
+  });
+
+  cursorGraphic = createCursor(app); // Crée le curseur.
+
+  // ***** TICKER : actualisation de l'app sur chaque frame ******
+  app.ticker.add(() => {
+    // met à jour l'echelle du zoom à chaque frame */
+    if (pixiContainer) {
+    pixiContainer.scale.set(zoomFactor);
+    }
+    // Animation et redraw des points
+    for (const point of pixiPoints) {
+      const speed = 0.2;
+      point.currentRadius += (point.targetRadius - point.currentRadius) * speed;
+      if (typeof point.drawSelf === "function") point.drawSelf();
+    }
+  });
+
+  console.log("1) SetupPixi terminé : ", app);
+}
+
+function initZoom() {
+    if (!pixiContainer) {
+      console.log("pas de pixicontainer, pas de zoom");
+      return;
+    };
   const activePointers = new Map();
   let lastPinchDistance = null;
 
@@ -137,8 +175,6 @@ async function setupPixi() {
 
     if (activePointers.size === 2) {
 
-      console.log('en train de zoomer');
-
       const pointers = Array.from(activePointers.values());
       const p1 = pointers[0];
       const p2 = pointers[1];
@@ -152,7 +188,6 @@ async function setupPixi() {
       const currentDistance = (dist1 + dist2 ) / 2;
 
       if (lastPinchDistance === null) {
-        //point central entre les trois doigts
         const pinchCenterGlobal = new PIXI.Point(centroidX, centroidY);
         const pinchCenterLocal = pixiContainer.toLocal(pinchCenterGlobal);
 
@@ -186,36 +221,6 @@ async function setupPixi() {
   pixiContainer.on("pointermove", onPointerMove);
   pixiContainer.on("pointerup", onPointerUp);
   pixiContainer.on("pointerupoutside", onPointerUp);
-
-  // au cas ou la fenêtre change de taille, on redessine les points
-  window.addEventListener('resize', () => {
-    app.renderer.resize(window.innerWidth, window.innerHeight);
-    updateCenter();
-    gestionPoints(bufferNames);
-    
-    if (lastFormesLibresPath[currentPage]) {
-        ReDessinFormeLibre(lastFormesLibresPath[currentPage], currentPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
-      console.log('formelibre dessinée de resize');
-    }
-  });
-
-  cursorGraphic = createCursor(app); // Crée le curseur.
-
-  // ***** TICKER : actualisation de l'app sur chaque frame ******
-  app.ticker.add(() => {
-    // met à jour l'echelle du zoom à chaque frame */
-    if (pixiContainer) {
-    pixiContainer.scale.set(zoomFactor);
-    }
-    // Animation et redraw des points
-    for (const point of pixiPoints) {
-      const speed = 0.2;
-      point.currentRadius += (point.targetRadius - point.currentRadius) * speed;
-      if (typeof point.drawSelf === "function") point.drawSelf();
-    }
-  });
-
-  console.log("1) SetupPixi terminé : ", app);
 }
 
 // crée un selecteur pour sélectionner la page/buffer à jouer.
@@ -481,6 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
       isInitialized = true;
 
       await setupPixi();
+      initZoom();
       await initialiseContexteAudio();
       await initialiseEffetAudio();
       await chargeFichiersAudioEtJson();
