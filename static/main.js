@@ -450,7 +450,7 @@ export function onFormeLibreComplete(path) {
   lastFormesLibresPath[currentPage] = path; // stocke le chemin pour le resize/redessin
   drawingEnabled = false;
   const drawToggleButton = document.getElementById("draw-toggle");
-  drawToggleButton.textContent = "Eff+s";
+  drawToggleButton.textContent = "Eff+";
   drawToggleButton.style.backgroundColor = "";
 }
 
@@ -519,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
       drawToggleButton.textContent = 'Stop';
       drawToggleButton.style.backgroundColor = "#0f0";
 
-      DessinFormeLibre(pixiContainer, drawingEnabled, currentPoints, onFormeLibreComplete, formesLibresConteneurs[currentPage]);
+      DessinFormeLibre(pixiContainer, currentPoints, onFormeLibreComplete, formesLibresConteneurs[currentPage]);
       
       if (formesLibres[currentPage]) formesLibres[currentPage].visible = true; // rend la forme libre visible
       console.log("Dessin activé");

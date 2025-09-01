@@ -95,71 +95,82 @@ export function setupFormesLibres (app,  nbPages, formesLibresConteneurs) {
   return formesLibres;
 }   
 
-export function DessinFormeLibre(fondPourDessinFormeLibre, drawingEnabled, currentPoints, onCompleteCallback, formesLibresContainer) {
-  const stage = fondPourDessinFormeLibre;
+export function DessinFormeLibre(fondPourDessinFormeLibre, currentPoints, onCompleteCallback, formesLibresContainer) {
   let currentPath = [];
-  let isCurrentlyDrawing = false;
+  let drawing = false;
+
+  // S'assurer que ce conteneur passe au-dessus (si tri activé)
+  formesLibresContainer.sortableChildren = true;
 
   const formeLibre = new PIXI.Graphics();
+  formeLibre.zIndex = 9999;
   formesLibresContainer.addChild(formeLibre);
 
-  const  onDrawStart = (event) => {
-      isCurrentlyDrawing = true;
-      const startPoint = formesLibresContainer.toLocal(event.global);
-      currentPath = [startPoint];
+  const rebuildStroke = () => {
+    if (currentPath.length < 2) return;
+    formeLibre.clear();
+    formeLibre.moveTo(currentPath[0].x, currentPath[0].y);
+    for (let i = 1; i < currentPath.length; i++) {
+      formeLibre.lineTo(currentPath[i].x, currentPath[i].y);
+    }
+    // stroke explicite (v8)
+    formeLibre.stroke({ width: 4, color: 0xff0000, alpha: 1 });
   };
 
-  const  onDrawMove = (event) => {
-      if (!isCurrentlyDrawing) return;
-        const movePoint = formesLibresContainer.toLocal(event.global);
-        currentPath.push(movePoint);
-        
-        formeLibre.clear();
-        formeLibre.lineStyle(4, 0xff0000, 1);
-        formeLibre.moveTo(currentPath[0].x, currentPath[0].y);
-        for (let i = 1; i< currentPath.length; i++) {
-          formeLibre.lineTo(currentPath[i].x, currentPath[i].y);
-          }
-        };
+  const onDown = (e) => {
+    drawing = true;
+    const p = formesLibresContainer.toLocal(e.global);
+    currentPath = [p];
+    rebuildStroke();
+  };
 
-  const onDrawEnd = () => {
-      if(!isCurrentlyDrawing) return;
-      isCurrentlyDrawing = false;
+  const onMove = (e) => {
+    if (!drawing) return;
+    const p = formesLibresContainer.toLocal(e.global);
+    currentPath.push(p);
+    rebuildStroke();
+  };
 
-      formeLibre.beginFill(0x0000ff, 0.2);
+  const finalize = () => {
+    if (!drawing) return;
+    drawing = false;
+
+    // Re-dessine, cette fois remplissage + contour
+    formeLibre.clear();
+    if (currentPath.length > 1) {
       formeLibre.moveTo(currentPath[0].x, currentPath[0].y);
-        for (let i = 1; i < currentPath.length; i++) {
-          formeLibre.lineTo(currentPath[i].x, currentPath[i].y);
-        }
-        formeLibre.closePath();
-        formeLibre.endFill();
+      for (let i = 1; i < currentPath.length; i++) {
+        formeLibre.lineTo(currentPath[i].x, currentPath[i].y);
+      }
+      formeLibre.closePath();
+      formeLibre.fill({ color: 0x0000ff, alpha: 0.2 }).stroke({ width: 4, color: 0xff0000, alpha: 1 });
+    }
 
-      // Met à jour les points pour l'effet
-    currentPoints.forEach(point => {
-      point.isEffectEnabled = formesLibresContainer.children.some(forme => forme.containsPoint(point.position));
+    // Mise à jour des points
+    currentPoints.forEach(pt => {
+      pt.isEffectEnabled = formesLibresContainer.children.some(f => f.containsPoint(pt.position));
     });
 
-      if (onCompleteCallback) {
-        // coordonnées normalisés
-        const normPath = currentPath.map(pt => ({
-          x: pt.x / window.innerWidth,
-          y: pt.y / window.innerHeight
-        }));
+    if (onCompleteCallback) {
+      const normPath = currentPath.map(pt => ({
+        x: pt.x / window.innerWidth,
+        y: pt.y / window.innerHeight
+      }));
       onCompleteCallback(normPath);
-      }
- // Nettoie les événements
-    fondPourDessinFormeLibre.off("pointerdown", onDrawStart);
-    fondPourDessinFormeLibre.off("pointermove", onDrawMove);
-    fondPourDessinFormeLibre.off("pointerup", onDrawEnd);
-    fondPourDessinFormeLibre.off("pointerupoutside", onDrawEnd);
+    }
+
+    fondPourDessinFormeLibre.off("pointermove", onMove);
+    fondPourDessinFormeLibre.off("pointerup", onUp);
+    fondPourDessinFormeLibre.off("pointerupoutside", onUp);
   };
 
-  fondPourDessinFormeLibre.on("pointerdown", onDrawStart);
-  fondPourDessinFormeLibre.on("pointermove", onDrawMove);
-  fondPourDessinFormeLibre.on("pointerup", onDrawEnd);
-  fondPourDessinFormeLibre.on("pointerupoutside", onDrawEnd);
-      
-};
+  const onUp = () => finalize();
+
+  fondPourDessinFormeLibre.on("pointerdown", onDown);
+  fondPourDessinFormeLibre.on("pointermove", onMove);
+  fondPourDessinFormeLibre.on("pointerup", onUp);
+  fondPourDessinFormeLibre.on("pointerupoutside", onUp);
+}
 
 // après un zoom ou un redimensionnement de fenetre, ou le choix d'un corpus
 export function ReDessinFormeLibre(normPath, currentPoints, formeLibre, formeLibreContext, Container) {
