@@ -461,7 +461,7 @@ export function enableDrawing() {
 
 // modifie le threshold suivant le zoom et la taille de fenetre
 function getProximityThreshold() {
-  const base = Math.min(window.innerWidth, window.innerHeight) * 0.08;
+  const base = Math.min(window.innerWidth, window.innerHeight) * 0.04;
   return base / zoomFactor;
 }
 

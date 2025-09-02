@@ -21,13 +21,17 @@ export function drawPixiPoints(pointsData, app, container, getProximityThreshold
 
   
   const bounds = getBounds(pointsData);
+   
+  const targetTotalArea = window.innerWidth * window.innerHeight * 0.5; // 0.5 : pourcentage de remplissage
+  const radiusMax = 0.5 * Math.sqrt(targetTotalArea / pointsData.length); // aire moyenne par point.
+
 
   pointsData.forEach((pointData) => {
 
     const pointGraphic = new PIXI.Graphics();
 
   // radius (taille des points) suit loudness (donné par analyse CATART/Max)
-    const radius = mapRange(pointData.loudnessMax, bounds.lMin, bounds.lMax, 5, 20);
+    const radius = mapRange(pointData.loudnessMax, bounds.lMin, bounds.lMax, 5, radiusMax);
 
   // couleur du point suit energy (donné par analyse CATART/Max)
     const hue = mapRange(pointData.energyMax, bounds.eMin, bounds.eMax, 240, 0);
