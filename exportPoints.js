@@ -8,12 +8,12 @@ outlets = 2;
     if (mubu != null) {
         var lesdeux = mubu.gettrack(1, "lesdeux");
         if (lesdeux != null) {
-            var DistX = lesdeux.getmxcolumn(1);
-            var DistY = lesdeux.getmxcolumn(2);
-            var loudnessMax = lesdeux.getmxcolumn(8);
-            var energyMax = lesdeux.getmxcolumn(5);
+            var DistX = lesdeux.getmxcolumn(0);
+            var DistY = lesdeux.getmxcolumn(1);
+            var loudnessMax = lesdeux.getmxcolumn(7);
+            var energyMax = lesdeux.getmxcolumn(4);
             var Time = lesdeux.gettime();
-            var Duration = lesdeux.getmxcolumn(3);
+            var Duration = lesdeux.getmxcolumn(2);
 
             try {
                 var folderPath = "/Users/philippecaillot/Documents/programmation/geste/public";

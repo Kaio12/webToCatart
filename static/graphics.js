@@ -36,7 +36,12 @@ export function drawPixiPoints(pointsData, app, container, getProximityThreshold
 
   // Calcule la position centrée AVANT zoom
     const x0 = mapRange(pointData.x, bounds.xMin, bounds.xMax, radius, window.innerWidth -  2 * radius);
-    const y0 = mapRange(pointData.y, bounds.yMin, bounds.yMax, radius, window.innerHeight - 2 * radius);
+
+    // Inversion verticale: dans le navigateur y=0 est en haut, dans Mubu y=0 est en bas
+    // On inverse donc la plage de sortie pour refléter correctement le repère de Mubu.
+    const y0 = mapRange(pointData.y, bounds.yMin, bounds.yMax,
+                        window.innerHeight - 2 * radius,  
+                        radius);                          
 
 
     pointGraphic.x = x0;

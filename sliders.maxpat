@@ -4,15 +4,27 @@
 		"appversion" : 		{
 			"major" : 9,
 			"minor" : 0,
-			"revision" : 7,
+			"revision" : 8,
 			"architecture" : "x64",
 			"modernui" : 1
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ -1686.0, -11.0, 1636.0, 959.0 ],
+		"rect" : [ 86.0, 145.0, 1444.0, 848.0 ],
 		"gridsize" : [ 15.0, 15.0 ],
 		"boxes" : [ 			{
+				"box" : 				{
+					"id" : "obj-3",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 702.0, 116.0, 91.0, 22.0 ],
+					"text" : "readtrack audio"
+				}
+
+			}
+, 			{
 				"box" : 				{
 					"bgcolor" : [ 0.796078431372549, 0.082352941176471, 0.082352941176471, 1.0 ],
 					"bgcolor2" : [ 0.163688058058427, 0.163688010157025, 0.163688022674427, 1.0 ],
@@ -76,8 +88,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 566.0, 73.0, 465.0, 22.0 ],
-					"text" : "readtrack audio /Users/philippecaillot/Documents/programmation/geste/public/enr.wav"
+					"patching_rect" : [ 566.0, 73.0, 472.0, 22.0 ],
+					"text" : "readtrack audio /Users/philippecaillot/Documents/programmation/geste/public/enr1.wav"
 				}
 
 			}
@@ -105,7 +117,7 @@
 						"appversion" : 						{
 							"major" : 9,
 							"minor" : 0,
-							"revision" : 7,
+							"revision" : 8,
 							"architecture" : "x64",
 							"modernui" : 1
 						}
@@ -368,15 +380,14 @@
 						"appversion" : 						{
 							"major" : 9,
 							"minor" : 0,
-							"revision" : 7,
+							"revision" : 8,
 							"architecture" : "x64",
 							"modernui" : 1
 						}
 ,
 						"classnamespace" : "box",
-						"rect" : [ -1409.0, -7.0, 952.0, 818.0 ],
+						"rect" : [ -1360.0, 62.0, 952.0, 818.0 ],
 						"gridsize" : [ 15.0, 15.0 ],
-						"visible" : 1,
 						"boxes" : [ 							{
 								"box" : 								{
 									"id" : "obj-19",
@@ -423,6 +434,8 @@
 									"saved_object_attributes" : 									{
 										"autostart" : 0,
 										"defer" : 0,
+										"node_bin_path" : "",
+										"npm_bin_path" : "",
 										"watch" : 0
 									}
 ,
@@ -459,7 +472,7 @@
 									"numoutlets" : 1,
 									"outlettype" : [ "" ],
 									"patching_rect" : [ 172.0, 519.0, 50.0, 35.0 ],
-									"text" : "/hover 47"
+									"text" : "/hover 20"
 								}
 
 							}
@@ -661,6 +674,8 @@
 									"saved_object_attributes" : 									{
 										"autostart" : 0,
 										"defer" : 0,
+										"node_bin_path" : "",
+										"npm_bin_path" : "",
 										"watch" : 0
 									}
 ,
@@ -888,15 +903,14 @@
 						"appversion" : 						{
 							"major" : 9,
 							"minor" : 0,
-							"revision" : 7,
+							"revision" : 8,
 							"architecture" : "x64",
 							"modernui" : 1
 						}
 ,
 						"classnamespace" : "box",
-						"rect" : [ 134.0, 100.0, 1242.0, 848.0 ],
+						"rect" : [ 133.0, 100.0, 1242.0, 848.0 ],
 						"gridsize" : [ 15.0, 15.0 ],
-						"visible" : 1,
 						"boxes" : [ 							{
 								"box" : 								{
 									"id" : "obj-7",
@@ -1562,7 +1576,7 @@
 									"sourcecode" : "import(\"stdfaust.lib\");\n\nmaxduration = 1;\nduration = hslider(\"duration\", 0, 0, 100, 0.001)* 0.001:si.smoo;\nfb = hslider(\"feedback\", 0, 0, 1, 0.01);\n\nmaxdel = 4096;\nintdel = hslider(\"intdel\", 0, 0, maxdel, 1):si.smoo;\ng = hslider(\"g\", 0, 0, 1, 0.001):si.smoo;\n\nprocess= _ : fi.fbcombfilter(maxdel,intdel,g) : ef.echo(maxduration, duration, fb);",
 									"sourcecode_size" : 343,
 									"text" : "faustgen~ multiEf",
-									"varname" : "faustgen-5058909136",
+									"varname" : "faustgen-4989254688",
 									"version" : "1.73"
 								}
 
@@ -2035,7 +2049,7 @@
 						"appversion" : 						{
 							"major" : 9,
 							"minor" : 0,
-							"revision" : 7,
+							"revision" : 8,
 							"architecture" : "x64",
 							"modernui" : 1
 						}
@@ -2409,13 +2423,12 @@
 , 			{
 				"box" : 				{
 					"id" : "obj-37",
-					"linecount" : 2,
 					"maxclass" : "message",
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 327.0, 406.0, 59.0, 35.0 ],
-					"text" : "11 18 9 19"
+					"patching_rect" : [ 327.0, 406.0, 59.0, 22.0 ],
+					"text" : "1 5 16 22"
 				}
 
 			}
@@ -2455,7 +2468,7 @@
 						"appversion" : 						{
 							"major" : 9,
 							"minor" : 0,
-							"revision" : 7,
+							"revision" : 8,
 							"architecture" : "x64",
 							"modernui" : 1
 						}
@@ -2760,13 +2773,13 @@
 						"appversion" : 						{
 							"major" : 9,
 							"minor" : 0,
-							"revision" : 7,
+							"revision" : 8,
 							"architecture" : "x64",
 							"modernui" : 1
 						}
 ,
 						"classnamespace" : "box",
-						"rect" : [ -1620.0, 58.0, 1525.0, 833.0 ],
+						"rect" : [ -1585.0, 78.0, 1525.0, 833.0 ],
 						"gridsize" : [ 15.0, 15.0 ],
 						"visible" : 1,
 						"boxes" : [ 							{
@@ -3005,6 +3018,10 @@
 									"numoutlets" : 4,
 									"outlettype" : [ "", "", "int", "" ],
 									"patching_rect" : [ 9.0, 165.0, 834.0, 22.0 ],
+									"saved_object_attributes" : 									{
+										"verbose" : 1
+									}
+,
 									"text" : "mubu.process echantillons descr onseg @name markers @onseg.columns Loudness @process 0 @onseg.max 1 @onseg.duration 1 @onseg.threshold 5."
 								}
 
@@ -3053,6 +3070,10 @@
 									"numoutlets" : 4,
 									"outlettype" : [ "", "", "int", "" ],
 									"patching_rect" : [ 9.0, 73.0, 802.0, 22.0 ],
+									"saved_object_attributes" : 									{
+										"verbose" : 1
+									}
+,
 									"text" : "mubu.process echantillons audio descr @name descr @process 0 @descr.winsize 1710 @descr.hopsize 512 @descr.minfreq 50 1 @timetagged yes"
 								}
 
@@ -3102,6 +3123,10 @@
 									"numoutlets" : 4,
 									"outlettype" : [ "", "", "int", "" ],
 									"patching_rect" : [ 16.0, 486.0, 935.0, 22.0 ],
+									"saved_object_attributes" : 									{
+										"verbose" : 1
+									}
+,
 									"text" : "mubu.process echantillons peaks scale @process 1 @scale.func dbtoa @name partials @matrixcolnames Frequency Amplitude @scale.columns Amplitude @timetagged yes"
 								}
 
@@ -3115,6 +3140,10 @@
 									"numoutlets" : 4,
 									"outlettype" : [ "", "", "int", "" ],
 									"patching_rect" : [ 16.0, 402.0, 1668.0, 35.0 ],
+									"saved_object_attributes" : 									{
+										"verbose" : 1
+									}
+,
 									"text" : "mubu.process echantillons audio slice:fft:peaks @name peaks @slice.wind hann @slice.size 1024 @slice.hop 512 @fft.size 4096 @fft.mode logpower @peaks.numpeaks 10 @peaks.keep lowest @process 1 @progressoutput input @info gui \"interface traces, colormode fgcolor, paramcols Frequency Amplitude, shape steps, paramautodisplayrange color 1, mixedlayout superposed, bounds 0 1090\" @timetagged yes"
 								}
 
@@ -3368,7 +3397,7 @@
 						"appversion" : 						{
 							"major" : 9,
 							"minor" : 0,
-							"revision" : 7,
+							"revision" : 8,
 							"architecture" : "x64",
 							"modernui" : 1
 						}
@@ -4002,8 +4031,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 566.0, 668.0, 248.0, 22.0 ],
-					"text" : "domain bounds 653.667827 8031.12196"
+					"patching_rect" : [ 562.5, 810.5, 248.0, 22.0 ],
+					"text" : "mouse exit 2498.237237 0.082384"
 				}
 
 			}
@@ -4015,7 +4044,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 327.0, 338.0, 138.0, 22.0 ],
-					"text" : "728.756418 0.468154"
+					"text" : "2492.767108 0.086881"
 				}
 
 			}
@@ -4049,14 +4078,14 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "signal", "" ],
-					"patching_rect" : [ 205.0, 601.0, 272.0, 49.0 ],
+					"patching_rect" : [ 205.0, 601.0, 260.0, 49.0 ],
 					"saved_object_attributes" : 					{
 						"outputstate" : 0,
 						"resampleaudioinput" : 0,
 						"verbose" : 1
 					}
 ,
-					"text" : "mubu.concat~ echantillons @audio audio @markers markers @play 0 @autotrigger 1 @allowrepeatmarkers 1"
+					"text" : "mubu.concat~ echantillons @audio audio @markers markers @play 0 @autotrigger 1 @allowrepeatmarkers 0"
 				}
 
 			}
@@ -4202,13 +4231,16 @@
 					"autorefreshrate" : 0,
 					"autoupdate" : 120.0,
 					"bgcolor" : [ 1.0, 1.0, 1.0, 1.0 ],
+					"bgcolordefault" : 0,
 					"bufferchooser_bgcolor" : [ 1.0, 1.0, 1.0, 1.0 ],
+					"bufferchooser_bgcolordefault" : 0,
 					"bufferchooser_fgcolor" : [ 0.0, 0.0, 0.0, 1.0 ],
+					"bufferchooser_fgcolordefault" : 0,
 					"bufferchooser_position" : 1,
 					"bufferchooser_shape" : "buttons",
 					"bufferchooser_size" : 15,
 					"bufferchooser_visible" : 1,
-					"content" : [ 2, null, [ "audio", 1, 1, 0, [  ], 0, "none", [ [ 5760000, 0, 48000.0, 0.0, 1, 1, 0, 0, 0, 0, 0, 0, 0 ] ] ], [ "descr", 1, 9, 0, [ "Frequency", "Energy", "Periodicity", "AC1", "Loudness", "Centroid", "Spread", "Skewness", "Kurtosis" ], 1, "none", [ [ 11249, 0, 93.75, 0.0, 1, 9, 0, 0, 0, 0, 0, 0, 0 ] ] ], [ "peaks", 10, 2, 1, [ "Frequency", "Amplitude" ], 1, "none", [ [ 11249, 0, 93.75, 0.0, 10, 2, 0, 0, 0, 0, 0, 0, 0 ] ] ], [ "markers", 1, 10, 0, [ "Duration", "FrequencyMax", "EnergyMax", "PeriodicityMax", "AC1Max", "LoudnessMax", "CentroidMax", "SpreadMax", "SkewnessMax", "KurtosisMax" ], 1, "none", [ [ 11249, 0, 93.75, 0.0, 1, 10, 0, 0, 0, 0, 0, 0, 0 ] ] ], [ "partials", 10, 2, 1, [ "Frequency", "Amplitude" ], 1, "none", [ [ 11249, 0, 93.75, 0.0, 10, 2, 0, 0, 0, 0, 0, 0, 0 ] ] ], [ "distribute", 1, 2, 0, [ "DistX", "DistY" ], 1, "none", [ [ 11249, 0, 93.75, 0.0, 1, 2, 0, 0, 0, 0, 0, 0, 0 ] ] ], [ "lesdeux", 1, 12, 0, [ "DistX", "DistY", "Duration", "FrequencyMax", "EnergyMax", "PeriodicityMax", "AC1Max", "LoudnessMax", "CentroidMax", "SpreadMax", "SkewnessMax", "KurtosisMax" ], 1, "none", [ [ 11249, 0, 93.75, 0.0, 1, 12, 0, 0, 0, 0, 0, 0, 0 ] ] ] ],
+					"content" : [ 2, null, [ "audio", 2, 1, 0, [  ], 0, "none", [ [ 5760000, 0, 48000.0, 0.0, 2, 1, 0, 0, 0, 0, 0, 0, 0 ] ] ], [ "descr", 1, 9, 0, [ "Frequency", "Energy", "Periodicity", "AC1", "Loudness", "Centroid", "Spread", "Skewness", "Kurtosis" ], 1, "none", [ [ 11249, 0, 93.75, 0.0, 1, 9, 0, 0, 0, 0, 0, 0, 0 ] ] ], [ "peaks", 10, 2, 1, [ "Frequency", "Amplitude" ], 1, "none", [ [ 11249, 0, 93.75, 0.0, 10, 2, 0, 0, 0, 0, 0, 0, 0 ] ] ], [ "markers", 1, 10, 0, [ "Duration", "FrequencyMax", "EnergyMax", "PeriodicityMax", "AC1Max", "LoudnessMax", "CentroidMax", "SpreadMax", "SkewnessMax", "KurtosisMax" ], 1, "none", [ [ 11249, 0, 93.75, 0.0, 1, 10, 0, 0, 0, 0, 0, 0, 0 ] ] ], [ "partials", 10, 2, 1, [ "Frequency", "Amplitude" ], 1, "none", [ [ 11249, 0, 93.75, 0.0, 10, 2, 0, 0, 0, 0, 0, 0, 0 ] ] ], [ "distribute", 1, 2, 0, [ "DistX", "DistY" ], 1, "none", [ [ 11249, 0, 93.75, 0.0, 1, 2, 0, 0, 0, 0, 0, 0, 0 ] ] ], [ "lesdeux", 1, 12, 0, [ "DistX", "DistY", "Duration", "FrequencyMax", "EnergyMax", "PeriodicityMax", "AC1Max", "LoudnessMax", "CentroidMax", "SpreadMax", "SkewnessMax", "KurtosisMax" ], 1, "none", [ [ 11249, 0, 93.75, 0.0, 1, 12, 0, 0, 0, 0, 0, 0, 0 ] ] ] ],
 					"continousediting" : 0,
 					"cursor_circleedgecolor" : [ 0.298039215686275, 0.290196078431373, 0.290196078431373, 1.0 ],
 					"cursor_circlefillcolor" : [ 0.109803921568627, 0.109803921568627, 0.109803921568627, 1.0 ],
@@ -4219,10 +4251,18 @@
 					"cursor_crossheight" : 0.0,
 					"cursor_crosswidth" : 0.0,
 					"cursor_followmouse" : 1,
+					"cursor_label" : "",
+					"cursor_labelcolor" : [ 0.0, 0.0, 0.0, 1.0 ],
+					"cursor_labelfontsize" : 12,
+					"cursor_labelposition" : 0,
+					"cursor_labelxoffset" : 0,
+					"cursor_labelyoffset" : 0,
 					"cursor_nearest" : 1,
 					"cursor_nearestcolor" : [ 1.0, 0.0, 0.0, 1.0 ],
 					"cursor_noringoffset" : 0,
-					"cursor_position" : [ 653.667826738202393, 0.465647411006264 ],
+					"cursor_numextracursors" : 0,
+					"cursor_outputdata" : 0,
+					"cursor_position" : [ 3729.016221510657942, 0.082384172607749 ],
 					"cursor_shape" : "cross",
 					"cursor_size" : 4,
 					"cursor_sizeunit" : 0,
@@ -4234,20 +4274,23 @@
 					"cursor_symbolwidth" : 16.0,
 					"cursor_visible" : 1,
 					"dirtypatcher" : 1,
-					"domain_bounds" : [ 653.667826738202393, 8031.121959633221195 ],
+					"domain_bounds" : [ 2219.260666708909866, 6518.781920600844387 ],
 					"domainruler_bgcolor" : [ 1.0, 1.0, 1.0, 1.0 ],
+					"domainruler_bgcolordefault" : 0,
 					"domainruler_fgcolor" : [ 0.0, 0.0, 0.0, 1.0 ],
+					"domainruler_fgcolordefault" : 0,
 					"domainruler_grid" : 0,
 					"domainruler_position" : 0,
 					"domainruler_size" : 15,
 					"domainruler_unit" : 3,
 					"domainruler_visible" : 1,
 					"domainscrollbar_color" : [ 1.0, 1.0, 1.0, 1.0 ],
+					"domainscrollbar_colordefault" : 0,
 					"domainscrollbar_size" : 10,
 					"domainscrollbar_visible" : 0,
 					"embed" : 2,
 					"externalfiles" : 1,
-					"foremost" : 1,
+					"foremost" : 7,
 					"freeze" : 0,
 					"id" : "obj-54",
 					"layout" : 0,
@@ -4268,7 +4311,7 @@
 					"outputvalues" : 0,
 					"outputviewname" : 0,
 					"parameter_enable" : 0,
-					"patching_rect" : [ 562.0, 336.0, 818.0, 314.0 ],
+					"patching_rect" : [ 562.0, 336.0, 294.0, 458.0 ],
 					"presentation" : 1,
 					"presentation_rect" : [ 13.0, 116.0, 857.0, 560.0 ],
 					"rangeruler_grid" : 0,
@@ -4287,16 +4330,19 @@
 					"tabs_position" : 0,
 					"tabs_size" : 20,
 					"tabs_visible" : 1,
-					"tool" : "cursor",
+					"tabsbgcolordefault" : 1,
+					"tabsfgcolordefault" : 1,
+					"tool" : "edit",
 					"toolbar_bgcolor" : [ 1.0, 1.0, 1.0, 1.0 ],
 					"toolbar_position" : 1,
 					"toolbar_size" : 30,
 					"toolbar_transposition" : 0,
 					"toolbar_visible" : 1,
+					"toolbarbgcolordefault" : 0,
 					"useplaceholders" : 1,
 					"varname" : "imub",
 					"verbose" : 1,
-					"viewconfig" : [ "interface wave, mainautobounds 1, hidenotforemost 1, progress 1", "interface sonogram, autobounds 1, hidenotforemost 1, colormode rainbow, progress 1, , paramdisplayrange , paramdisplayrange ", "interface traces, mainautobounds 1, hidenotforemost 1, colormode fgcolor, paramcols Frequency Amplitude -, , paramdisplayrange , , paramautodisplayrange , paramdisplayrange , shape steps", "interface scatterplot, mainautobounds 1, autobounds 1, hidenotforemost 1, allbuffersvisible 1, domainalign -, paramcols x y width height LoudnessMax LoudnessMax angle EnergyMax edgeopacity EnergyMax fillopacity type labeltext labelxoffset labelyoffset labelposition labelcolor labelopacity labelfontsize labelfontstyle connectionstyle connectioncolor connectionopacity connectionthickness connectionheadsize connectionweight, , paramdisplayrange fixedwidth 5 20 fixedheight 5 20 , paramdisplayrange fixedwidth 5 20 fixedheight 5 20 , selectioncolor 0 0 0 0.6", "interface matrix, bgcolor 255 255 255 1, fgcolor 0 0 0 1, bounds 0 1, visible 1, mainautobounds 1, autobounds 0, hidenotforemost 1, allbuffersvisible 0, domainalign time, displayOrder -1, colormode , thickness 1, pointdiam 5, highlight color 154 205 50 1, highlight mode index, progresscolor 64 70 72 1, progressmode bar, progress -1, shape , depth 0 0, fgcolorgradient 0, selectioncolor 173 216 230 0.2, linkedtrackid -292, header fgcolor 0 0 0 1, header bgcolor 255 255 255 1, grid color 240 240 240 1, header bordercolor 200 200 200 1, header visible all, header fontstyle italic, grid visible 1, scrollbars visible 1, fontsize 10, fontstyle 0, toolbar visible retractable, showmeans 0, layout , opacity 0, foremost 0, showcolnames 0, depth 0 0, stavecolor 0 0 0 1, inset 0, visiblesummarycolumns , columnorder ", "interface scatterplot, mainautobounds 1, autobounds 1, hidenotforemost 1, allbuffersvisible 1, domainalign -, paramcols x y width height LoudnessMax LoudnessMax angle EnergyMax edgeopacity EnergyMax fillopacity type labeltext labelxoffset labelyoffset labelposition labelcolor labelopacity labelfontsize labelfontstyle connectionstyle connectioncolor connectionopacity connectionthickness connectionheadsize connectionweight", "interface scatterplot, mainautobounds 1, autobounds 1, hidenotforemost 1, allbuffersvisible 1, domainalign -, paramcols x y width height LoudnessMax LoudnessMax angle EnergyMax edgeopacity EnergyMax fillopacity type labeltext labelxoffset labelyoffset labelposition labelcolor labelopacity labelfontsize labelfontstyle connectionstyle connectioncolor connectionopacity connectionthickness connectionheadsize connectionweight, , paramdisplayrange fixedwidth 5 20 fixedheight 5 20 , paramdisplayrange fixedwidth 5 20 fixedheight 5 20 , selectioncolor 0 0 0 0.6, , toolbar visible invisible" ],
+					"viewconfig" : [ "interface wave, bgcolor 255 255 255 1, fgcolor 0 0 0 1, mainautobounds 1, hidenotforemost 1, progress 1, header fgcolor 00 0 1, header bgcolor 255 255 255 1", "interface sonogram, bgcolor 255 255 255 1, fgcolor 0 0 0 1, autobounds 1, hidenotforemost 1, colormode rainbow, progress 1, , paramdisplayrange , paramdisplayrange , header fgcolor 00 0 1, header bgcolor 255 255 255 1", "interface traces, bgcolor 255 255 255 1, fgcolor 0 0 0 1, mainautobounds 1, hidenotforemost 1, colormode fgcolor, paramcols Frequency Amplitude --------------------, , paramdisplayrange , , paramautodisplayrange , paramdisplayrange , shape steps, header fgcolor 00 0 1, header bgcolor 255 255 255 1", "interface scatterplot, bgcolor 255 255 255 1, fgcolor 0 0 0 1, autobounds 1, hidenotforemost 1, allbuffersvisible 1, domainalign -, paramcols x y width height LoudnessMax LoudnessMax angle EnergyMax edgeopacity EnergyMax fillopacity type labeltext labelxoffset labelyoffset labelposition labelcolor labelopacity labelfontsize labelfontstyle connectionstyle connectioncolor connectionopacity connectionthickness connectionheadsize connectionweight, , paramdisplayrange fixedwidth 5 20 fixedheight 5 20 edgeopacity 0 1 fillopacity 0 1 type 0 13 labelposition 0 8 labelopacity 0 1 labelfontsize 8 72 labelfontstyle 0 3 connectionopacity 0 1 , , paramdatarange connectionstyle 0 3 , paramdisplayrange fixedwidth 5 20 fixedheight 5 20 edgeopacity 0 1 fillopacity 0 1 type 0 13 labelposition 0 8 labelopacity 0 1 labelfontsize 8 72 labelfontstyle 0 3 connectionopacity 0 1 , paramdatarange connectionstyle 0 3 , selectioncolor 0 0 0 0.6, header fgcolor 00 0 1, header bgcolor 255 255 255 1", "interface matrix, bgcolor 255 255 255 1, fgcolor 0 0 0 1, bounds 0 1, visible 1, mainautobounds 1, autobounds 0, hidenotforemost 1, allbuffersvisible 0, domainalign time, displayOrder -1, colormode , thickness 1, pointdiam 5, highlight color 154 205 50 1, highlight mode index, progresscolor 64 70 72 1, progressmode bar, progress -1, shape , depth 0 0, fgcolorgradient 0, selectioncolor 173 216 230 0.2, linkedtrackid -322, header fgcolor 0 0 0 1, header bgcolor 255 255 255 1, grid color 240 240 240 1, header bordercolor 200 200 200 1, header visible all, header fontstyle italic, grid visible 1, scrollbars visible 1, fontsize 10, fontstyle 0, toolbar visible retractable, showmeans 0, layout , opacity 0, foremost 0, showcolnames 0, depth 0 0, stavecolor 0 0 0 1, inset 0, visiblesummarycolumns , columnorder , rangerulerinside 0", "interface scatterplot, bgcolor 255 255 255 1, fgcolor 0 0 0 1, mainautobounds 1, autobounds 1, hidenotforemost 1, allbuffersvisible 1, domainalign -, paramcols x y width height LoudnessMax LoudnessMax angle EnergyMax edgeopacity EnergyMax fillopacity type labeltext labelxoffset labelyoffset labelposition labelcolor labelopacity labelfontsize labelfontstyle connectionstyle connectioncolor connectionopacity connectionthickness connectionheadsize connectionweight, , paramdisplayrange fixedwidth 5 20 fixedheight 5 20 edgeopacity 0 1 fillopacity 0 1 type 0 13 labelposition 0 8 labelopacity 0 1 labelfontsize 8 72 labelfontstyle 0 3 connectionopacity 0 1 , , paramdatarange connectionstyle 0 3 , paramdisplayrange fixedwidth 5 20 fixedheight 5 20 edgeopacity 0 1 fillopacity 0 1 type 0 13 labelposition 0 8 labelopacity 0 1 labelfontsize 8 72 labelfontstyle 0 3 connectionopacity 0 1 , paramdatarange connectionstyle 0 3 , header fgcolor 00 0 1, header bgcolor 255 255 255 1", "interface scatterplot, bgcolor 255 255 255 1, fgcolor 0 0 0 1, autobounds 1, hidenotforemost 1, allbuffersvisible 1, domainalign -, paramcols x y width height LoudnessMax LoudnessMax angle EnergyMax edgeopacity EnergyMax fillopacity type labeltext labelxoffset labelyoffset labelposition labelcolor labelopacity labelfontsize labelfontstyle connectionstyle connectioncolor connectionopacity connectionthickness connectionheadsize connectionweight, , paramdisplayrange fixedwidth 5 20 fixedheight 5 20 edgeopacity 0 1 fillopacity 0 1 type 0 13 labelposition 0 8 labelopacity 0 1 labelfontsize 8 72 labelfontstyle 0 3 connectionopacity 0 1 , , paramdatarange connectionstyle 0 3 , paramdisplayrange fixedwidth 5 20 fixedheight 5 20 edgeopacity 0 1 fillopacity 0 1 type 0 13 labelposition 0 8 labelopacity 0 1 labelfontsize 8 72 labelfontstyle 0 3 connectionopacity 0 1 , paramdatarange connectionstyle 0 3 , selectioncolor 0 0 0 0.6, header fgcolor 00 0 1, header bgcolor 255 255 255 1, , toolbar visible invisible" ],
 					"windresize" : 0
 				}
 
@@ -4448,6 +4494,13 @@
 				"patchline" : 				{
 					"destination" : [ "obj-52", 0 ],
 					"source" : [ "obj-29", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-54", 0 ],
+					"source" : [ "obj-3", 0 ]
 				}
 
 			}
@@ -4634,7 +4687,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-46", 1 ],
-					"order" : 1,
+					"order" : 0,
 					"source" : [ "obj-54", 0 ]
 				}
 
