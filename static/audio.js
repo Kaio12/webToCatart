@@ -20,6 +20,15 @@ export let effectNode = null;
 // GrainBus
 export let grainBus = null; // bus fixe pour router les grains vers l'effet
 
+// Envelope par défaut (en secondes)
+let GRAIN_ATTACK = 0.005;
+let GRAIN_RELEASE = 0.05;
+
+export function setGrainEnvelope(attack, release) {
+  if (attack >= 0) GRAIN_ATTACK = attack;
+  if (release >= 0) GRAIN_RELEASE = release;
+}
+
 //playgrain, pour jouer le grain correspondant au point PIXI sélectionné (survolé)
 export function playGrain(startMs, durationMs, useEffect = false, BufferName) {
   if(!BufferName) return;
@@ -27,35 +36,48 @@ export function playGrain(startMs, durationMs, useEffect = false, BufferName) {
   const source = audioContext.createBufferSource();
   source.buffer = BufferName;
 
+  // Gain d'enveloppe
+  const envGain = audioContext.createGain();
+  envGain.gain.value = 0;
+
   activeAudioSources.push(source); // ajoute la source pour éviter qu'elle soit garbage collectée
   
   source.onended = () => {
     source.disconnect(); // déconnecte la source une fois terminée
+    envGain.disconnect();
     activeAudioSources = activeAudioSources.filter(s => s !== source); // retire la source
-    /*
-    if (!useEffect) {
-      source.disconnect(); // déconnecte la source une fois terminée
-      activeAudioSources = activeAudioSources.filter(s => s !== source); // retire la source du tableau
-    } else {
-      const delayTailDuration = 5000; // durée de la queue de l'effet Faust
-      setTimeout(() => {
-        console.log("Queue de l'effet Faust terminée, source déconnectée");
-        source.disconnect(); // déconnecte la source après la queue
-        activeAudioSources = activeAudioSources.filter(s => s !== source); // retire la source du tableau après la queue
-      }, delayTailDuration);
-    }
-      */
   };
   
-  //connexion au faustnode. on verifie si le point est dans la forme libre
+  //connexion au node. on verifie si le point est dans la forme libre
   if (useEffect && grainBus) {
-    source.connect(grainBus);
+    source.connect(envGain).connect(grainBus);
   } else {
-    source.connect(audioContext.destination);
-  }  
+    source.connect(envGain).connect(audioContext.destination);
+  }
+  
   const startSec = startMs / 1000; //conversion en s
   const durationSec = durationMs / 1000;
   source.start(0, startSec, durationSec);
+  
+  // Planification enveloppe
+  const now = audioContext.currentTime;
+  let attack = GRAIN_ATTACK;
+  let release = GRAIN_RELEASE;
+  const minDur = 0.002;
+  const effDur = Math.max(durationSec, minDur);
+  if (attack + release > effDur) {
+    const scale = effDur / (attack + release);
+    attack *= scale;
+    release *= scale;
+  }
+  const peakTime = now + attack;
+  const endTime = now + effDur;
+  const releaseStart = Math.max(peakTime, endTime - release);
+
+  envGain.gain.setValueAtTime(0, now);
+  envGain.gain.linearRampToValueAtTime(1, peakTime);
+  envGain.gain.setValueAtTime(1, releaseStart);
+  envGain.gain.linearRampToValueAtTime(0.0001, endTime); // quasi silence
 }
 
 export async function initEffect() {
@@ -76,10 +98,10 @@ export async function initEffect() {
     effectNode.connect(feedbackGain);
     feedbackGain.connect(effectNode);
 
-    return {effectNode };
+    return { effectNode };
   } catch (e) {
     console.error("erreur lors de l'init de effectNode");
-    return null;s
+    return null;
   }
 }
 

@@ -357,7 +357,7 @@ async function gestionPoints(bufferNames) {
        // console.log(`Attachement de l'écouteur au point ${point.sampleId} de la page ${name}`);
         
         point.on('pointerover', () => {
-          console.log(`pointerover, Survol du point ${point.sampleId}. Utilisation du buffer:`, currentBufferForPage);
+          console.log(`pointerover, Survol du point ${point.sampleId}, time ${point.startTime}, duration ${point.duration} Utilisation du buffer:`, currentBufferForPage);
 
           point.targetRadius = point.baseRadius * 1.8;
           if (!drawingEnabled) playGrain(point.startTime, point.duration, point.isEffectEnabled, currentBufferForPage);
