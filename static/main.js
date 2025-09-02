@@ -482,22 +482,28 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (!isInitialized) {
       isInitialized = true;
-
-      await setupPixi();
-      initZoom();
-      await initialiseContexteAudio();
-      await initialiseEffetAudio();
-      await chargeFichiersAudioEtJson();
-      await initialiseSocket();
-      await initialiseSelecteurDePage();
-      await initSousConteneurs(bufferNames);
-      await gestionPoints(bufferNames);
     
+    try{
+      await setupPixi();
+      await initialiseContexteAudio();
+      await chargeFichiersAudioEtJson();
+      bufferNames = Object.keys(buffers);
+      nbPages = bufferNames.length;
+      await initSousConteneurs(bufferNames);
       setupFormesLibres(app, nbPages, formesLibresConteneurs); // init nb de formesLibres = nb de pages
-      }
+      await gestionPoints(bufferNames);
+      await initialiseSelecteurDePage();
+      await initialiseEffetAudio();
+      await initialiseSocket();
+      initZoom();
 
+      console.log("Initialisation terminée");
+    } catch (e) {
+      console.error("erreur initialisation", e);
+    }
+  }
+      
     zoomFactor = 1.0;
-
     if (pixiContainer) {
       updateCenter(); // S'assure que le centre est à jour
       pixiContainer.pivot.set(centerX, centerY);
