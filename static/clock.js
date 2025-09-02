@@ -16,6 +16,10 @@ export class ClockWidget extends PIXI.Container {
     this.resizeStartPos = null;
     this.running = true;
 
+    this.hitPaddingIdle = 10;
+    this.hitPaddingResize = 80; // on augmente la marge lors du resize
+    this.currentHitPadding = this.hitPaddingIdle;
+
     // Dessin du cercle
     this.circle = new PIXI.Graphics()
       .circle(0, 0, this.radius)
@@ -24,9 +28,10 @@ export class ClockWidget extends PIXI.Container {
         alpha: 0.3
       })
       .stroke({
-        width: 5,
+        width: 15,
         color: 0xffffff
     });
+    this.updateHitArea();
     this.addChild(this.circle);
 
     // Dessin de l'aiguille
@@ -53,60 +58,66 @@ export class ClockWidget extends PIXI.Container {
     this.lastPlayedPointId = null;
   }
 
+  updateHitArea() {
+    this.circle.hitArea = new PIXI.Circle(0, 0, this.radius + this.currentHitPadding);
+  }
 
   update(delta = 1) {
   
     if (this.running) {
-  this.rotation = (this.rotation + this.speed * delta) % (2 * Math.PI);
-  //this.hand.angle = this.angle;
+      this.rotation = (this.rotation + this.speed * delta) % (2 * Math.PI);
+      //this.hand.angle = this.angle;
 
-  const cx = this.x;
-  const cy = this.y;
-  const needleRotation = this.rotation;
-  let hit = false;
+      const cx = this.x;
+      const cy = this.y;
+      const needleRotation = this.rotation;
+      let hit = false;
 
-  for (const point of this.points) {
-    const gp = point.parent.toGlobal(point.position);
-    const dx = gp.x - cx;
-    const dy = gp.y - cy;
-    const dist2 = dx * dx + dy * dy;
-    if (dist2 > this.radius * this.radius) continue;
+      for (const point of this.points) {
+        const gp = point.parent.toGlobal(point.position);
+        const dx = gp.x - cx;
+        const dy = gp.y - cy;
+        const dist2 = dx * dx + dy * dy;
+        if (dist2 > this.radius * this.radius) continue;
 
-    // Angle du point (radians)
-    let pa = Math.atan2(dy, dx);
-    if (pa < 0) pa += Math.PI * 2;
+        // Angle du point (radians)
+        let pa = Math.atan2(dy, dx);
+        if (pa < 0) pa += Math.PI * 2;
 
-    // Différence angulaire minimale (-PI, PI]
-    let diff = pa - needleRotation;
-    diff = (diff + Math.PI) % (Math.PI * 2) - Math.PI;
+        // Différence angulaire minimale (-PI, PI]
+        let diff = pa - needleRotation;
+        diff = (diff + Math.PI) % (Math.PI * 2) - Math.PI;
 
-    // Tolérance angulaire (ajuste 0.03 ≈ 1.7°)
-    if (Math.abs(diff) < 0.03) {
-      if (this.lastPlayedPointId !== point.sampleId) {
-        this.lastPlayedPointId = point.sampleId;
-        if (point.baseRadius) point.targetRadius = point.baseRadius * 1.8;
-        playGrain(point.startTime, point.duration, point.isEffectEnabled, this.buffer);
-        sendOSC("/clock", point.sampleId);
-      }
-      hit = true;
-      break;
-    } else if (point.baseRadius) {
-      point.targetRadius = point.baseRadius;
+        // Tolérance angulaire (ajuste 0.03 ≈ 1.7°)
+        if (Math.abs(diff) < 0.03) {
+          if (this.lastPlayedPointId !== point.sampleId) {
+          this.lastPlayedPointId = point.sampleId;
+          if (point.baseRadius) point.targetRadius = point.baseRadius * 1.8;
+          playGrain(point.startTime, point.duration, point.isEffectEnabled, this.buffer);
+          sendOSC("/clock", point.sampleId);
+        }
+        hit = true;
+        break;
+        } else if (point.baseRadius) {
+          point.targetRadius = point.baseRadius;
+          }
+        }
+
+      if (!hit) this.lastPlayedPointId = null;
     }
   }
 
-  if (!hit) this.lastPlayedPointId = null;
-}
-  }
-
 onPointerDown(event) {
+  console.log("pointer down");
   const local = this.toLocal(event.global);
   const dist = Math.hypot(local.x, local.y);
-  // Si clic proche du bord du cercle (±10px)
-  if (Math.abs(dist - this.radius) < 12) {
+  
+  if (Math.abs(dist - this.radius) < 20) {
     this.resizing = true;
     this.resizeStartRadius = this.radius;
     this.resizeStartPos = { x: event.global.x, y: event.global.y };
+    this.currentHitPadding = this.hitPaddingResize;
+    this.updateHitArea();
     this.cursor = 'nwse-resize';
   } else {
     // Drag normal
@@ -120,13 +131,17 @@ onPointerDown(event) {
 }
 
 onPointerUp() {
+  console.log("pointer up");
   this.dragging = false;
   this.resizing = false;
   this.cursor = 'grab';
+  this.currentHitPadding = this.hitPaddingIdle;
+  this.updateHitArea();
 }
 
 onPointerMove(event) {
   if (this.resizing) {
+    console.log("pointer move resize");
     const local = this.toLocal(event.global);
     const newRadius = Math.max(20, Math.hypot(local.x, local.y));
     this.radius = newRadius;
@@ -134,11 +149,15 @@ onPointerMove(event) {
     this.circle.clear()
       .circle(0, 0, this.radius)
       .fill({ color: 0xffffff, alpha: 0.3 })
-      .stroke({ width: 5, color: 0xffffff });
+      .stroke({ width: 15, color: 0xffffff });
+
+    this.updateHitArea();
+
     this.hand.clear()
       .rect(0, -this.thickness / 2, this.radius, this.thickness)
       .fill({ color: 0xffffff, alpha: 0.8 });
   } else if (this.dragging) {
+    console.log("pointer move dragg");
     this.x = event.global.x - this.dragOffset.x;
     this.y = event.global.y - this.dragOffset.y;
   }
@@ -155,7 +174,7 @@ onPointerTap(event) {
   addTicker(app) {
     this._tickerFn = (ticker) => this.update(ticker.deltaTime);
     app.ticker.add(this._tickerFn);
-    }
+  }
 
   removeTicker(app) {
     if (this._tickerFn) {
@@ -164,5 +183,5 @@ onPointerTap(event) {
     }
   }
 
-  }
+}
 
