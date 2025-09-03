@@ -5,6 +5,8 @@ import { playGrain,initEffect, feedbackGain } from "./audio.js";
 import { initSocket, setupSocketAndHandlers, sendOSC, loadJsonPoints, loadAudioBuffers } from "./network.js";
 import { drawPixiPoints, setupFormesLibres, createCursor, DessinFormeLibre, ReDessinFormeLibre, formesLibres, formesLibresContextes } from "./graphics.js";
 import { ClockWidget } from "./clock.js"
+import { VirtualPointer } from './virtualPointer.js';
+
 
 export let pixiContainer = null; // conteneur Pixi global
 export let pixiPointsContainer = null; // pour les points
@@ -23,6 +25,7 @@ export let centerY = window.innerHeight / 2;
 
 export const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
+let eventBoundary;
 let isInitialized = false;
 
 let pointsData = [];  // les données des points à afficher, chargées depuis le serveur
@@ -110,6 +113,8 @@ async function setupPixi() {
     app.stage.addChild(pixiContainer);
   }
 
+  eventBoundary = new PIXI.EventBoundary(app.stage);
+
   // pour le dessin de la forme libre
   pixiContainer.hitArea = new PIXI.Rectangle(0, 0, window.innerWidth, window.innerHeight);
   pixiContainer.eventMode = 'static';
@@ -160,11 +165,17 @@ function initZoom() {
   let lastPinchDistance = null;
 
   const onPointerDown = async (event) => {
+
+    console.log('Pointer down:', event.pointerId, event.global.x, event.global.y);
+
     if (drawingEnabled) return;
     activePointers.set(event.pointerId, event.global.clone());
   };
 
   const onPointerMove = (event) => {
+
+    console.log('Pointer move:', event.pointerId, event.global.x, event.global.y);
+
     if (drawingEnabled) return; // Ne rien faire si on dessine
     if (!estEnTrainDeZoomer) return; // vérifie si le bouton zoom a été activé
     if (!activePointers.has(event.pointerId)) return;
@@ -509,6 +520,19 @@ document.addEventListener('DOMContentLoaded', () => {
       pixiContainer.pivot.set(centerX, centerY);
       pixiContainer.position.set(centerX, centerY);
     }
+
+/*
+    const vptr = new VirtualPointer(app, eventBoundary);
+    let t = 0;
+    app.ticker.add(() => {
+      const cx = window.innerWidth * 0.5;
+      const cy = window.innerHeight * 0.5;
+      const r = Math.min(cx, cy) * 0.6;
+      vptr.move(cx + Math.cos(t) * r, cy + Math.sin(t) * r);
+      t += 0.02;
+    });
+*/
+
   });
 
   // Zoom toggle button

@@ -19,7 +19,6 @@ export function drawPixiPoints(pointsData, app, container, getProximityThreshold
   container.removeChildren(); // Efface les anciens points
   const newPoints = [];
 
-  
   const bounds = getBounds(pointsData);
    
   const targetTotalArea = window.innerWidth * window.innerHeight * 0.5; // 0.5 : pourcentage de remplissage
