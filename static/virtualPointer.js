@@ -1,7 +1,8 @@
 export class VirtualPointer {
-  constructor(app, boundary, options = {}) {
+  constructor(app, boundary, container,  options = {}) {
     this.app = app;
     this.boundary = boundary;
+    this.container = container;
     this.pointerId = options.pointerId || 9999;
     this.pointerType = options.pointerType || 'virtual';
     this.buttons = 0;
@@ -9,6 +10,17 @@ export class VirtualPointer {
     this.capturedTarget = null;
     this.active = false;
     this.global = new PIXI.Point();
+
+    this.radius = options.radius || 14;
+    this.color = options.color || 0xff3333;
+    this.alpha = options.alpha ?? 0.9;
+    this.outline = options.outline || 0x000000;
+    this.outlineAlpha = 0.4;
+
+    this.visual = new PIXI.Graphics().circle(0,0,this.radius).fill(this.color);
+    this.visual.eventMode = 'none'; 
+    this.container.addChild(this.visual);
+
   }
 
   setCapture(displayObject) {
@@ -30,6 +42,7 @@ export class VirtualPointer {
 
   move(x, y, extra = {}) {
     this.global.set(x, y);
+    this.visual.position.set(x, y);
     const target = this._hit();
 
     if (target !== this.lastTarget) {
@@ -40,6 +53,7 @@ export class VirtualPointer {
     this.lastTarget = target;
   }
 
+  
   down(x, y, extra = {}) {
     this.move(x, y, extra);
     if (this.lastTarget) {
@@ -69,6 +83,14 @@ export class VirtualPointer {
     this.active = false;
     this.releaseCapture();
   }
+
+  destroy() {
+  if (this.visual && this.visual.parent) {
+    this.visual.parent.removeChild(this.visual);
+  }
+  this.visual.destroy();
+  this.visual = null;
+}
 
   _dispatch(type, target, extra) {
     const e = this._makeEvent(type, target, extra);

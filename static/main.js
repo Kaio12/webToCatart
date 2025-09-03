@@ -521,17 +521,19 @@ document.addEventListener('DOMContentLoaded', () => {
       pixiContainer.position.set(centerX, centerY);
     }
 
-/*
-    const vptr = new VirtualPointer(app, eventBoundary);
+
+    let vptr = new VirtualPointer(app, eventBoundary, pixiContainer);
     let t = 0;
     app.ticker.add(() => {
       const cx = window.innerWidth * 0.5;
       const cy = window.innerHeight * 0.5;
       const r = Math.min(cx, cy) * 0.6;
-      vptr.move(cx + Math.cos(t) * r, cy + Math.sin(t) * r);
+      
+      if (vptr) vptr.move(cx + Math.cos(t) * r, cy + Math.sin(t) * r);
       t += 0.02;
+      if (t>10 && vptr) {vptr.destroy(); vptr = null};
     });
-*/
+
 
   });
 
