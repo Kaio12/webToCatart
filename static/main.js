@@ -49,13 +49,21 @@ const pageBackgroundColors = [
 
 let nbPages = 0; // le nombre de pages qui correspond au nombres de buffers
 
-let buffers;
 let points;
 
+let buffers;
 let buffer;
 let bufferNames;
 
 let effectNode;
+
+let lastFormesLibresPath = []; //sauvegarde des coordo des formes libres.
+
+let zoomFactor = 1.0 // facteur zoom affichage des points
+
+let cursorGraphic; // le curseur.
+
+let sequence = null;
 
 const selectorDiv = document.getElementById("page-selector"); // selecteur de page.
 const init = document.getElementById("init"); // bouton d'initialistion globale.
@@ -64,12 +72,6 @@ const drawToggleButton = document.getElementById("draw-toggle");
 const zoomToggleButton = document.getElementById("zoom");
 const addClock = document.getElementById("clock+");
 const delClock = document.getElementById("clock-");
-
-let lastFormesLibresPath = []; //sauvegarde des coordo des formes libres.
-
-let zoomFactor = 1.0 // facteur zoom affichage des points
-
-let cursorGraphic; // le curseur.
 
 // nécessaire pour pwa
 if ('serviceWorker' in navigator) {
@@ -164,9 +166,18 @@ function initZoom() {
   const activePointers = new Map();
   let lastPinchDistance = null;
 
+function createEventSeq(time, x, y) {
+  return { time, x, y };
+}
+
   const onPointerDown = async (event) => {
 
     console.log('Pointer down:', event.pointerId, event.global.x, event.global.y);
+    // construction d'une séquence à rejouer
+    sequence = {
+      startTimeSeq : performance.now(),
+      events: []
+    };
 
     if (drawingEnabled) return;
     activePointers.set(event.pointerId, event.global.clone());
@@ -175,6 +186,14 @@ function initZoom() {
   const onPointerMove = (event) => {
 
     console.log('Pointer move:', event.pointerId, event.global.x, event.global.y);
+
+    // construction d'une séquence suite
+    if (sequence) {
+      const currentTime = performance.now();
+      const relTime = currentTime - sequence.startTimeSeq;
+      const pos = pixiContainer.toLocal(event.global);
+      sequence.events.push(createEventSeq(relTime, pos.x, pos.y));
+    }
 
     if (drawingEnabled) return; // Ne rien faire si on dessine
     if (!estEnTrainDeZoomer) return; // vérifie si le bouton zoom a été activé
@@ -217,6 +236,8 @@ function initZoom() {
   };
 
   const onPointerUp = (event) => {
+
+    if (sequence) console.log("sequence : ", sequence);
 
     if (drawingEnabled) return; // Ne rien faire si on dessine
     estEnTrainDeZoomer = false; // fin du zoom
