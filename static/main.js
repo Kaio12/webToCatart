@@ -64,6 +64,7 @@ let zoomFactor = 1.0 // facteur zoom affichage des points
 let cursorGraphic; // le curseur.
 
 let sequence = null;
+let vptrSeq;
 
 const selectorDiv = document.getElementById("page-selector"); // selecteur de page.
 const init = document.getElementById("init"); // bouton d'initialistion globale.
@@ -158,6 +159,39 @@ async function setupPixi() {
   console.log("1) SetupPixi terminé : ", app);
 }
 
+
+// pour jouer une séquence enregistrée
+function playSequence(sequence, vptr, onEnd) {
+  if (!sequence || !sequence.events || sequence.events.length === 0 || !vptr) return;
+  console.log("playSequence");
+  let i = 0;
+  const start = performance.now();
+
+  function step() {
+    if (i >= sequence.events.length) {
+      if (typeof onEnd === "function") onEnd();
+      return;
+    };
+
+    const evt = sequence.events[i];
+    const now = performance.now();
+    const elapsed = now - start;
+
+    if (elapsed >= evt.time) {
+      vptr.move(evt.x, evt.y);
+      i++;
+    }
+    if (i < sequence.events.length) {
+      requestAnimationFrame(step);
+    }
+  }
+  step();
+}
+
+
+
+
+// à renommer, contient également le séquenceur (gestion des pointeurs);
 function initZoom() {
     if (!pixiContainer) {
       console.log("pas de pixicontainer, pas de zoom");
@@ -178,6 +212,7 @@ function createEventSeq(time, x, y) {
       startTimeSeq : performance.now(),
       events: []
     };
+    vptrSeq = new VirtualPointer(app, eventBoundary, pixiContainer);
 
     if (drawingEnabled) return;
     activePointers.set(event.pointerId, event.global.clone());
@@ -236,8 +271,21 @@ function createEventSeq(time, x, y) {
   };
 
   const onPointerUp = (event) => {
+    // joue la séquence une seule fois
+    if (sequence) {
+      console.log("sequence : ", sequence);
+      const seqClone = {
+        startTimeSeq: sequence.startTimeSeq,
+        events: sequence.events.map(e => ({ ...e }))
+      };
+      playSequence(seqClone, vptrSeq, () => {
+        vptrSeq.destroy();
+        vptrSeq = null;
+      });
+      sequence = null;
+      
+    };
 
-    if (sequence) console.log("sequence : ", sequence);
 
     if (drawingEnabled) return; // Ne rien faire si on dessine
     estEnTrainDeZoomer = false; // fin du zoom
@@ -542,7 +590,7 @@ document.addEventListener('DOMContentLoaded', () => {
       pixiContainer.position.set(centerX, centerY);
     }
 
-
+    // essai d'animation d'un vptr sur un cercle, pour remplacer clock plus tart
     let vptr = new VirtualPointer(app, eventBoundary, pixiContainer);
     let t = 0;
     app.ticker.add(() => {
@@ -552,7 +600,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       if (vptr) vptr.move(cx + Math.cos(t) * r, cy + Math.sin(t) * r);
       t += 0.02;
-      if (t>10 && vptr) {vptr.destroy(); vptr = null};
+      if (t>5 && vptr) {vptr.destroy(); vptr = null};
     });
 
 
