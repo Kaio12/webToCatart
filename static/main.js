@@ -181,7 +181,7 @@ function playSequence(sequence, vptr, onEnd) {
       vptr.move(evt.x, evt.y);
       i++;
     }
-    if (i < sequence.events.length) {
+    if (i <= sequence.events.length) {
       requestAnimationFrame(step);
     }
   }
@@ -212,7 +212,6 @@ function createEventSeq(time, x, y) {
       startTimeSeq : performance.now(),
       events: []
     };
-    vptrSeq = new VirtualPointer(app, eventBoundary, pixiContainer);
 
     if (drawingEnabled) return;
     activePointers.set(event.pointerId, event.global.clone());
@@ -278,9 +277,14 @@ function createEventSeq(time, x, y) {
         startTimeSeq: sequence.startTimeSeq,
         events: sequence.events.map(e => ({ ...e }))
       };
+      
+      vptrSeq = new VirtualPointer(app, eventBoundary, pixiContainer);
+
       playSequence(seqClone, vptrSeq, () => {
+        vptrSeq.up();
         vptrSeq.destroy();
         vptrSeq = null;
+
       });
       sequence = null;
       
@@ -600,7 +604,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       if (vptr) vptr.move(cx + Math.cos(t) * r, cy + Math.sin(t) * r);
       t += 0.02;
-      if (t>5 && vptr) {vptr.destroy(); vptr = null};
+      if (t>5 && vptr) {vptr.up(); vptr.destroy(); vptr = null};
     });
 
 
@@ -628,13 +632,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // delete effect
-deleteEffect.addEventListener("click", async () => {
-  const formesLibresContainer = formesLibresConteneurs[currentPage];
+  deleteEffect.addEventListener("click", async () => {
+    const formesLibresContainer = formesLibresConteneurs[currentPage];
 
-  if (formesLibresContainer && formesLibresContainer.children.length > 0) {
-    // Supprime uniquement la dernière forme libre
-    const lastFormeLibre = formesLibresContainer.children.pop();
-    formesLibresContainer.removeChild(lastFormeLibre);
+    if (formesLibresContainer && formesLibresContainer.children.length > 0) {
+      // Supprime uniquement la dernière forme libre
+      const lastFormeLibre = formesLibresContainer.children.pop();
+      formesLibresContainer.removeChild(lastFormeLibre);
 
     // Met à jour les propriétés des points pour l'effet
     currentPoints.forEach(point => {
@@ -645,7 +649,7 @@ deleteEffect.addEventListener("click", async () => {
   } else {
     console.log("Aucune forme libre à supprimer.");
   }
-});
+  });
 
     // bouton Fullscreen
     document.getElementById("fullscreen-btn").addEventListener("click", () => {
