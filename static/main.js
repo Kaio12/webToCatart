@@ -63,7 +63,9 @@ let zoomFactor = 1.0 // facteur zoom affichage des points
 
 let cursorGraphic; // le curseur.
 
-let sequence = null;
+let geste = null;
+let sequences = null;
+
 let vptrSeq;
 
 const selectorDiv = document.getElementById("page-selector"); // selecteur de page.
@@ -161,19 +163,19 @@ async function setupPixi() {
 
 
 // pour jouer une séquence enregistrée
-function playSequence(sequence, vptr, onEnd) {
-  if (!sequence || !sequence.events || sequence.events.length === 0 || !vptr) return;
-  console.log("playSequence");
+function playgeste(geste, vptr, onEnd) {
+  if (!geste || !geste.events || geste.events.length === 0 || !vptr) return;
+  console.log("playgeste");
   let i = 0;
   const start = performance.now();
 
   function step() {
-    if (i >= sequence.events.length) {
+    if (i >= geste.events.length) {
       if (typeof onEnd === "function") onEnd();
       return;
     };
 
-    const evt = sequence.events[i];
+    const evt = geste.events[i];
     const now = performance.now();
     const elapsed = now - start;
 
@@ -181,7 +183,7 @@ function playSequence(sequence, vptr, onEnd) {
       vptr.move(evt.x, evt.y);
       i++;
     }
-    if (i <= sequence.events.length) {
+    if (i <= geste.events.length) {
       requestAnimationFrame(step);
     }
   }
@@ -208,7 +210,7 @@ function createEventSeq(time, x, y) {
 
     console.log('Pointer down:', event.pointerId, event.global.x, event.global.y);
     // construction d'une séquence à rejouer
-    sequence = {
+    geste = {
       startTimeSeq : performance.now(),
       events: []
     };
@@ -219,14 +221,14 @@ function createEventSeq(time, x, y) {
 
   const onPointerMove = (event) => {
 
-    console.log('Pointer move:', event.pointerId, event.global.x, event.global.y);
+    //console.log('Pointer move:', event.pointerId, event.global.x, event.global.y);
 
     // construction d'une séquence suite
-    if (sequence) {
+    if (geste) {
       const currentTime = performance.now();
-      const relTime = currentTime - sequence.startTimeSeq;
+      const relTime = currentTime - geste.startTimeSeq;
       const pos = pixiContainer.toLocal(event.global);
-      sequence.events.push(createEventSeq(relTime, pos.x, pos.y));
+      geste.events.push(createEventSeq(relTime, pos.x, pos.y));
     }
 
     if (drawingEnabled) return; // Ne rien faire si on dessine
@@ -271,22 +273,22 @@ function createEventSeq(time, x, y) {
 
   const onPointerUp = (event) => {
     // joue la séquence une seule fois
-    if (sequence) {
-      console.log("sequence : ", sequence);
+    if (geste) {
+      console.log("geste : ", geste);
       const seqClone = {
-        startTimeSeq: sequence.startTimeSeq,
-        events: sequence.events.map(e => ({ ...e }))
+        startTimeSeq: geste.startTimeSeq,
+        events: geste.events.map(e => ({ ...e }))
       };
       
       vptrSeq = new VirtualPointer(app, eventBoundary, pixiContainer);
 
-      playSequence(seqClone, vptrSeq, () => {
+      playgeste(seqClone, vptrSeq, () => {
         vptrSeq.up();
         vptrSeq.destroy();
         vptrSeq = null;
 
       });
-      sequence = null;
+      geste = null;
       
     };
 
@@ -441,7 +443,7 @@ async function gestionPoints(bufferNames) {
        // console.log(`Attachement de l'écouteur au point ${point.sampleId} de la page ${name}`);
         
         point.on('pointerover', () => {
-          console.log(`pointerover, Survol du point ${point.sampleId}, time ${point.startTime}, duration ${point.duration} Utilisation du buffer:`, currentBufferForPage);
+          //console.log(`pointerover, Survol du point ${point.sampleId}, time ${point.startTime}, duration ${point.duration} Utilisation du buffer:`, currentBufferForPage);
 
           point.targetRadius = point.baseRadius * 1.8;
           if (!drawingEnabled) playGrain(point.startTime, point.duration, point.isEffectEnabled, currentBufferForPage);
