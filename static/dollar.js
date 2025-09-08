@@ -69,7 +69,7 @@
 //
 // Point class
 //
-function Point(x, y) // constructor
+export function Point(x, y) // constructor
 {
 	this.X = x;
 	this.Y = y;
@@ -187,7 +187,7 @@ function DollarRecognizer() // constructor
 //
 // Private helper functions from here on down
 //
-function Resample(points, n)
+export function Resample(points, n)
 {
 	var I = PathLength(points) / (n - 1); // interval length
 	var D = 0.0;
