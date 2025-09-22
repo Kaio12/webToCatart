@@ -5,11 +5,20 @@ const Max = require('max-api');
 const fs = require('fs');
 const path = require('path');
 
-// Définir le chemin du fichier à supprimer de manière robuste
-const filePathToDelete = path.join(__dirname, 'public', 'points.json');
+let filePathToDelete;
 
 // Créer un gestionnaire qui attend le message "delete"
-Max.addHandler('delete', () => {
+Max.addHandler('delete', (file) => {
+
+Max.post(typeof file);
+
+// Définir le chemin du fichier à supprimer de manière robuste
+if (typeof file === "string") {
+ filePathToDelete = path.join(__dirname, 'public', file);
+ Max.post("filePathToDelete:", filePathToDelete)
+} else return;
+
+
   // Utiliser fs.unlink pour supprimer le fichier
   fs.unlink(filePathToDelete, (err) => {
     if (err) {

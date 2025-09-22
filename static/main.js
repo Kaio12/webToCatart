@@ -7,12 +7,12 @@ import { drawPixiPoints, setupFormesLibres, createCursor, DessinFormeLibre, ReDe
 import { ClockWidget } from "./clock.js"
 import { VirtualPointer } from './virtualPointer.js';
 
-import { Point, Resample } from "./dollar.js";
+//import { Point, Resample } from "./dollar.js";
 import { resample, getBoundsArray, moyenneDistanceEntreTableaux } from "./resampler.js";
 
 export let pixiContainer = null; // conteneur Pixi global
-export let pixiPointsContainer = null; // pour les points
-export let formesLibresContainer = null; // pour les formes libres
+//export let pixiPointsContainer = null; // pour les points
+//export let formesLibresContainer = null; // pour les formes libres
 
 export let pointsConteneurs = [];
 export let formesLibresConteneurs = [];
@@ -62,15 +62,16 @@ let effectNode;
 let lastFormesLibresPath = []; //sauvegarde des coordo des formes libres.
 
 let zoomFactor = 1.0 // facteur zoom affichage des points
+let zoomFactors = []; // un zoom par page
 
 let cursorGraphic; // le curseur.
 
 let geste = null;
-let gesteAn = null;
+//let gesteAn = null;
 let sequences = []; // tableau contenant les gestes
 let sequencesAn = []; // tableau pour l'analyse des gestes
 
-let vptrSeq;
+let vptrSeq; // pointer virtuel pour prochain séquenceur libre à construire
 
 const selectorDiv = document.getElementById("page-selector"); // selecteur de page.
 const init = document.getElementById("init"); // bouton d'initialistion globale.
@@ -92,6 +93,8 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
+
+
 
 // Fonction pour mettre à jour le centre lors du resize
 export function updateCenter() {
@@ -193,7 +196,6 @@ function playgeste(geste, vptr, onEnd) {
   step();
 }
 
-
 // détermine les bornes de points (pour recogniser)
 function getBounds(points) {
   const xs = points.map(p => p.X ?? p[0]);
@@ -205,7 +207,6 @@ function getBounds(points) {
   return { xmin, xmax, ymin, ymax };
 }
 
-
 function moyenneDistanceEntreGestes(g1, g2) {
   let total = 0;
   for (let i = 0; i < Math.min(g1.length, g2.length); i++) {
@@ -216,7 +217,6 @@ function moyenneDistanceEntreGestes(g1, g2) {
   return total / Math.min(g1.length, g2.length);
 }
 
-
 // à renommer, contient également le séquenceur (gestion des pointeurs);
 function initZoom() {
     if (!pixiContainer) {
@@ -226,36 +226,15 @@ function initZoom() {
   const activePointers = new Map();
   let lastPinchDistance = null;
 
-function createEventSeq(time, x, y) {
-  return { time, x, y };
-}
 
   const onPointerDown = async (event) => {
 
-    //console.log('Pointer down:', event.pointerId, event.global.x, event.global.y);
-    // construction d'une séquence à rejouer
-    geste = {
-      startTimeSeq : performance.now(),
-      events: []
-    };
-
     if (drawingEnabled) return;
     activePointers.set(event.pointerId, event.global.clone());
-    const pos = pixiContainer.toLocal(event.global);
-    geste.events.push(createEventSeq(geste.startTimeSeq, pos.x, pos.y)); // premier point enregistré sur pointerDown
+    
   };
 
   const onPointerMove = (event) => {
-
-    //console.log('Pointer move:', event.pointerId, event.global.x, event.global.y);
-
-    // construction d'une séquence suite
-    if (geste) {
-      const currentTime = performance.now();
-      const relTime = currentTime - geste.startTimeSeq;
-      const pos = pixiContainer.toLocal(event.global);
-      geste.events.push(createEventSeq(relTime, pos.x, pos.y));
-    }
 
     if (drawingEnabled) return; // Ne rien faire si on dessine
     if (!estEnTrainDeZoomer) return; // vérifie si le bouton zoom a été activé
@@ -298,57 +277,6 @@ function createEventSeq(time, x, y) {
   };
 
   const onPointerUp = (event) => {
-    
-    if (geste) {
-      
-      console.log("geste", geste);
-
-      sequences.push(geste);
-      if (sequences.length > 3) sequences.shift();
-
-      let pointsTab = geste.events.map(e => [e.x, e.y]);
-      let gesteAnTab = resample(pointsTab, 64);
-      
-      //let bounds = getBoundsArray(gesteAnTab);
-      //let gesteZeroTab = gesteAnTab.map( p  => [p[0] - bounds.xmin, p[1] - bounds.ymin]);
-      
-      sequencesAn.push(gesteAnTab);
-      if (sequencesAn.length > 3) sequencesAn.shift();
-      console.log ("sequencesAn", sequencesAn);
-
-      if (sequencesAn.length >= 3) {
-        const scores = [
-          moyenneDistanceEntreTableaux(sequencesAn[0], sequencesAn[1]),
-          moyenneDistanceEntreTableaux(sequencesAn[0], sequencesAn[2]),
-          moyenneDistanceEntreTableaux(sequencesAn[1], sequencesAn[2])
-        ];
-        const scoreGlobal = scores.reduce((a, b) => a + b, 0) / scores.length;
-        console.log ("score global", scoreGlobal);
-        if (scoreGlobal < 30) console.log("!!!!!!!OUI!!!!!!");
-        else console.log("-------NON--------");
-      };
-/*
-// joue la séquence une seule fois
-      const seqClone = {
-        startTimeSeq: geste.startTimeSeq,
-        events: geste.events.map(e => ({ ...e }))
-      };
-      
-      vptrSeq = new VirtualPointer(app, eventBoundary, pixiContainer);
-
-      playgeste(seqClone, vptrSeq, () => {
-        vptrSeq.up();
-        vptrSeq.destroy();
-        vptrSeq = null;
-
-      });
-
-*/
-      geste = null;
-      
-    };
-
-
     if (drawingEnabled) return; // Ne rien faire si on dessine
     estEnTrainDeZoomer = false; // fin du zoom
     activePointers.delete(event.pointerId);
@@ -363,7 +291,99 @@ function createEventSeq(time, x, y) {
   pixiContainer.on("pointerupoutside", onPointerUp);
 }
 
-// crée un selecteur pour sélectionner la page/buffer à jouer.
+// utilisée dans initReconnaissanceGeste
+function createEventSeq(time, x, y) {
+  return { time, x, y };
+}
+
+// reconnaissance de forme
+function initReconnaissanceGeste() {
+
+  const onPointerDown = async (event) => {
+    geste = {
+      startTimeSeq : performance.now(),
+      events: []
+    };
+
+    if (drawingEnabled) return;
+   
+    const pos = pixiContainer.toLocal(event.global);
+    geste.events.push(createEventSeq(geste.startTimeSeq, pos.x, pos.y)); // premier point enregistré sur pointerDown
+  };
+
+  const onPointerMove = (event) => {
+
+    if (geste) {
+      const currentTime = performance.now();
+      const relTime = currentTime - geste.startTimeSeq;
+      const pos = pixiContainer.toLocal(event.global);
+      geste.events.push(createEventSeq(relTime, pos.x, pos.y));
+    }
+
+    if (drawingEnabled) return; // Ne rien faire si on dessine
+  };
+
+  const onPointerUp = (event) => {
+    
+    if (geste) {
+      
+      //console.log("geste", geste);
+
+      sequences.push(geste);
+      if (sequences.length > 3) sequences.shift();
+
+      let pointsTab = geste.events.map(e => [e.x, e.y]);
+      let gesteAnTab = resample(pointsTab, 64);
+      
+      sequencesAn.push(gesteAnTab);
+      if (sequencesAn.length > 3) sequencesAn.shift();
+      //console.log ("sequencesAn", sequencesAn);
+
+      if (sequencesAn.length >= 3) {
+        const scores = [
+          moyenneDistanceEntreTableaux(sequencesAn[0], sequencesAn[1]),
+          moyenneDistanceEntreTableaux(sequencesAn[0], sequencesAn[2]),
+          moyenneDistanceEntreTableaux(sequencesAn[1], sequencesAn[2])
+        ];
+        const scoreGlobal = scores.reduce((a, b) => a + b, 0) / scores.length;
+        console.log ("score global", scoreGlobal);
+        if (scoreGlobal < 30) console.log("!!!!!!!OUI!!!!!!");
+        else console.log("-------NON--------");
+      };
+  /*
+  // joue la séquence une seule fois
+      const seqClone = {
+        startTimeSeq: geste.startTimeSeq,
+        events: geste.events.map(e => ({ ...e }))
+      };
+      
+      vptrSeq = new VirtualPointer(app, eventBoundary, pixiContainer);
+
+      playgeste(seqClone, vptrSeq, () => {
+        vptrSeq.up();
+        vptrSeq.destroy();
+        vptrSeq = null;
+
+      });
+
+  */
+      geste = null;
+      
+    };
+
+    if (drawingEnabled) return; // Ne rien faire si on dessine
+    
+  };
+
+  pixiContainer.on("pointerdown", onPointerDown);
+  pixiContainer.on("pointermove", onPointerMove);
+  pixiContainer.on("pointerup", onPointerUp);
+  pixiContainer.on("pointerupoutside", onPointerUp);
+
+};
+
+
+  // crée un selecteur pour sélectionner la page/buffer à jouer.
 function createPageSelector(bufferNames, onPageChange) {
 
   selectorDiv.innerHTML = ""; //efface le contenu précédent
@@ -397,6 +417,7 @@ function createPageSelector(bufferNames, onPageChange) {
     selectorDiv.appendChild(btn);
   });
 }
+
 
 async function initialiseContexteAudio() {
   try {
@@ -450,13 +471,13 @@ async function initSousConteneurs(bufferNames) {
     bufferNames.forEach((name, idx) => {
 
       // Crée un conteneur pour chaque page
-      const pageContainer = new PIXI.Container();
+      const pageContainer = new PIXI.Container({label: 'page'});
       pixiContainer.addChild(pageContainer);
 
       // Crée des sous-conteneurs pour les points, formes libres et séquenceurs
-      const pointsContainer = new PIXI.Container();
-      const formesLibresContainer = new PIXI.Container();
-      const sequenceursContainer = new PIXI.Container();
+      const pointsContainer = new PIXI.Container({label: 'points'});
+      const formesLibresContainer = new PIXI.Container({label: 'formesLibres'});
+      const sequenceursContainer = new PIXI.Container({label: 'sequenceurs'});
 
       // Ajoute les sous-conteneurs au conteneur de la page
       pageContainer.addChild(pointsContainer);
@@ -496,10 +517,8 @@ async function gestionPoints(bufferNames) {
       const newPagePoints = drawPixiPoints(pointsDataForPage, app, pointsConteneurs[idx], getProximityThreshold);
 
       newPagePoints.forEach(point => {
-       // console.log(`Attachement de l'écouteur au point ${point.sampleId} de la page ${name}`);
         
         point.on('pointerover', () => {
-          //console.log(`pointerover, Survol du point ${point.sampleId}, time ${point.startTime}, duration ${point.duration} Utilisation du buffer:`, currentBufferForPage);
 
           point.targetRadius = point.baseRadius * 1.8;
           if (!drawingEnabled) playGrain(point.startTime, point.duration, point.isEffectEnabled, currentBufferForPage);
@@ -588,7 +607,6 @@ async function initialiseSelecteurDePage() {
 }
 
 export function onFormeLibreComplete(path) {
-
   lastFormesLibresPath[currentPage] = path; // stocke le chemin pour le resize/redessin
   drawingEnabled = false;
   const drawToggleButton = document.getElementById("draw-toggle");
@@ -596,12 +614,12 @@ export function onFormeLibreComplete(path) {
   drawToggleButton.style.backgroundColor = "";
 }
 
-//pour activer drawingEnabled depuis network.js
+  //pour activer drawingEnabled depuis network.js
 export function enableDrawing() {
   drawingEnabled = true;
 }
 
-// modifie le threshold suivant le zoom et la taille de fenetre
+  // modifie le threshold suivant le zoom et la taille de fenetre
 function getProximityThreshold() {
   const base = Math.min(window.innerWidth, window.innerHeight) * 0.04;
   return base / zoomFactor;
@@ -637,7 +655,9 @@ document.addEventListener('DOMContentLoaded', () => {
       await initialiseSelecteurDePage();
       await initialiseEffetAudio();
       await initialiseSocket();
-      initZoom();
+
+      
+      initReconnaissanceGeste();
 
       console.log("Initialisation terminée");
     } catch (e) {
@@ -671,6 +691,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Zoom toggle button
   zoomToggleButton.addEventListener("click", () => {
     estEnTrainDeZoomer = true;
+
+    initZoom();
+
     console.log("appel du zoom");
   })
 

@@ -1,4 +1,4 @@
-
+// resample array to length 64
 
 export function resample(points, N) {
   if (points.length <= 1) return points; // si un seul point séléctionné, pas de resampling
