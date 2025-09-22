@@ -6,7 +6,9 @@ import { initSocket, setupSocketAndHandlers, sendOSC, loadJsonPoints, loadAudioB
 import { drawPixiPoints, setupFormesLibres, createCursor, DessinFormeLibre, ReDessinFormeLibre, formesLibres, formesLibresContextes } from "./graphics.js";
 import { ClockWidget } from "./clock.js"
 import { VirtualPointer } from './virtualPointer.js';
+
 import { Point, Resample } from "./dollar.js";
+import { resample, getBoundsArray, moyenneDistanceEntreTableaux } from "./resampler.js";
 
 export let pixiContainer = null; // conteneur Pixi global
 export let pixiPointsContainer = null; // pour les points
@@ -203,6 +205,7 @@ function getBounds(points) {
   return { xmin, xmax, ymin, ymax };
 }
 
+
 function moyenneDistanceEntreGestes(g1, g2) {
   let total = 0;
   for (let i = 0; i < Math.min(g1.length, g2.length); i++) {
@@ -238,6 +241,8 @@ function createEventSeq(time, x, y) {
 
     if (drawingEnabled) return;
     activePointers.set(event.pointerId, event.global.clone());
+    const pos = pixiContainer.toLocal(event.global);
+    geste.events.push(createEventSeq(geste.startTimeSeq, pos.x, pos.y)); // premier point enregistré sur pointerDown
   };
 
   const onPointerMove = (event) => {
@@ -293,28 +298,37 @@ function createEventSeq(time, x, y) {
   };
 
   const onPointerUp = (event) => {
-    // joue la séquence une seule fois
+    
     if (geste) {
       
+      console.log("geste", geste);
 
       sequences.push(geste);
       if (sequences.length > 3) sequences.shift();
-      let points = geste.events.map(e => new Point(e.x, e.y));
-      gesteAn = Resample(points, 64); // resampling du geste en 64 points
-      let bornes = getBounds(gesteAn);
-      let gesteZero = gesteAn.map(({X, Y}) => ({ x: X - bornes.xmin, y: Y - bornes.ymin }));
-      sequencesAn.push(gesteZero);
+
+      let pointsTab = geste.events.map(e => [e.x, e.y]);
+      let gesteAnTab = resample(pointsTab, 64);
+      
+      //let bounds = getBoundsArray(gesteAnTab);
+      //let gesteZeroTab = gesteAnTab.map( p  => [p[0] - bounds.xmin, p[1] - bounds.ymin]);
+      
+      sequencesAn.push(gesteAnTab);
       if (sequencesAn.length > 3) sequencesAn.shift();
+      console.log ("sequencesAn", sequencesAn);
+
       if (sequencesAn.length >= 3) {
-      let score12 = moyenneDistanceEntreGestes(sequencesAn[0], sequencesAn[1]);
-      let score13 = moyenneDistanceEntreGestes(sequencesAn[0], sequencesAn[2]);
-      let score23 = moyenneDistanceEntreGestes(sequencesAn[1], sequencesAn[2]);
-      // moyenne globale :
-      let scoreGlobal = (score12 + score13 + score23) / 3;
-      if (scoreGlobal < 50) console.log("!!!!!!!OUI!!!!!!")
-      else console.log("-------NON--------");;
+        const scores = [
+          moyenneDistanceEntreTableaux(sequencesAn[0], sequencesAn[1]),
+          moyenneDistanceEntreTableaux(sequencesAn[0], sequencesAn[2]),
+          moyenneDistanceEntreTableaux(sequencesAn[1], sequencesAn[2])
+        ];
+        const scoreGlobal = scores.reduce((a, b) => a + b, 0) / scores.length;
+        console.log ("score global", scoreGlobal);
+        if (scoreGlobal < 30) console.log("!!!!!!!OUI!!!!!!");
+        else console.log("-------NON--------");
       };
 /*
+// joue la séquence une seule fois
       const seqClone = {
         startTimeSeq: geste.startTimeSeq,
         events: geste.events.map(e => ({ ...e }))
