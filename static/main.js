@@ -504,6 +504,7 @@ async function initSousConteneurs(bufferNames) {
   }
 }
 
+// dessine les points, leur attribue fonction play et sendOsc, affiche la premiere page
 async function gestionPoints(bufferNames) {
   try {
     pixiPoints = [];
@@ -514,7 +515,7 @@ async function gestionPoints(bufferNames) {
       const pointsDataForPage = points[jsonName] || [];
       const currentBufferForPage = buffers[name]; 
 
-      const newPagePoints = drawPixiPoints(pointsDataForPage, app, pointsConteneurs[idx], getProximityThreshold);
+      const newPagePoints = drawPixiPoints(pointsDataForPage, app, pixiContainer.getChildrenByLabel('points', true)[idx], getProximityThreshold);
 
       newPagePoints.forEach(point => {
         
@@ -534,18 +535,13 @@ async function gestionPoints(bufferNames) {
       pixiPoints.push(...newPagePoints);
     });
     
-    // affiche la premiere page uniquement.
-    pointsConteneurs.forEach((container, idx) => {
-        container.visible = (idx === 0);
-      });
-      formesLibresConteneurs.forEach((container, idx) => {
-        container.visible = (idx === 0);
-      });
-      sequenceursConteneurs.forEach((container, idx) => {
+    // affiche la premiere page uniquement. pixiContainer.getChildByLabel('page');
+    pixiContainer.getChildrenByLabel('page').forEach((container, idx) => {
         container.visible = (idx === 0);
       });
 
-      currentPoints = pointsConteneurs[0].children; // init currentPoints sur la première page
+
+      currentPoints = pixiContainer.getChildrenByLabel('points', true)[0].children; // init currentPoints sur la première page
 
   } catch (e) {
     console.log("erreur dans le dessin des points", e);
@@ -561,18 +557,13 @@ async function initialiseSelecteurDePage() {
     createPageSelector(bufferNames, (pageIdx) => {
       currentPage = pageIdx;
 
-      currentPoints = pointsConteneurs[currentPage].children; // mise à jour des points courants
+      currentPoints = pixiContainer.getChildrenByLabel('points', true)[currentPage].children; // mise à jour des points courants
       
-      // rend tous les conteneurs invisibles sauf celui de la page courante
-      pointsConteneurs.forEach((container, idx) => {
+      // rend tous les pages invisibles sauf la page courante
+      pixiContainer.getChildrenByLabel('page').forEach((container, idx) => {
         container.visible = (idx === currentPage);
       });
-      formesLibresConteneurs.forEach((container, idx) => {
-        container.visible = (idx === currentPage);
-      });
-      sequenceursConteneurs.forEach((container, idx) => {
-        container.visible = (idx === currentPage);
-      });
+
       
       const bufferName = bufferNames[pageIdx]; // ex; "enr1.wav"
       const jsonName = bufferName.replace(/\.wav$/i, ".json"); // obtient ex "enr1.json"
@@ -647,8 +638,10 @@ document.addEventListener('DOMContentLoaded', () => {
       await setupPixi();
       await initialiseContexteAudio();
       await chargeFichiersAudioEtJson();
+
       bufferNames = Object.keys(buffers);
       nbPages = bufferNames.length;
+
       await initSousConteneurs(bufferNames);
       setupFormesLibres(app, nbPages, formesLibresConteneurs); // init nb de formesLibres = nb de pages
       await gestionPoints(bufferNames);
@@ -656,7 +649,6 @@ document.addEventListener('DOMContentLoaded', () => {
       await initialiseEffetAudio();
       await initialiseSocket();
 
-      
       initReconnaissanceGeste();
 
       console.log("Initialisation terminée");
