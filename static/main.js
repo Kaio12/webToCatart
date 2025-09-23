@@ -11,12 +11,6 @@ import { VirtualPointer } from './virtualPointer.js';
 import { resample, getBoundsArray, moyenneDistanceEntreTableaux } from "./resampler.js";
 
 export let pixiContainer = null; // conteneur Pixi global
-//export let pixiPointsContainer = null; // pour les points
-//export let formesLibresContainer = null; // pour les formes libres
-
-export let pointsConteneurs = [];
-export let formesLibresConteneurs = [];
-export let sequenceursConteneurs = [];
 
 export let app; // app pixi
 export let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
@@ -485,11 +479,6 @@ async function initSousConteneurs(bufferNames) {
       formesLibresContainer.zIndex = 2;
       sequenceursContainer.zIndex = 3;
 
-      // Stocke les conteneurs dans des structures accessibles si nécessaire
-      //pointsConteneurs[idx] = pointsContainer;
-      formesLibresConteneurs[idx] = formesLibresContainer;
-      sequenceursConteneurs[idx] = sequenceursContainer;
-
       });
 
     // Activer le tri par zIndex
@@ -632,7 +621,7 @@ document.addEventListener('DOMContentLoaded', () => {
       nbPages = bufferNames.length;
 
       await initSousConteneurs(bufferNames);
-      setupFormesLibres(app, nbPages, formesLibresConteneurs); // init nb de formesLibres = nb de pages
+      setupFormesLibres(app, nbPages, pixiContainer.getChildrenByLabel("formesLibres", true)); // init nb de formesLibres = nb de pages
       await gestionPoints(bufferNames);
       await initialiseSelecteurDePage();
       await initialiseEffetAudio();
@@ -686,7 +675,7 @@ document.addEventListener('DOMContentLoaded', () => {
       drawToggleButton.textContent = 'Stop';
       drawToggleButton.style.backgroundColor = "#0f0";
 
-      DessinFormeLibre(pixiContainer, currentPoints, onFormeLibreComplete, formesLibresConteneurs[currentPage]);
+      DessinFormeLibre(pixiContainer, currentPoints, onFormeLibreComplete, pixiContainer.getChildrenByLabel("formesLibres", true)[currentPage]);
       
       if (formesLibres[currentPage]) formesLibres[currentPage].visible = true; // rend la forme libre visible
       console.log("Dessin activé");
@@ -695,7 +684,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // delete effect
   deleteEffect.addEventListener("click", async () => {
-    const formesLibresContainer = formesLibresConteneurs[currentPage];
+    const formesLibresContainer = pixiContainer.getChildrenByLabel("formesLibres", true)[currentPage];
 
     if (formesLibresContainer && formesLibresContainer.children.length > 0) {
       // Supprime uniquement la dernière forme libre
@@ -728,17 +717,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // bouton ajout clock
     addClock.addEventListener("click", () => {
       const clockWidget = new ClockWidget(currentPoints, buffer, { radius: 80, speed: 0.03 });
-      sequenceursConteneurs[currentPage].addChild(clockWidget);
+      pixiContainer.getChildrenByLabel("sequenceurs", true)[currentPage].addChild(clockWidget);
       clockWidget.position.set(centerX, centerY); // position initiale
       clockWidget.addTicker(app);
     });
 
       // bouton delete clock
     delClock.addEventListener("click", () => {
-      const children = sequenceursConteneurs[currentPage].children;
+      const children = pixiContainer.getChildrenByLabel("sequenceurs", true)[currentPage].children;
       const lastChild = children[children.length - 1];
       if (lastChild instanceof ClockWidget) {
-      sequenceursConteneurs[currentPage].removeChild(lastChild);
+      pixiContainer.getChildrenByLabel("sequenceurs", true)[currentPage].removeChild(lastChild);
       lastChild.removeTicker(app);
       }
     }); 
