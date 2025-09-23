@@ -180,34 +180,6 @@ export function DessinFormeLibre(fondPourDessinFormeLibre, currentPoints, onComp
   fondPourDessinFormeLibre.on("pointerupoutside", onUp);
 }
 
-// après un zoom ou un redimensionnement de fenetre, ou le choix d'un corpus
-export function ReDessinFormeLibre(normPath, currentPoints, formeLibre, formeLibreContext, Container) {
-  formeLibreContext.clear();
-  const pxPath = normPath.map(pt => ({
-    x: pt.x * window.innerWidth,
-    y: pt.y * window.innerHeight
-  }));
-
-  formeLibreContext.moveTo(pxPath[0].x, pxPath[0].y);
-  for (let i = 1; i < pxPath.length; i++) {
-    formeLibreContext.lineTo(pxPath[i].x, pxPath[i].y);
-  }
-  // On ferme le chemin en revenant au premier point
-  formeLibreContext.lineTo(pxPath[0].x, pxPath[0].y);
-
-  // On peut remplir et tracer le contour
-  formeLibreContext.fill({ color: 0x0000ff, alpha: 0.2 });
-  formeLibreContext.stroke({ width: 4, color: 0xff0000, alpha: 1 });
-
-  // On met à jour la propriété des points pour l'effet
-  currentPoints.forEach(point => {
-      point.isEffectEnabled = formeLibre.containsPoint(point.position);
-  });
-
-  if (Container && formeLibre && !Container.children.includes(formeLibre)) {Container.addChild(formeLibre);}
-
-}
-
 // getBounds calcule les limites (min et max) des coordonnées et des valeurs pour un ensemble de points, permet d'adapter à la taille de la fenètre.
 function getBounds(data) {
   let xs = data.map(p => p.x);

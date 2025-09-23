@@ -3,7 +3,7 @@
 
 import { playGrain,initEffect, feedbackGain } from "./audio.js";
 import { initSocket, setupSocketAndHandlers, sendOSC, loadJsonPoints, loadAudioBuffers } from "./network.js";
-import { drawPixiPoints, setupFormesLibres, createCursor, DessinFormeLibre, ReDessinFormeLibre, formesLibres, formesLibresContextes } from "./graphics.js";
+import { drawPixiPoints, setupFormesLibres, createCursor, DessinFormeLibre, formesLibres, formesLibresContextes } from "./graphics.js";
 import { ClockWidget } from "./clock.js"
 import { VirtualPointer } from './virtualPointer.js';
 
@@ -142,11 +142,6 @@ async function setupPixi() {
     app.renderer.resize(window.innerWidth, window.innerHeight);
     updateCenter();
     gestionPoints(bufferNames);
-    
-    if (lastFormesLibresPath[currentPage]) {
-        ReDessinFormeLibre(lastFormesLibresPath[currentPage], currentPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
-      console.log('formelibre dessinée de resize');
-    }
   });
 
   cursorGraphic = createCursor(app); // Crée le curseur.
@@ -491,7 +486,7 @@ async function initSousConteneurs(bufferNames) {
       sequenceursContainer.zIndex = 3;
 
       // Stocke les conteneurs dans des structures accessibles si nécessaire
-      pointsConteneurs[idx] = pointsContainer;
+      //pointsConteneurs[idx] = pointsContainer;
       formesLibresConteneurs[idx] = formesLibresContainer;
       sequenceursConteneurs[idx] = sequenceursContainer;
 
@@ -568,13 +563,7 @@ async function initialiseSelecteurDePage() {
       const bufferName = bufferNames[pageIdx]; // ex; "enr1.wav"
       const jsonName = bufferName.replace(/\.wav$/i, ".json"); // obtient ex "enr1.json"
       pointsData = points[jsonName] || [];
-      buffer = buffers[bufferName];
-
-      // gestion des objets graphiques PIXI à dessiner
-      if (lastFormesLibresPath[currentPage]) {
-        ReDessinFormeLibre(lastFormesLibresPath[currentPage], currentPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
-          if (formesLibres[currentPage]) formesLibres[currentPage].visible = true;
-      }
+      buffer = buffers[bufferName]; 
 
       console.log("Sélecteur de page initialisé");
     });
@@ -730,11 +719,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.documentElement.requestFullscreen();
         updateCenter(); // met à jour le centre de la vue
         gestionPoints(bufferNames);
-
-      if (lastFormesLibresPath[currentPage]) {
-        ReDessinFormeLibre(lastFormesLibresPath[currentPage], currentPoints, formesLibres[currentPage], formesLibresContextes[currentPage], formesLibresConteneurs[currentPage] );
-        console.log('formelibre dessinée de fulscreen');
-      }
 
       } else {
         document.exitFullscreen();
