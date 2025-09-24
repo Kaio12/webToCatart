@@ -1,11 +1,7 @@
 export let formesLibres;
 export let formesLibresContextes;
-
 export let drawing = false; // état du dessin à la main
-let onDrawStart, onDrawMove, onDrawEnd;
-let isCurrentlyDrawing = false; // Indique si le dessin est en cours
-let startDrawPoint;
-let currentPath = [];
+
 
 export function drawPixiPoints(pointsData, app, container, getProximityThreshold) {
 
@@ -21,9 +17,8 @@ export function drawPixiPoints(pointsData, app, container, getProximityThreshold
 
   const bounds = getBounds(pointsData);
    
-  const targetTotalArea = window.innerWidth * window.innerHeight * 0.5; // 0.5 : pourcentage de remplissage
+  const targetTotalArea = app.renderer.width * app.renderer.height * 0.5; // 0.5 : pourcentage de remplissage
   const radiusMax = 0.5 * Math.sqrt(targetTotalArea / pointsData.length); // aire moyenne par point.
-
 
   pointsData.forEach((pointData) => {
 
@@ -38,14 +33,13 @@ export function drawPixiPoints(pointsData, app, container, getProximityThreshold
     const color = (r * 255 << 16) + (gVal * 255 << 8) + (b * 255) | 0;
 
   // Calcule la position centrée AVANT zoom
-    const x0 = mapRange(pointData.x, bounds.xMin, bounds.xMax, radius, window.innerWidth -  2 * radius);
+    const x0 = mapRange(pointData.x, bounds.xMin, bounds.xMax, radius, app.renderer.width -  2 * radius);
 
     // Inversion verticale: dans le navigateur y=0 est en haut, dans Mubu y=0 est en bas
     // On inverse donc la plage de sortie pour refléter correctement le repère de Mubu.
     const y0 = mapRange(pointData.y, bounds.yMin, bounds.yMax,
-                        window.innerHeight - 2 * radius,  
+                        app.renderer.height - 2 * radius,  
                         radius);                          
-
 
     pointGraphic.x = x0;
     pointGraphic.y = y0;
@@ -70,7 +64,7 @@ export function drawPixiPoints(pointsData, app, container, getProximityThreshold
 
     pointGraphic.drawSelf();
 
-    pointGraphic.eventMode = 'static';
+    pointGraphic.eventMode = 'dynamic';
     pointGraphic.cursor = 'pointer';
     pointGraphic.hitArea = new PIXI.Circle(0, 0, getProximityThreshold());
 
@@ -103,7 +97,7 @@ export function setupFormesLibres (app,  nbPages, formesLibresConteneurs) {
   return formesLibres;
 }   
 
-export function DessinFormeLibre(fondPourDessinFormeLibre, currentPoints, onCompleteCallback, formesLibresContainer) {
+export function DessinFormeLibre(app, fondPourDessinFormeLibre, currentPoints, onCompleteCallback, formesLibresContainer) {
   let currentPath = [];
   let drawing = false;
 
@@ -161,8 +155,8 @@ export function DessinFormeLibre(fondPourDessinFormeLibre, currentPoints, onComp
 
     if (onCompleteCallback) {
       const normPath = currentPath.map(pt => ({
-        x: pt.x / window.innerWidth,
-        y: pt.y / window.innerHeight
+         x: pt.x / app.renderer.width,
+        y: pt.y / app.renderer.height
       }));
       onCompleteCallback(normPath);
     }

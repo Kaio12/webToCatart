@@ -16,8 +16,8 @@ export let app; // app pixi
 export let pixiPoints = []; // Configuration de Pixi.js pour le rendu graphique
 export let drawingEnabled = false; // pour activer/désactiver le dessin libre
 
-export let centerX = window.innerWidth / 2;
-export let centerY = window.innerHeight / 2;
+export let centerX = 0;
+export let centerY = 0;
 
 export const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -89,23 +89,40 @@ if ('serviceWorker' in navigator) {
 }
 
 
-
 // Fonction pour mettre à jour le centre lors du resize
 export function updateCenter() {
-  centerX = window.innerWidth / 2;
-  centerY = window.innerHeight / 2;
+  if (app && app.renderer) {
+    centerX = app.renderer.width / 2;
+    centerY = app.renderer.height / 2;
 }
+};
 
 // **** Initialise et configure l'application Pixi.js ****
 async function setupPixi() {
 
   app = new PIXI.Application();
   await app.init({
-    resizeTo: window,
+  resizeTo: document.getElementById('pixi-container'), // ou window
     backgroundColor: 0x000000 // couleur du fond
   });
 
   app.ticker.maxFPS = 60; // will not tick faster than 60fps
+
+  app.renderer.on('resize', (width, height) => {
+    console.log(`Pixi a redimensionné le canvas à ${width}x${height}`);
+
+    centerX = width / 2;
+    centerY = height / 2;
+
+    if (pixiContainer) {
+      pixiContainer.pivot.set(centerX, centerY);
+      pixiContainer.position.set(centerX, centerY);
+      pixiContainer.hitArea = new PIXI.Rectangle(0, 0, width, height);
+    }
+
+    gestionPoints(bufferNames)  // redessine les points
+
+  });
 
   // on ajout l'app canvas à la partie pixi-container de la page
   const container = document.getElementById("pixi-container");
@@ -114,29 +131,22 @@ async function setupPixi() {
   // Création du container principal PIXI
   if (!pixiContainer) {
     pixiContainer = new PIXI.Container();
-    pixiContainer.pivot.set(centerX, centerY); // Centre le conteneur
-    pixiContainer.position.set(centerX, centerY); 
+    //pixiContainer.pivot.set(app.renderer.width / 2, app.renderer.height / 2); // Centre le conteneur
+    //pixiContainer.position.set(app.renderer.width / 2, app.renderer.height / 2); 
     app.stage.addChild(pixiContainer);
   }
 
   eventBoundary = new PIXI.EventBoundary(app.stage);
 
   // pour le dessin de la forme libre
-  pixiContainer.hitArea = new PIXI.Rectangle(0, 0, window.innerWidth, window.innerHeight);
-  pixiContainer.eventMode = 'static';
+  //pixiContainer.hitArea = new PIXI.Rectangle(0, 0, app.renderer.width, app.renderer.height);
+  pixiContainer.eventMode = 'dynamic';
 
   // === blocage des gestes natifs ===
   app.canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
   app.canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
   app.canvas.addEventListener('touchend', e => e.preventDefault(), { passive: false });
   app.canvas.addEventListener('wheel', e => e.preventDefault(), { passive: false });
-
-  // au cas ou la fenêtre change de taille, on redessine les points
-  window.addEventListener('resize', () => {
-    app.renderer.resize(window.innerWidth, window.innerHeight);
-    updateCenter();
-    gestionPoints(bufferNames);
-  });
 
   cursorGraphic = createCursor(app); // Crée le curseur.
 
@@ -576,7 +586,7 @@ async function initialiseSelecteurDePage() {
 }
 
 export function onFormeLibreComplete(path) {
-  lastFormesLibresPath[currentPage] = path; // stocke le chemin pour le resize/redessin
+  //lastFormesLibresPath[currentPage] = path; // stocke le chemin pour le resize/redessin
   drawingEnabled = false;
   const drawToggleButton = document.getElementById("draw-toggle");
   drawToggleButton.textContent = "Eff+";
@@ -590,7 +600,7 @@ export function enableDrawing() {
 
   // modifie le threshold suivant le zoom et la taille de fenetre
 function getProximityThreshold() {
-  const base = Math.min(window.innerWidth, window.innerHeight) * 0.04;
+  const base = Math.min(app.renderer.width, app.renderer.height) * 0.04;
   return base / zoomFactor;
 }
 
@@ -638,16 +648,16 @@ document.addEventListener('DOMContentLoaded', () => {
     zoomFactor = 1.0;
     if (pixiContainer) {
       updateCenter(); // S'assure que le centre est à jour
-      pixiContainer.pivot.set(centerX, centerY);
-      pixiContainer.position.set(centerX, centerY);
+      //pixiContainer.pivot.set(centerX, centerY);
+      //pixiContainer.position.set(centerX, centerY);
     }
 
     // essai d'animation d'un vptr sur un cercle, pour remplacer clock plus tart
     let vptr = new VirtualPointer(app, eventBoundary, pixiContainer);
     let t = 0;
     app.ticker.add(() => {
-      const cx = window.innerWidth * 0.5;
-      const cy = window.innerHeight * 0.5;
+      const cx = app.renderer.width * 0.5;
+      const cy = app.renderer.height * 0.5;
       const r = Math.min(cx, cy) * 0.6;
       
       if (vptr) vptr.move(cx + Math.cos(t) * r, cy + Math.sin(t) * r);
@@ -675,7 +685,7 @@ document.addEventListener('DOMContentLoaded', () => {
       drawToggleButton.textContent = 'Stop';
       drawToggleButton.style.backgroundColor = "#0f0";
 
-      DessinFormeLibre(pixiContainer, currentPoints, onFormeLibreComplete, pixiContainer.getChildrenByLabel("formesLibres", true)[currentPage]);
+      DessinFormeLibre(app, pixiContainer, currentPoints, onFormeLibreComplete, pixiContainer.getChildrenByLabel("formesLibres", true)[currentPage]);
       
       if (formesLibres[currentPage]) formesLibres[currentPage].visible = true; // rend la forme libre visible
       console.log("Dessin activé");
@@ -718,7 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
     addClock.addEventListener("click", () => {
       const clockWidget = new ClockWidget(currentPoints, buffer, { radius: 80, speed: 0.03 });
       pixiContainer.getChildrenByLabel("sequenceurs", true)[currentPage].addChild(clockWidget);
-      clockWidget.position.set(centerX, centerY); // position initiale
+      clockWidget.position.set(app.renderer.width / 2, app.renderer.height / 2); // position initiale
       clockWidget.addTicker(app);
     });
 
