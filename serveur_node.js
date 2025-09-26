@@ -68,6 +68,8 @@ app.post('/delete', (req, res) => {
 });
 
 
+
+
 // sert la liste des fichiers de type audio => audiofiles
 app.get('/api/listaudiofiles', (req, res) => {
   fs.readdir(PUBLIC_FOLDER, (err, files) => {
@@ -191,6 +193,13 @@ wss.on('connection', (ws, request) => {
             address: data.address,
             args: data.args
           }));
+        } else {
+
+          // data.type? construction fichier json a partir du message recu
+          const data = JSON.parse(message);
+          console.log('Forme libre reçue:', data);
+
+
         }
       
      } catch(e) {
@@ -219,6 +228,10 @@ oscServer.on('message', (msg) => {
     webClientSocket.send(JSON.stringify({ type: 'osc-from-server', address, args }));
   }
 });
+
+
+
+
 
 //=== OSC lien max ===
 const maxClient = new OscClient(MAX_HOST, MAX_PORT);

@@ -2,7 +2,6 @@ export let formesLibres;
 export let formesLibresContextes;
 export let drawing = false; // état du dessin à la main
 
-
 export function drawPixiPoints(pointsData, app, container, getProximityThreshold) {
 
   if (!app) {console.error("L'app pixi n'est pas initialisée");
@@ -75,7 +74,6 @@ export function drawPixiPoints(pointsData, app, container, getProximityThreshold
   return newPoints;
 }
 
-
 export function DessinFormeLibre(app, pixiContainer, currentPage, onCompleteCallback) {
   let currentPath = []; // va stocker la forme libre
   let drawing = false;
@@ -119,7 +117,7 @@ export function DessinFormeLibre(app, pixiContainer, currentPage, onCompleteCall
 
   const finalize = () => {
 
-// reactive les events sur les points.
+    // reactive les events sur les points.
   pixiContainer.getChildByLabel('points', true).children.forEach(pt => {
     pt.eventMode = 'static';
     });
@@ -138,25 +136,30 @@ export function DessinFormeLibre(app, pixiContainer, currentPage, onCompleteCall
       newFormeLibre.fill({ color: 0x0000ff, alpha: 0.2 }).stroke({ width: 4, color: 0xff0000, alpha: 1 });
     }
 
+    // retourner normPath? comme objet avec indice formelibre, indice effet (couleur), path
+    //normPath entre 0 et 1
+    const normPath = currentPath.map(({x, y}) => ({
+      x: x / app.renderer.width, 
+      y : y / app.renderer.height
+    }));
+
+
+
     // Mise à jour des points pixiContainer.children[currentPage].children[0] pixiContainer.children[currentPage].getChildByLabel('points', true).children
     pixiContainer.children[currentPage].getChildByLabel('points', true).children.forEach(pt => {
       pt.isEffectEnabled = pixiContainer.children[currentPage].getChildByLabel('formesLibres').children.some(f => f.containsPoint(pt.position));
     });
 
     if (onCompleteCallback) {
-      const normPath = currentPath.map(pt => ({
-        x: pt.x / app.renderer.width,
-        y: pt.y / app.renderer.height
-      }));
       onCompleteCallback(normPath);
     }
 
-    // pixiContainer.children[CurrentPage]
-
+    pixiContainer.off("pointerdown", onDown);
     pixiContainer.off("pointermove", onMove);
     pixiContainer.off("pointerup", onUp);
     pixiContainer.off("pointerupoutside", onUp);
   };
+
 
   const onUp = () => finalize();
 
@@ -184,11 +187,11 @@ function getBounds(data) {
   };
 }
 
-// mapRange désigne ici une fonction fléchée
+  // mapRange désigne ici une fonction fléchée
 const mapRange = (val, inMin, inMax, outMin, outMax) =>
     ((val - inMin) / (inMax - inMin)) * (outMax - outMin) + outMin;
 
-// Convertit une couleur HSL en valeurs RGB (fournit des couleurs très proches de CATART dans Max)
+  // Convertit une couleur HSL en valeurs RGB (fournit des couleurs très proches de CATART dans Max)
 function hslToRgb(h, s, l) {
   let r, g, b;
 

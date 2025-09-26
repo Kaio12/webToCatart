@@ -2,7 +2,7 @@
 // script.js - Gère l'interaction entre le navigateur, Pixi.js, l'audio et le MIDI
 
 import { playGrain,initEffect, feedbackGain } from "./audio.js";
-import { initSocket, setupSocketAndHandlers, sendOSC, loadJsonPoints, loadAudioBuffers } from "./network.js";
+import { socket, initSocket, setupSocketAndHandlers, sendOSC, loadJsonPoints, loadAudioBuffers } from "./network.js";
 import { drawPixiPoints, createCursor, DessinFormeLibre, formesLibres,  } from "./graphics.js";
 import { ClockWidget } from "./clock.js"
 import { VirtualPointer } from './virtualPointer.js';
@@ -582,12 +582,21 @@ async function initialiseSelecteurDePage() {
   }
 }
 
-export function onFormeLibreComplete(path) {
-  //lastFormesLibresPath[currentPage] = path; // stocke le chemin pour le resize/redessin
+export function onFormeLibreComplete(normPath) {
+  
   drawingEnabled = false;
   const drawToggleButton = document.getElementById("draw-toggle");
   drawToggleButton.textContent = "Eff+";
   drawToggleButton.style.backgroundColor = "";
+
+  // construction d'un objet pour sauvegarder dans un fichier la formelibre construite
+  let recordFormeLibre = {
+    "indice" : 1,
+    "path" : normPath
+  }
+
+  socket.send(JSON.stringify(recordFormeLibre));
+
 }
 
   //pour activer drawingEnabled depuis network.js
