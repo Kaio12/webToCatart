@@ -7,6 +7,8 @@ const qrcode = require('qrcode');
 const WebSocket = require('ws');
 const { Server: OscServer, Client: OscClient } = require('node-osc');
 
+
+
 const httpsOptions = {
   key: fs.readFileSync(path.join(__dirname, 'secrets','ggkey.pem')),
   cert: fs.readFileSync(path.join(__dirname, 'secrets','gg.pem'))
@@ -34,6 +36,9 @@ app.use('/public', express.static(PUBLIC_FOLDER));
 
 if (!fs.existsSync(UPLOAD_FOLDER)) fs.mkdirSync(UPLOAD_FOLDER);
 if (!fs.existsSync(PUBLIC_FOLDER)) fs.mkdirSync(PUBLIC_FOLDER);
+
+
+const formesLibresPath = path.join(PUBLIC_FOLDER, 'formesLibres.JSON');
 
 // === UTILS ===
 function getLocalIp() {
@@ -198,8 +203,35 @@ wss.on('connection', (ws, request) => {
           // data.type? construction fichier json a partir du message recu
           const data = JSON.parse(message);
           console.log('Forme libre reçue:', data);
+          
+          let formesLibresArray = [];
 
+if (fs.existsSync(formesLibresPath)) {
+  // Le fichier existe, on lit et ajoute le nouveau message
+  try {
+    const fileContent = fs.readFileSync(formesLibresPath, 'utf8');
+    formesLibresArray = JSON.parse(fileContent);
+    if (!Array.isArray(formesLibresArray)) formesLibresArray = [];
+  } catch (e) {
+    console.error('Erreur lecture/parsing formesLibres.JSON:', e);
+    formesLibresArray = [];
+  }
+} else {
+  // Le fichier n'existe pas, on le crée vide
+  fs.writeFileSync(formesLibresPath, '[]', 'utf8');
+  formesLibresArray = [];
+}
 
+// Ajoute le nouveau message JSON
+formesLibresArray.push(data);
+
+// Sauvegarde le tableau mis à jour
+try {
+  fs.writeFileSync(formesLibresPath, JSON.stringify(formesLibresArray, null, 2), 'utf8');
+  console.log('Forme libre ajoutée à formesLibres.JSON');
+} catch (e) {
+  console.error('Erreur écriture formesLibres.JSON:', e);
+}
         }
       
      } catch(e) {
