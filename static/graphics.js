@@ -22,7 +22,7 @@ export function drawPixiPoints(pointsData, app, container, getProximityThreshold
 
   pointsData.forEach((pointData) => {
 
-    const pointGraphic = new PIXI.Graphics();
+    const pointGraphic = new PIXI.Graphics({label: 'point'});
 
   // radius (taille des points) suit loudness (donné par analyse CATART/Max)
     const radius = mapRange(pointData.loudnessMax, bounds.lMin, bounds.lMax, 5, radiusMax);
@@ -64,7 +64,7 @@ export function drawPixiPoints(pointsData, app, container, getProximityThreshold
 
     pointGraphic.drawSelf();
 
-    pointGraphic.eventMode = 'dynamic';
+    pointGraphic.eventMode = 'static';
     pointGraphic.cursor = 'pointer';
     pointGraphic.hitArea = new PIXI.Circle(0, 0, getProximityThreshold());
 
@@ -74,104 +74,96 @@ export function drawPixiPoints(pointsData, app, container, getProximityThreshold
 
   return newPoints;
 }
-  
-export function setupFormesLibres (app,  nbPages, formesLibresConteneurs) {
-  formesLibres = [];
-  formesLibresContextes = [];
 
-  for (let i = 0; i < nbPages; i++) {
-    const ctx = new PIXI.GraphicsContext(); 
-    const graphic = new PIXI.Graphics(ctx); 
-    formesLibresContextes.push(ctx);
-    formesLibres.push(graphic);
 
-    if(formesLibresConteneurs) {
-      formesLibresConteneurs[i].addChild(graphic);
-    }
-    else {
-      console.log ("pas de formesLibresConteneurs lors de l'initialisation des formesLibres");
-    }
-    
-  }
-  console.log('formesLibres', formesLibres);
-  return formesLibres;
-}   
-
-export function DessinFormeLibre(app, fondPourDessinFormeLibre, currentPoints, onCompleteCallback, formesLibresContainer) {
-  let currentPath = [];
+export function DessinFormeLibre(app, pixiContainer, currentPage, onCompleteCallback) {
+  let currentPath = []; // va stocker la forme libre
   let drawing = false;
 
-  // S'assurer que ce conteneur passe au-dessus (si tri activé)
-  formesLibresContainer.sortableChildren = true;
+  const newFormeLibre = new PIXI.Graphics({label: 'formeLibre'});
+  newFormeLibre.zIndex = 9999;
 
-  const formeLibre = new PIXI.Graphics();
-  formeLibre.zIndex = 9999;
-  formesLibresContainer.addChild(formeLibre);
+  // desactive les events sur les points.
+  pixiContainer.getChildByLabel('points', true).children.forEach(pt => {
+    pt.eventMode = 'none';
+    });
+
+  pixiContainer.children[currentPage].getChildByLabel("formesLibres").addChild(newFormeLibre);
+
+  //let nbFormesLibres = pixiContainer.children[currentPage].getChildByLabel("formesLibres").children.length;
 
   const rebuildStroke = () => {
     if (currentPath.length < 2) return;
-    formeLibre.clear();
-    formeLibre.moveTo(currentPath[0].x, currentPath[0].y);
+    newFormeLibre.clear();
+    newFormeLibre.moveTo(currentPath[0].x, currentPath[0].y);
     for (let i = 1; i < currentPath.length; i++) {
-      formeLibre.lineTo(currentPath[i].x, currentPath[i].y);
+      newFormeLibre.lineTo(currentPath[i].x, currentPath[i].y);
     }
     // stroke explicite (v8)
-    formeLibre.stroke({ width: 4, color: 0xff0000, alpha: 1 });
+    newFormeLibre.stroke({ width: 4, color: 0xff0000, alpha: 1 });
   };
 
   const onDown = (e) => {
     drawing = true;
-    const p = formesLibresContainer.toLocal(e.global);
+    const p = pixiContainer.children[currentPage].getChildByLabel('formesLibres').toLocal(e.global);
     currentPath = [p];
     rebuildStroke();
   };
 
   const onMove = (e) => {
     if (!drawing) return;
-    const p = formesLibresContainer.toLocal(e.global);
+    const p = pixiContainer.children[currentPage].getChildByLabel('formesLibres').toLocal(e.global)
     currentPath.push(p);
     rebuildStroke();
   };
 
   const finalize = () => {
+
+// reactive les events sur les points.
+  pixiContainer.getChildByLabel('points', true).children.forEach(pt => {
+    pt.eventMode = 'static';
+    });
+
     if (!drawing) return;
     drawing = false;
 
     // Re-dessine, cette fois remplissage + contour
-    formeLibre.clear();
+    newFormeLibre.clear();
     if (currentPath.length > 1) {
-      formeLibre.moveTo(currentPath[0].x, currentPath[0].y);
+      newFormeLibre.moveTo(currentPath[0].x, currentPath[0].y);
       for (let i = 1; i < currentPath.length; i++) {
-        formeLibre.lineTo(currentPath[i].x, currentPath[i].y);
+        newFormeLibre.lineTo(currentPath[i].x, currentPath[i].y);
       }
-      formeLibre.closePath();
-      formeLibre.fill({ color: 0x0000ff, alpha: 0.2 }).stroke({ width: 4, color: 0xff0000, alpha: 1 });
+      newFormeLibre.closePath();
+      newFormeLibre.fill({ color: 0x0000ff, alpha: 0.2 }).stroke({ width: 4, color: 0xff0000, alpha: 1 });
     }
 
-    // Mise à jour des points
-    currentPoints.forEach(pt => {
-      pt.isEffectEnabled = formesLibresContainer.children.some(f => f.containsPoint(pt.position));
+    // Mise à jour des points pixiContainer.children[currentPage].children[0] pixiContainer.children[currentPage].getChildByLabel('points', true).children
+    pixiContainer.children[currentPage].getChildByLabel('points', true).children.forEach(pt => {
+      pt.isEffectEnabled = pixiContainer.children[currentPage].getChildByLabel('formesLibres').children.some(f => f.containsPoint(pt.position));
     });
 
     if (onCompleteCallback) {
       const normPath = currentPath.map(pt => ({
-         x: pt.x / app.renderer.width,
+        x: pt.x / app.renderer.width,
         y: pt.y / app.renderer.height
       }));
       onCompleteCallback(normPath);
     }
 
-    fondPourDessinFormeLibre.off("pointermove", onMove);
-    fondPourDessinFormeLibre.off("pointerup", onUp);
-    fondPourDessinFormeLibre.off("pointerupoutside", onUp);
+    // pixiContainer.children[CurrentPage]
+
+    pixiContainer.off("pointermove", onMove);
+    pixiContainer.off("pointerup", onUp);
+    pixiContainer.off("pointerupoutside", onUp);
   };
 
   const onUp = () => finalize();
 
-  fondPourDessinFormeLibre.on("pointerdown", onDown);
-  fondPourDessinFormeLibre.on("pointermove", onMove);
-  fondPourDessinFormeLibre.on("pointerup", onUp);
-  fondPourDessinFormeLibre.on("pointerupoutside", onUp);
+  pixiContainer.on("pointerdown", onDown);
+  pixiContainer.on("pointermove", onMove);
+  pixiContainer.on("pointerup", onUp);
+  pixiContainer.on("pointerupoutside", onUp);
 }
 
 // getBounds calcule les limites (min et max) des coordonnées et des valeurs pour un ensemble de points, permet d'adapter à la taille de la fenètre.

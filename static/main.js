@@ -3,7 +3,7 @@
 
 import { playGrain,initEffect, feedbackGain } from "./audio.js";
 import { initSocket, setupSocketAndHandlers, sendOSC, loadJsonPoints, loadAudioBuffers } from "./network.js";
-import { drawPixiPoints, setupFormesLibres, createCursor, DessinFormeLibre, formesLibres, formesLibresContextes } from "./graphics.js";
+import { drawPixiPoints, createCursor, DessinFormeLibre, formesLibres,  } from "./graphics.js";
 import { ClockWidget } from "./clock.js"
 import { VirtualPointer } from './virtualPointer.js';
 
@@ -117,7 +117,6 @@ async function setupPixi() {
     if (pixiContainer) {
       pixiContainer.pivot.set(centerX, centerY);
       pixiContainer.position.set(centerX, centerY);
-      pixiContainer.hitArea = new PIXI.Rectangle(0, 0, width, height);
     }
 
     gestionPoints(bufferNames)  // redessine les points
@@ -130,17 +129,14 @@ async function setupPixi() {
 
   // Création du container principal PIXI
   if (!pixiContainer) {
-    pixiContainer = new PIXI.Container();
-    //pixiContainer.pivot.set(app.renderer.width / 2, app.renderer.height / 2); // Centre le conteneur
-    //pixiContainer.position.set(app.renderer.width / 2, app.renderer.height / 2); 
+    pixiContainer = new PIXI.Container({label: 'pixiContainer'});
     app.stage.addChild(pixiContainer);
+    pixiContainer.hitArea = new PIXI.Rectangle(0, 0, app.screen.width, app.screen.height);
   }
 
   eventBoundary = new PIXI.EventBoundary(app.stage);
 
-  // pour le dessin de la forme libre
-  //pixiContainer.hitArea = new PIXI.Rectangle(0, 0, app.renderer.width, app.renderer.height);
-  pixiContainer.eventMode = 'dynamic';
+  pixiContainer.eventMode = 'static';
 
   // === blocage des gestes natifs ===
   app.canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
@@ -148,7 +144,7 @@ async function setupPixi() {
   app.canvas.addEventListener('touchend', e => e.preventDefault(), { passive: false });
   app.canvas.addEventListener('wheel', e => e.preventDefault(), { passive: false });
 
-  cursorGraphic = createCursor(app); // Crée le curseur.
+  //cursorGraphic = createCursor(app); // Crée le curseur.
 
   // ***** TICKER : actualisation de l'app sur chaque frame ******
   app.ticker.add(() => {
@@ -485,9 +481,10 @@ async function initSousConteneurs(bufferNames) {
 
       // Gestion Zindex
       pageContainer.sortableChildren = true; // Active le tri pour les enfants de chaque page
-      pointsContainer.zIndex = 1;
-      formesLibresContainer.zIndex = 2;
-      sequenceursContainer.zIndex = 3;
+      pageContainer.zIndex = 1;
+      pointsContainer.zIndex = 2;
+      formesLibresContainer.zIndex = 3;
+      sequenceursContainer.zIndex = 4;
 
       });
 
@@ -631,7 +628,7 @@ document.addEventListener('DOMContentLoaded', () => {
       nbPages = bufferNames.length;
 
       await initSousConteneurs(bufferNames);
-      setupFormesLibres(app, nbPages, pixiContainer.getChildrenByLabel("formesLibres", true)); // init nb de formesLibres = nb de pages
+      //setupFormesLibres(app, nbPages, pixiContainer.getChildrenByLabel("formesLibres", true)); // init nb de formesLibres = nb de pages
       await gestionPoints(bufferNames);
       await initialiseSelecteurDePage();
       await initialiseEffetAudio();
@@ -685,9 +682,9 @@ document.addEventListener('DOMContentLoaded', () => {
       drawToggleButton.textContent = 'Stop';
       drawToggleButton.style.backgroundColor = "#0f0";
 
-      DessinFormeLibre(app, pixiContainer, currentPoints, onFormeLibreComplete, pixiContainer.getChildrenByLabel("formesLibres", true)[currentPage]);
+      DessinFormeLibre(app, pixiContainer, currentPage, onFormeLibreComplete);
       
-      if (formesLibres[currentPage]) formesLibres[currentPage].visible = true; // rend la forme libre visible
+      //if (formesLibres[currentPage]) formesLibres[currentPage].visible = true; // rend la forme libre visible
       console.log("Dessin activé");
     } 
   });
