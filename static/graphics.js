@@ -74,6 +74,21 @@ export function drawPixiPoints(pointsData, app, container, getProximityThreshold
   return newPoints;
 }
 
+
+export function termineFormeLibre(formeLibre, path) {
+  // Re-dessine, cette fois remplissage + contour
+    formeLibre.clear();
+    if (path.length > 1) {
+      formeLibre.moveTo(path[0].x, path[0].y);
+      for (let i = 1; i < path.length; i++) {
+        formeLibre.lineTo(path[i].x, path[i].y);
+      }
+      formeLibre.closePath();
+      formeLibre.fill({ color: 0x0000ff, alpha: 0.2 }).stroke({ width: 4, color: 0xff0000, alpha: 1 });
+    }
+}
+
+
 export function DessinFormeLibre(app, pixiContainer, currentPage, onCompleteCallback) {
   let currentPath = []; // va stocker la forme libre
   let drawing = false;
@@ -125,16 +140,9 @@ export function DessinFormeLibre(app, pixiContainer, currentPage, onCompleteCall
     if (!drawing) return;
     drawing = false;
 
-    // Re-dessine, cette fois remplissage + contour
-    newFormeLibre.clear();
-    if (currentPath.length > 1) {
-      newFormeLibre.moveTo(currentPath[0].x, currentPath[0].y);
-      for (let i = 1; i < currentPath.length; i++) {
-        newFormeLibre.lineTo(currentPath[i].x, currentPath[i].y);
-      }
-      newFormeLibre.closePath();
-      newFormeLibre.fill({ color: 0x0000ff, alpha: 0.2 }).stroke({ width: 4, color: 0xff0000, alpha: 1 });
-    }
+
+    termineFormeLibre(newFormeLibre, currentPath);
+    
 
     // retourner normPath? comme objet avec indice formelibre, indice effet (couleur), path
     //normPath entre 0 et 1

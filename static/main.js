@@ -28,6 +28,7 @@ let pointsData = [];  // les données des points à afficher, chargées depuis l
 let currentPage = 0;
 let currentPoints; // les points de la page courante
 
+
 let estEnTrainDeZoomer = false;
 
 const pageBackgroundColors = [
@@ -589,9 +590,13 @@ export function onFormeLibreComplete(normPath) {
   drawToggleButton.textContent = "Eff+";
   drawToggleButton.style.backgroundColor = "";
 
+
+  indiceFormeLibre+= 1;
+  
+
   // construction d'un objet pour sauvegarder dans un fichier la formelibre construite
   let recordFormeLibre = {
-    "indice" : 1,
+    "indice" : indiceFormeLibre,
     "path" : normPath
   }
 
