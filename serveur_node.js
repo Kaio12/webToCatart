@@ -86,7 +86,12 @@ app.get('/api/listaudiofiles', (req, res) => {
   // sert le fichier json des formes libres
 app.get('/api/formesLibres', (req, res) => {
   fs.readFile('public/formesLibres.JSON', 'utf8', (err, data) => {
-    if (err) return res.status(500).json({ error: 'Erreur lecture fichier'});
+    if (err) 
+      {
+        if (err.code === 'ENOENT') return res.json([]);
+        return res.status(500).json({ error: 'Erreur lecture fichier'});
+      }
+      
     res.json(data);
     });
 });

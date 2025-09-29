@@ -180,7 +180,7 @@ export async function loadFormesLibres() {
   try {
     const response = await fetch('/api/formesLibres');
     if (!response.ok) {
-      if (response.status === 404) {
+      if (response.status === 500) {
         console.warn("Le fichier formesLibres n'existe pas.");
         return []; // Retourne un tableau vide si le fichier n'est pas trouvé
       }
@@ -188,7 +188,7 @@ export async function loadFormesLibres() {
       return;
     }
     const liste = await response.json();
-    return liste;
+    return JSON.parse(liste);
   } catch (e) {
     console.log("Erreur de chargement de la liste des formes libres:", e);
   }

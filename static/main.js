@@ -602,7 +602,9 @@ export function onFormeLibreComplete(normPath) {
 
 // pour dessiner les formesLibres à partir du fichier json
 async function FormesLibresPredessinees() {
- const preFormesLibres = JSON.parse(await loadFormesLibres());
+
+ const preFormesLibres = await loadFormesLibres()
+ if (!preFormesLibres) return;
  const path = [];
  if (pixiContainer) {
   preFormesLibres.forEach((fl) => {
