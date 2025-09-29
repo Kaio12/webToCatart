@@ -75,9 +75,15 @@ export function drawPixiPoints(pointsData, app, container, getProximityThreshold
 }
 
 
-export function termineFormeLibre(formeLibre, path) {
+export function termineFormeLibre(app, formeLibre, normPath, currentPage, pixiContainer) {
   // Re-dessine, cette fois remplissage + contour
     formeLibre.clear();
+
+    const path = normPath.map(({x, y}) => ({
+      x: x * app.renderer.width, 
+      y : y * app.renderer.height,
+    }));
+
     if (path.length > 1) {
       formeLibre.moveTo(path[0].x, path[0].y);
       for (let i = 1; i < path.length; i++) {
@@ -86,6 +92,13 @@ export function termineFormeLibre(formeLibre, path) {
       formeLibre.closePath();
       formeLibre.fill({ color: 0x0000ff, alpha: 0.2 }).stroke({ width: 4, color: 0xff0000, alpha: 1 });
     }
+
+
+   // Mise à jour des points pixiContainer.children[currentPage].children[0] pixiContainer.children[currentPage].getChildByLabel('points', true).children
+    pixiContainer.getChildrenByLabel('page')[currentPage].getChildByLabel('points', true).children.forEach(pt => {
+      pt.isEffectEnabled = pixiContainer.getChildrenByLabel('page')[currentPage].getChildByLabel('formesLibres').children.some(f => f.containsPoint(pt.position));
+    });
+
 }
 
 
@@ -140,10 +153,6 @@ export function DessinFormeLibre(app, pixiContainer, currentPage, onCompleteCall
     if (!drawing) return;
     drawing = false;
 
-
-    termineFormeLibre(newFormeLibre, currentPath);
-    
-
     // retourner normPath? comme objet avec indice formelibre, indice effet (couleur), path
     //normPath entre 0 et 1
     const normPath = currentPath.map(({x, y}) => ({
@@ -151,12 +160,10 @@ export function DessinFormeLibre(app, pixiContainer, currentPage, onCompleteCall
       y : y / app.renderer.height
     }));
 
+    termineFormeLibre(app, newFormeLibre, normPath, currentPage, pixiContainer);
 
 
-    // Mise à jour des points pixiContainer.children[currentPage].children[0] pixiContainer.children[currentPage].getChildByLabel('points', true).children
-    pixiContainer.children[currentPage].getChildByLabel('points', true).children.forEach(pt => {
-      pt.isEffectEnabled = pixiContainer.children[currentPage].getChildByLabel('formesLibres').children.some(f => f.containsPoint(pt.position));
-    });
+ 
 
     if (onCompleteCallback) {
       onCompleteCallback(normPath);

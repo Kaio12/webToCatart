@@ -602,12 +602,16 @@ export function onFormeLibreComplete(normPath) {
 
 // pour dessiner les formesLibres à partir du fichier json
 async function FormesLibresPredessinees() {
- const preFormesLibres = await loadFormesLibres();
+ const preFormesLibres = JSON.parse(await loadFormesLibres());
  const path = [];
  if (pixiContainer) {
-  const newFormeLibre = new PIXI.Graphics({label: 'formeLibre'});
-  pixiContainer.children[0].children[1].addChild(newFormeLibre);
-
+  preFormesLibres.forEach((fl) => {
+    const currentPage = fl.page;
+    const path = fl.formeLibre.path;
+    const newFormeLibre = new PIXI.Graphics({label: 'formeLibre'});
+    pixiContainer.getChildrenByLabel('page')[currentPage].children[1].addChild(newFormeLibre);
+    termineFormeLibre(app, newFormeLibre, path, currentPage, pixiContainer);
+  })
  }
 }
 
@@ -659,7 +663,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       initReconnaissanceGeste();
 
-      //FormesLibresPredessinees();
+      FormesLibresPredessinees();
 
       console.log("Initialisation terminée");
     } catch (e) {
