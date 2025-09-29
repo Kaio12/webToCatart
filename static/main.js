@@ -107,21 +107,37 @@ async function setupPixi() {
     backgroundColor: 0x000000 // couleur du fond
   });
 
+  // hauteur et largeur à l'init
+  let baseWidth = app.renderer.width;
+  let baseHeight = app.renderer.height;
+
   app.ticker.maxFPS = 60; // will not tick faster than 60fps
 
   app.renderer.on('resize', (width, height) => {
     console.log(`Pixi a redimensionné le canvas à ${width}x${height}`);
 
+    const scaleX = width / baseWidth;
+    const scaleY = height / baseHeight;
+
     centerX = width / 2;
     centerY = height / 2;
 
+    const FLContainers = pixiContainer.getChildrenByLabel('formesLibres', true);
+    FLContainers.forEach((container) => {
+      container.scale.set(scaleX, scaleY)
+    })
+    
     if (pixiContainer) {
       pixiContainer.pivot.set(centerX, centerY);
       pixiContainer.position.set(centerX, centerY);
     }
-
+    pixiContainer.hitArea = new PIXI.Rectangle(0, 0, app.screen.width, app.screen.height);
     gestionPoints(bufferNames)  // redessine les points
 
+     // Mise à jour des points pixiContainer.children[currentPage].children[0] pixiContainer.children[currentPage].getChildByLabel('points', true).children
+    pixiContainer.getChildrenByLabel('page')[currentPage].getChildByLabel('points', true).children.forEach(pt => {
+      pt.isEffectEnabled = pixiContainer.getChildrenByLabel('page')[currentPage].getChildByLabel('formesLibres').children.some(f => f.containsPoint(pt.position));
+    });
   });
 
   // on ajout l'app canvas à la partie pixi-container de la page
@@ -461,7 +477,7 @@ async function initialiseSocket() {
   }
 }
 
-async function initSousConteneurs(bufferNames) {
+async function initSousConteneurs(bufferNames)  {
   try {
 
     bufferNames.forEach((name, idx) => {
@@ -526,12 +542,6 @@ async function gestionPoints(bufferNames) {
 
       pixiPoints.push(...newPagePoints);
     });
-    
-    // affiche la premiere page uniquement. pixiContainer.getChildByLabel('page');
-    pixiContainer.getChildrenByLabel('page').forEach((container, idx) => {
-        container.visible = (idx === 0);
-      });
-
 
       currentPoints = pixiContainer.getChildrenByLabel('points', true)[0].children; // init currentPoints sur la première page
 
@@ -576,12 +586,12 @@ async function initialiseSelecteurDePage() {
         app.renderer.background.color = pageBackgroundColors[0];
       }
     }
-
   }
   catch(e){
     console.log("erreur pendant l'initialisation du selecteur de pages", e);
   }
 }
+
 
 export function onFormeLibreComplete(normPath) {
   drawingEnabled = false;
@@ -589,16 +599,17 @@ export function onFormeLibreComplete(normPath) {
   drawToggleButton.textContent = "Eff+";
   drawToggleButton.style.backgroundColor = "";
 
-   let indiceFormeLibre; // num de la forme libre, probablement à déplacer
-   indiceFormeLibre  += 1;
+  let indiceFormeLibre; // num de la forme libre, probablement à déplacer
+  indiceFormeLibre  += 1;
 
-  // construction d'un objet JSON pour sauvegarder la formelibre construite et envoi par ws
+    // construction d'un objet JSON pour sauvegarder la formelibre construite et envoi par ws
   let recordFormeLibre = {"path": normPath};
   socket.send(JSON.stringify({
     page: currentPage,
     formeLibre: recordFormeLibre
-  }));
+    }));
   };
+
 
 // pour dessiner les formesLibres à partir du fichier json
 async function FormesLibresPredessinees() {
@@ -664,8 +675,12 @@ document.addEventListener('DOMContentLoaded', () => {
       await initialiseSocket();
 
       initReconnaissanceGeste();
-
       FormesLibresPredessinees();
+
+      // affiche la premiere page uniquement. pixiContainer.getChildByLabel('page');
+      pixiContainer.getChildrenByLabel('page').forEach((container, idx) => {
+        container.visible = (idx === 0);
+      });
 
       console.log("Initialisation terminée");
     } catch (e) {

@@ -79,20 +79,28 @@ export function termineFormeLibre(app, formeLibre, normPath, currentPage, pixiCo
   // Re-dessine, cette fois remplissage + contour
     formeLibre.clear();
 
+    const gpath = new PIXI.GraphicsPath();
+
+
     const path = normPath.map(({x, y}) => ({
       x: x * app.renderer.width, 
       y : y * app.renderer.height,
     }));
 
     if (path.length > 1) {
-      formeLibre.moveTo(path[0].x, path[0].y);
-      for (let i = 1; i < path.length; i++) {
-        formeLibre.lineTo(path[i].x, path[i].y);
-      }
-      formeLibre.closePath();
-      formeLibre.fill({ color: 0x0000ff, alpha: 0.2 }).stroke({ width: 4, color: 0xff0000, alpha: 1 });
+      gpath.moveTo(path[0].x, path[0].y);
+    for (let i = 1; i < path.length; i++) {
+      gpath.lineTo(path[i].x, path[i].y);
     }
+    gpath.closePath();
 
+    const strokeBuilder = formeLibre.stroke({ width: 4, color: 0xff0000, alpha: 1 });
+    strokeBuilder.path(gpath);        // applique le path au trait
+
+    const fillBuilder = formeLibre.fill({ color: 0xFF6600, alpha: 0.5 });
+    fillBuilder.path(gpath);  
+     
+    }
 
    // Mise à jour des points pixiContainer.children[currentPage].children[0] pixiContainer.children[currentPage].getChildByLabel('points', true).children
     pixiContainer.getChildrenByLabel('page')[currentPage].getChildByLabel('points', true).children.forEach(pt => {
@@ -116,7 +124,6 @@ export function DessinFormeLibre(app, pixiContainer, currentPage, onCompleteCall
 
   pixiContainer.children[currentPage].getChildByLabel("formesLibres").addChild(newFormeLibre);
 
-  //let nbFormesLibres = pixiContainer.children[currentPage].getChildByLabel("formesLibres").children.length;
 
   const rebuildStroke = () => {
     if (currentPath.length < 2) return;
