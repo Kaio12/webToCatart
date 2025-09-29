@@ -2,8 +2,8 @@
 // script.js - Gère l'interaction entre le navigateur, Pixi.js, l'audio et le MIDI
 
 import { playGrain,initEffect, feedbackGain } from "./audio.js";
-import { socket, initSocket, setupSocketAndHandlers, sendOSC, loadJsonPoints, loadAudioBuffers } from "./network.js";
-import { drawPixiPoints, createCursor, DessinFormeLibre, formesLibres,  } from "./graphics.js";
+import { socket, initSocket, setupSocketAndHandlers, sendOSC, loadJsonPoints, loadAudioBuffers, loadFormesLibres } from "./network.js";
+import { drawPixiPoints, createCursor, DessinFormeLibre, formesLibres, termineFormeLibre  } from "./graphics.js";
 import { ClockWidget } from "./clock.js"
 import { VirtualPointer } from './virtualPointer.js';
 
@@ -584,24 +584,31 @@ async function initialiseSelecteurDePage() {
 }
 
 export function onFormeLibreComplete(normPath) {
-  
   drawingEnabled = false;
   const drawToggleButton = document.getElementById("draw-toggle");
   drawToggleButton.textContent = "Eff+";
   drawToggleButton.style.backgroundColor = "";
 
+   let indiceFormeLibre; // num de la forme libre, probablement à déplacer
+   indiceFormeLibre  += 1;
 
-  indiceFormeLibre+= 1;
-  
+  // construction d'un objet JSON pour sauvegarder la formelibre construite et envoi par ws
+  let recordFormeLibre = {"path": normPath};
+  socket.send(JSON.stringify({
+    page: currentPage,
+    formeLibre: recordFormeLibre
+  }));
+  };
 
-  // construction d'un objet pour sauvegarder dans un fichier la formelibre construite
-  let recordFormeLibre = {
-    "indice" : indiceFormeLibre,
-    "path" : normPath
-  }
+// pour dessiner les formesLibres à partir du fichier json
+async function FormesLibresPredessinees() {
+ const preFormesLibres = await loadFormesLibres();
+ const path = [];
+ if (pixiContainer) {
+  const newFormeLibre = new PIXI.Graphics({label: 'formeLibre'});
+  pixiContainer.children[0].children[1].addChild(newFormeLibre);
 
-  socket.send(JSON.stringify(recordFormeLibre));
-
+ }
 }
 
   //pour activer drawingEnabled depuis network.js
@@ -614,6 +621,8 @@ function getProximityThreshold() {
   const base = Math.min(app.renderer.width, app.renderer.height) * 0.04;
   return base / zoomFactor;
 }
+
+  
 
 // =======  INITIALISATION ==========
 document.addEventListener('DOMContentLoaded', () => {
@@ -649,6 +658,8 @@ document.addEventListener('DOMContentLoaded', () => {
       await initialiseSocket();
 
       initReconnaissanceGeste();
+
+      //FormesLibresPredessinees();
 
       console.log("Initialisation terminée");
     } catch (e) {

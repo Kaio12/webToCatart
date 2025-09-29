@@ -23,7 +23,7 @@ export function sendOSC (address, ...args) {
 export function initSocket() {
   const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const wsUrl = `${wsProtocol}//${window.location.host}`;
-  
+
   socket = new WebSocket(wsUrl);
   
 
@@ -124,7 +124,7 @@ export async function loadAudioBuffers() {
 // charge la liste des fichiers json analyse sous forme JSON
 async function loadListJsonFiles() {
   try {
-    const response = await fetch('/api/listjsonfiles');
+    const response = await fetch('/api/listpointsjsonfiles');
     if (!response.ok) {
       if (response.status === 404) {
         console.warn("Le fichier listjsonfiles n'existe pas.");
@@ -134,6 +134,7 @@ async function loadListJsonFiles() {
       return;
     }
     const liste = await response.json();
+
     return liste;
   } catch (e) {
     console.log("Erreur de chargement de la liste des fichiers audio:", e);
@@ -174,3 +175,21 @@ export async function loadJsonPoints() {
   return pointsByFile; // { "enr1.json": [...], ... }
 }
 
+  // charge la liste des formes libres
+export async function loadFormesLibres() {
+  try {
+    const response = await fetch('/api/formesLibres');
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.warn("Le fichier formesLibres n'existe pas.");
+        return []; // Retourne un tableau vide si le fichier n'est pas trouvé
+      }
+      console.error("Erreur HTTP:", response.status);
+      return;
+    }
+    const liste = await response.json();
+    return liste;
+  } catch (e) {
+    console.log("Erreur de chargement de la liste des formes libres:", e);
+  }
+}

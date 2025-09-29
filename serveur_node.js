@@ -73,23 +73,30 @@ app.post('/delete', (req, res) => {
 });
 
 
-
-
-// sert la liste des fichiers de type audio => audiofiles
+// sert la liste des fichiers de type audio enrN.wav => audiofiles
 app.get('/api/listaudiofiles', (req, res) => {
   fs.readdir(PUBLIC_FOLDER, (err, files) => {
     if (err) return res.status(500).json({ error: 'Erreur lecture dossier' });
     // Filtre les fichiers audio (wav, mp3, etc.)
-    const audioFiles = files.filter(f => /\.(wav|mp3|ogg)$/i.test(f));
+    const audioFiles = files.filter(f => /^enr\d\.(wav|mp3|ogg)$/i.test(f));
     res.json(audioFiles);
   });
 });
-// sert la liste des fichiers json (points) => jsonfiles
-app.get('/api/listjsonfiles', (req,res) => {
+
+  // sert le fichier json des formes libres
+app.get('/api/formesLibres', (req, res) => {
+  fs.readFile('public/formesLibres.JSON', 'utf8', (err, data) => {
+    if (err) return res.status(500).json({ error: 'Erreur lecture fichier'});
+    res.json(data);
+    });
+});
+
+// sert la liste des fichiers enrN.json (points) => jsonfiles
+app.get('/api/listpointsjsonfiles', (req,res) => {
   fs.readdir(PUBLIC_FOLDER, (err, files) => {
     if (err) return res.status(500).json({ error: 'Erreur lecture dossier json' });
-    const jsonFiles = files.filter(f => /\.(json)$/i.test(f));
-    res.json(jsonFiles);
+    const pointsJsonFiles = files.filter(f => /^enr\d+\.json$/i.test(f));
+    res.json(pointsJsonFiles);
   });
 });
 
@@ -204,30 +211,30 @@ wss.on('connection', (ws, request) => {
           const data = JSON.parse(message);
           console.log('Forme libre reçue:', data);
           
-          let formesLibresArray = [];
+          let formesLibres = [];
 
 if (fs.existsSync(formesLibresPath)) {
   // Le fichier existe, on lit et ajoute le nouveau message
   try {
     const fileContent = fs.readFileSync(formesLibresPath, 'utf8');
-    formesLibresArray = JSON.parse(fileContent);
-    if (!Array.isArray(formesLibresArray)) formesLibresArray = [];
+    formesLibres = JSON.parse(fileContent);
+    if (!Array.isArray(formesLibres)) formesLibres = [];
   } catch (e) {
     console.error('Erreur lecture/parsing formesLibres.JSON:', e);
-    formesLibresArray = [];
+    formesLibres = {};
   }
 } else {
   // Le fichier n'existe pas, on le crée vide
   fs.writeFileSync(formesLibresPath, '[]', 'utf8');
-  formesLibresArray = [];
+  formesLibres = [];
 }
 
 // Ajoute le nouveau message JSON
-formesLibresArray.push(data);
+formesLibres.push(data);
 
 // Sauvegarde le tableau mis à jour
 try {
-  fs.writeFileSync(formesLibresPath, JSON.stringify(formesLibresArray, null, 2), 'utf8');
+  fs.writeFileSync(formesLibresPath, JSON.stringify(formesLibres, null, 2), 'utf8');
   console.log('Forme libre ajoutée à formesLibres.JSON');
 } catch (e) {
   console.error('Erreur écriture formesLibres.JSON:', e);
