@@ -113,31 +113,60 @@ async function setupPixi() {
 
   app.ticker.maxFPS = 60; // will not tick faster than 60fps
 
+
+
   app.renderer.on('resize', (width, height) => {
     console.log(`Pixi a redimensionné le canvas à ${width}x${height}`);
-
-    const scaleX = width / baseWidth;
-    const scaleY = height / baseHeight;
 
     centerX = width / 2;
     centerY = height / 2;
 
     const FLContainers = pixiContainer.getChildrenByLabel('formesLibres', true);
-    FLContainers.forEach((container) => {
-      container.scale.set(scaleX, scaleY)
-    })
+
+    // on reconstruit la forme libre
+    FLContainers.forEach(container => {
+      container.children.forEach(formeLibre => {
+        if (!formeLibre._normPath) return;
+
+        const rebuilt = new PIXI.GraphicsPath();
+        formeLibre._normPath.forEach(({ x, y }, i) => {
+          const px = x * width;
+          const py = y * height;
+          i === 0 ? rebuilt.moveTo(px, py) : rebuilt.lineTo(px, py);
+        });
+      rebuilt.closePath();
+
+      formeLibre.clear();
+      
+      formeLibre.stroke({ width: 4, color: 0x800000, alpha: 1 }).path(rebuilt);
+      formeLibre.fill({ color: 0xC0C0C0, alpha: 0.5 }).path(rebuilt);
+
+      formeLibre._gpath = rebuilt; // on sauve le dernier path
+      });
+    });
     
     if (pixiContainer) {
       pixiContainer.pivot.set(centerX, centerY);
       pixiContainer.position.set(centerX, centerY);
     }
-    pixiContainer.hitArea = new PIXI.Rectangle(0, 0, app.screen.width, app.screen.height);
+
+    pixiContainer.hitArea = new PIXI.Rectangle(0, 0, app.screen.width, app.screen.height);// on reprend les dimensions pour les events
+
     gestionPoints(bufferNames)  // redessine les points
 
-     // Mise à jour des points pixiContainer.children[currentPage].children[0] pixiContainer.children[currentPage].getChildByLabel('points', true).children
-    pixiContainer.getChildrenByLabel('page')[currentPage].getChildByLabel('points', true).children.forEach(pt => {
-      pt.isEffectEnabled = pixiContainer.getChildrenByLabel('page')[currentPage].getChildByLabel('formesLibres').children.some(f => f.containsPoint(pt.position));
-    });
+   // Mise à jour des points 
+   const pages = pixiContainer.getChildrenByLabel('page');
+   pages.forEach ((container) => 
+  {
+    const pointsContainer = container.getChildByLabel('points');
+    const formesLibresContainer = container.getChildByLabel('formesLibres');
+    pointsContainer.children.forEach(pt => {
+      const globalPos = pt.getGlobalPosition();
+      pt.isEffectEnabled = formesLibresContainer.children.some((formeLibre) =>
+        formeLibre.context.containsPoint(globalPos)
+        );
+    })
+  })
   });
 
   // on ajout l'app canvas à la partie pixi-container de la page

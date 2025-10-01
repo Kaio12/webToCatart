@@ -81,7 +81,7 @@ export function termineFormeLibre(app, formeLibre, normPath, currentPage, pixiCo
 
     const gpath = new PIXI.GraphicsPath();
 
-
+    // on retrouve les coordonées réelles
     const path = normPath.map(({x, y}) => ({
       x: x * app.renderer.width, 
       y : y * app.renderer.height,
@@ -99,8 +99,11 @@ export function termineFormeLibre(app, formeLibre, normPath, currentPage, pixiCo
 
     const fillBuilder = formeLibre.fill({ color: 0xFF6600, alpha: 0.5 });
     fillBuilder.path(gpath);  
-     
     }
+
+    // on sauvegarde les paths (notamment pour reconstruire en cas de resize)
+    formeLibre._normPath = normPath.map(p => ({ ...p }));
+    formeLibre._gpath = gpath;
 
    // Mise à jour des points pixiContainer.children[currentPage].children[0] pixiContainer.children[currentPage].getChildByLabel('points', true).children
     pixiContainer.getChildrenByLabel('page')[currentPage].getChildByLabel('points', true).children.forEach(pt => {
@@ -132,7 +135,6 @@ export function DessinFormeLibre(app, pixiContainer, currentPage, onCompleteCall
     for (let i = 1; i < currentPath.length; i++) {
       newFormeLibre.lineTo(currentPath[i].x, currentPath[i].y);
     }
-    // stroke explicite (v8)
     newFormeLibre.stroke({ width: 4, color: 0xff0000, alpha: 1 });
   };
 
