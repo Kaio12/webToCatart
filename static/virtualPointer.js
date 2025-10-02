@@ -139,6 +139,7 @@ function manualHitTest(root, globalPoint) {
   }
   return null;
 }
+
 function isHit(displayObject, globalPoint) {
   if (!displayObject) return false;
   const local = displayObject.toLocal(globalPoint);

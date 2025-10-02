@@ -338,7 +338,7 @@ function initReconnaissanceGeste() {
     
     if (geste) {
       
-      //console.log("geste", geste);
+      console.log("geste", geste);
 
       sequences.push(geste);
       if (sequences.length > 3) sequences.shift();
@@ -361,36 +361,16 @@ function initReconnaissanceGeste() {
         if (scoreGlobal < 30) console.log("!!!!!!!OUI!!!!!!");
         else console.log("-------NON--------");
       };
-  /*
-  // joue la séquence une seule fois
-      const seqClone = {
-        startTimeSeq: geste.startTimeSeq,
-        events: geste.events.map(e => ({ ...e }))
-      };
-      
-      vptrSeq = new VirtualPointer(app, eventBoundary, pixiContainer);
-
-      playgeste(seqClone, vptrSeq, () => {
-        vptrSeq.up();
-        vptrSeq.destroy();
-        vptrSeq = null;
-
-      });
-
-  */
       geste = null;
-      
     };
 
     if (drawingEnabled) return; // Ne rien faire si on dessine
-    
   };
 
   pixiContainer.on("pointerdown", onPointerDown);
   pixiContainer.on("pointermove", onPointerMove);
   pixiContainer.on("pointerup", onPointerUp);
   pixiContainer.on("pointerupoutside", onPointerUp);
-
 };
 
   // crée un selecteur pour sélectionner la page/buffer à jouer.
