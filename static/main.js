@@ -7,8 +7,7 @@ import { drawPixiPoints, createCursor, DessinFormeLibre, formesLibres, termineFo
 import { ClockWidget } from "./clock.js"
 import { VirtualPointer } from './virtualPointer.js';
 
-//import { Point, Resample } from "./dollar.js";
-import { resample, getBoundsArray, moyenneDistanceEntreTableaux } from "./resampler.js";
+import { resample, moyenneDistanceEntreTableaux } from "./resampler.js";
 
 export let pixiContainer = null; // conteneur Pixi global
 
@@ -54,15 +53,12 @@ let bufferNames;
 
 let effectNode;
 
-let lastFormesLibresPath = []; //sauvegarde des coordo des formes libres.
-
 let zoomFactor = 1.0 // facteur zoom affichage des points
 let zoomFactors = []; // un zoom par page
 
 let cursorGraphic; // le curseur.
 
 let geste = null;
-//let gesteAn = null;
 let sequences = []; // tableau contenant les gestes
 let sequencesAn = []; // tableau pour l'analyse des gestes
 
@@ -89,7 +85,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-
 // Fonction pour mettre à jour le centre lors du resize
 export function updateCenter() {
   if (app && app.renderer) {
@@ -103,18 +98,13 @@ async function setupPixi() {
 
   app = new PIXI.Application();
   await app.init({
-  resizeTo: document.getElementById('pixi-container'), // ou window
+  resizeTo: document.getElementById('pixi-container'), 
     backgroundColor: 0x000000 // couleur du fond
   });
 
-  // hauteur et largeur à l'init
-  let baseWidth = app.renderer.width;
-  let baseHeight = app.renderer.height;
-
   app.ticker.maxFPS = 60; // will not tick faster than 60fps
 
-
-
+  // ------- GESTION RESIZE ------------------
   app.renderer.on('resize', (width, height) => {
     console.log(`Pixi a redimensionné le canvas à ${width}x${height}`);
 
@@ -137,14 +127,14 @@ async function setupPixi() {
       rebuilt.closePath();
 
       formeLibre.clear();
-      
-      formeLibre.stroke({ width: 4, color: 0x800000, alpha: 1 }).path(rebuilt);
-      formeLibre.fill({ color: 0xC0C0C0, alpha: 0.5 }).path(rebuilt);
+      formeLibre.stroke({ width: 4, color: 0xFF6600, alpha: 1 }).path(rebuilt);
+      formeLibre.fill({ color: 0xFF6600, alpha: 0.5 }).path(rebuilt);
 
       formeLibre._gpath = rebuilt; // on sauve le dernier path
       });
     });
     
+    // on recentre le container
     if (pixiContainer) {
       pixiContainer.pivot.set(centerX, centerY);
       pixiContainer.position.set(centerX, centerY);
@@ -154,19 +144,19 @@ async function setupPixi() {
 
     gestionPoints(bufferNames)  // redessine les points
 
-   // Mise à jour des points 
+   // Mise à jour des points (gestion effets)
    const pages = pixiContainer.getChildrenByLabel('page');
    pages.forEach ((container) => 
-  {
-    const pointsContainer = container.getChildByLabel('points');
-    const formesLibresContainer = container.getChildByLabel('formesLibres');
-    pointsContainer.children.forEach(pt => {
-      const globalPos = pt.getGlobalPosition();
-      pt.isEffectEnabled = formesLibresContainer.children.some((formeLibre) =>
-        formeLibre.context.containsPoint(globalPos)
+    {
+      const pointsContainer = container.getChildByLabel('points');
+      const formesLibresContainer = container.getChildByLabel('formesLibres');
+      pointsContainer.children.forEach(pt => {
+        const globalPos = pt.getGlobalPosition();
+        pt.isEffectEnabled = formesLibresContainer.children.some((formeLibre) =>
+          formeLibre.context.containsPoint(globalPos)
         );
+      })
     })
-  })
   });
 
   // on ajout l'app canvas à la partie pixi-container de la page
@@ -185,10 +175,10 @@ async function setupPixi() {
   pixiContainer.eventMode = 'static';
 
   // === blocage des gestes natifs ===
-  app.canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
-  app.canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
-  app.canvas.addEventListener('touchend', e => e.preventDefault(), { passive: false });
-  app.canvas.addEventListener('wheel', e => e.preventDefault(), { passive: false });
+    app.canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+    app.canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+    app.canvas.addEventListener('touchend', e => e.preventDefault(), { passive: false });
+    app.canvas.addEventListener('wheel', e => e.preventDefault(), { passive: false });
 
   //cursorGraphic = createCursor(app); // Crée le curseur.
 
@@ -196,8 +186,9 @@ async function setupPixi() {
   app.ticker.add(() => {
     // met à jour l'echelle du zoom à chaque frame */
     if (pixiContainer) {
-    pixiContainer.scale.set(zoomFactor);
+      pixiContainer.scale.set(zoomFactor);
     }
+
     // Animation et redraw des points
     for (const point of pixiPoints) {
       const speed = 0.2;
@@ -235,27 +226,6 @@ function playgeste(geste, vptr, onEnd) {
     }
   }
   step();
-}
-
-// détermine les bornes de points (pour recogniser)
-function getBounds(points) {
-  const xs = points.map(p => p.X ?? p[0]);
-  const ys = points.map(p => p.Y ?? p[1]);
-  const xmin = Math.min(...xs);
-  const xmax = Math.max(...xs);
-  const ymin = Math.min(...ys);
-  const ymax = Math.max(...ys);
-  return { xmin, xmax, ymin, ymax };
-}
-
-function moyenneDistanceEntreGestes(g1, g2) {
-  let total = 0;
-  for (let i = 0; i < Math.min(g1.length, g2.length); i++) {
-    const dx = g1[i].x - g2[i].x;
-    const dy = g1[i].y - g2[i].y;
-    total += Math.hypot(dx, dy);
-  }
-  return total / Math.min(g1.length, g2.length);
 }
 
 // à renommer, contient également le séquenceur (gestion des pointeurs);
@@ -423,7 +393,6 @@ function initReconnaissanceGeste() {
 
 };
 
-
   // crée un selecteur pour sélectionner la page/buffer à jouer.
 function createPageSelector(bufferNames, onPageChange) {
 
@@ -458,7 +427,6 @@ function createPageSelector(bufferNames, onPageChange) {
     selectorDiv.appendChild(btn);
   });
 }
-
 
 async function initialiseContexteAudio() {
   try {
@@ -637,7 +605,7 @@ export function onFormeLibreComplete(normPath) {
     page: currentPage,
     formeLibre: recordFormeLibre
     }));
-  };
+};
 
 
 // pour dessiner les formesLibres à partir du fichier json
@@ -697,7 +665,6 @@ document.addEventListener('DOMContentLoaded', () => {
       nbPages = bufferNames.length;
 
       await initSousConteneurs(bufferNames);
-      //setupFormesLibres(app, nbPages, pixiContainer.getChildrenByLabel("formesLibres", true)); // init nb de formesLibres = nb de pages
       await gestionPoints(bufferNames);
       await initialiseSelecteurDePage();
       await initialiseEffetAudio();
@@ -720,10 +687,9 @@ document.addEventListener('DOMContentLoaded', () => {
     zoomFactor = 1.0;
     if (pixiContainer) {
       updateCenter(); // S'assure que le centre est à jour
-      //pixiContainer.pivot.set(centerX, centerY);
-      //pixiContainer.position.set(centerX, centerY);
     }
 
+    /*
     // essai d'animation d'un vptr sur un cercle, pour remplacer clock plus tart
     let vptr = new VirtualPointer(app, eventBoundary, pixiContainer);
     let t = 0;
@@ -736,6 +702,7 @@ document.addEventListener('DOMContentLoaded', () => {
       t += 0.02;
       if (t>5 && vptr) {vptr.up(); vptr.destroy(); vptr = null};
     });
+  */
 
 
   });
@@ -749,7 +716,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log("appel du zoom");
   })
 
-  // ****** pour dessiner la forme libre *******
+  // ******  dessiner la forme libre *******
   drawToggleButton.addEventListener("click", () => {
 
     if (!drawingEnabled) {
@@ -759,12 +726,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       DessinFormeLibre(app, pixiContainer, currentPage, onFormeLibreComplete);
       
-      //if (formesLibres[currentPage]) formesLibres[currentPage].visible = true; // rend la forme libre visible
       console.log("Dessin activé");
     } 
   });
 
-  // delete effect
+  // delete effect area
   deleteEffect.addEventListener("click", async () => {
     const formesLibresContainer = pixiContainer.getChildrenByLabel("formesLibres", true)[currentPage];
 
@@ -781,7 +747,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log("Dernière forme libre supprimée.");
   } else {
     console.log("Aucune forme libre à supprimer.");
-  }
+    }
   });
 
     // bouton Fullscreen

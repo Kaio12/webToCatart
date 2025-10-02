@@ -184,7 +184,6 @@ export function DessinFormeLibre(app, pixiContainer, currentPage, onCompleteCall
     pixiContainer.off("pointerupoutside", onUp);
   };
 
-
   const onUp = () => finalize();
 
   pixiContainer.on("pointerdown", onDown);
