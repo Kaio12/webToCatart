@@ -18,31 +18,36 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>interface to catart, map grains</title>
-  
     <script src="/pixi.min.js"></script>
-  
     <link rel="stylesheet" href="/style.css">
-   
   </head>
 
   <body>
 
-<div class="sidebarleft" id="sidebarleft">
-    <button id="init">Init</button>
-    <button id="draw-toggle">Eff+</button>
-    <button id="efface-formelibre">Eff-</button>
-<!--  <button id="fullscreen-btn">FS</button>. -->   
-<!--    <button id="zoom">Z</button>. -->
-    <button id="clock+">Cl+</button>
-    <button id="clock-">Cl-</button>
+    <!-- Le conteneur principal pour le canvas Pixi -->
+    <div id="pixi-container"></div> 
 
-    <div id="page-selector"></div>
-</div>
+    <!-- La barre d'outils du bas -->
+    <div class="sidebar-bottom">
+        <button id="init">Init</button>
+        <button id="draw-toggle">Eff+</button>
+        <button id="efface-formelibre">Eff-</button>
+        <button id="clock+">Cl+</button>
+        <button id="clock-">Cl-</button>
+        <div id="page-selector"></div>
+    </div>
 
+    <!-- La barre de sliders à droite -->
+    <div class="sidebar-right">
+      <input 
+        type="range"  
+        id="length" 
+        min="0" 
+        max="1" 
+        step="0.01" />
+      <!-- Tu peux ajouter un deuxième slider ici si besoin -->
+    </div>
    
-<div id="pixi-container"></div> 
-
-
-<script type="module" src = "/main.js"></script>
+    <script type="module" src = "/main.js"></script>
   </body>
 </html>

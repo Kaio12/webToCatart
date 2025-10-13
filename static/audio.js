@@ -83,7 +83,7 @@ export function playGrain(startMs, durationMs, useEffect = false, BufferName) {
 export async function initEffect() {
   try {
     effectNode = audioContext.createDelay();
-    effectNode.delayTime.value = 0.1;
+    effectNode.delayTime.value = 0.5;
 
     feedbackGain = audioContext.createGain();
     feedbackGain.gain.value = 0.8;
