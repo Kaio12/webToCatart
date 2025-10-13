@@ -54,7 +54,7 @@ let bufferNames;
 let effectNode;
 
 let zoomFactor = 1.0 // facteur zoom affichage des points
-let zoomFactors = []; // un zoom par page
+//let zoomFactors = []; // un zoom par page
 
 let cursorGraphic; // le curseur.
 
@@ -68,7 +68,7 @@ const selectorDiv = document.getElementById("page-selector"); // selecteur de pa
 const init = document.getElementById("init"); // bouton d'initialistion globale.
 const deleteEffect = document.getElementById("efface-formelibre"); // pour effacer la forme libre et l'effet afférent
 const drawToggleButton = document.getElementById("draw-toggle");
-const zoomToggleButton = document.getElementById("zoom");
+//const zoomToggleButton = document.getElementById("zoom");
 const addClock = document.getElementById("clock+");
 const delClock = document.getElementById("clock-");
 
@@ -380,8 +380,8 @@ function createPageSelector(bufferNames, onPageChange) {
 
   bufferNames.forEach((name, idx) => {
     const btn = document.createElement("button");
-    btn.style.width = "36px";
-    btn.style.height = "36px";
+    //btn.style.width = "36px";
+    //btn.style.height = "36px";
     btn.style.margin = "8px 0";
     btn.style.borderRadius = "50%";
     btn.style.border = "none";
@@ -687,6 +687,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   });
 
+
+  /*
   // Zoom toggle button
   zoomToggleButton.addEventListener("click", () => {
     estEnTrainDeZoomer = true;
@@ -695,6 +697,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     console.log("appel du zoom");
   })
+*/
+
+
 
   // ******  dessiner la forme libre *******
   drawToggleButton.addEventListener("click", () => {
@@ -730,6 +735,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+
+  /*
     // bouton Fullscreen
     document.getElementById("fullscreen-btn").addEventListener("click", () => {
       if (!document.fullscreenElement) {
@@ -741,6 +748,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.exitFullscreen();
       }
     });
+    */
 
     // bouton ajout clock
     addClock.addEventListener("click", () => {

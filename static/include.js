@@ -4,7 +4,7 @@ inlets = 1;
 
 function list(numBuff, numTotal) {
 
-	let excluded = [];
+	let excluded = []; //buffers à exclure
 
 	for (let i = 1; i <= numTotal; i++) {
 		if (i === numBuff) {

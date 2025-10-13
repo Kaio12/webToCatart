@@ -7,12 +7,12 @@ body {
 }
 
 .sidebarleft {
-    background-color: aliceblue;
-    padding: 15px;
+    /* background-color: aliceblue; */
+    padding: 0;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
     transition: transform 0.5s ease;
     display: flex ;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     gap: 10px; 
     position: absolute;
@@ -25,11 +25,12 @@ body {
 
 #page-selector {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    width: 48px;
-    margin-top: 16px;
-    gap: 8px;
+   /* width: 48px;
+*/
+   margin-top: 0;
+    gap: 4px;
 }
 
 .main-content {

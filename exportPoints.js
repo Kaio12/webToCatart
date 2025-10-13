@@ -1,6 +1,6 @@
 outlets = 2;
 
-    // exporte de max vers browser les coordonnées de chaque grain
+    // export max --> browser des coordonnées de chaque grain
 function exportPoints(fileName) {
     var mubu = new MubuJS("echantillons");
     mubu.refer("echantillons"); 
