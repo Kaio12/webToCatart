@@ -29,6 +29,16 @@ export function setGrainEnvelope(attack, release) {
   if (release >= 0) GRAIN_RELEASE = release;
 }
 
+const slider = document.querySelector('#length');
+let paramLong = 0; // une variable pour jouer sur l'attaque et la longueur des grains joués
+if (slider) {
+slider.addEventListener('input', (e) => {
+  const raw = e.target.value;
+  paramLong = Number(raw) * 10 ; // entre 0 et 10
+})
+}
+
+
 //playgrain, pour jouer le grain correspondant au point PIXI sélectionné (survolé)
 export function playGrain(startMs, durationMs, useEffect = false, BufferName) {
   if(!BufferName) return;
@@ -56,13 +66,13 @@ export function playGrain(startMs, durationMs, useEffect = false, BufferName) {
   }
   
   const startSec = startMs / 1000; //conversion en s
-  const durationSec = durationMs / 1000;
+  const durationSec = (durationMs / 1000) * paramLong; // modulé par le slider
   source.start(0, startSec, durationSec);
   
   // Planification enveloppe
   const now = audioContext.currentTime;
-  let attack = GRAIN_ATTACK;
-  let release = GRAIN_RELEASE;
+  let attack = GRAIN_ATTACK * paramLong ; // modulé par le slider
+  let release = GRAIN_RELEASE * paramLong;
   const minDur = 0.002;
   const effDur = Math.max(durationSec, minDur);
   if (attack + release > effDur) {

@@ -72,6 +72,8 @@ const drawToggleButton = document.getElementById("draw-toggle");
 const addClock = document.getElementById("clock+");
 const delClock = document.getElementById("clock-");
 
+
+
 // nécessaire pour pwa
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
