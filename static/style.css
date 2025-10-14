@@ -34,7 +34,7 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 5px;
+    /* padding: 5px; */
     background-color: rgba(40, 40, 40, 0.8);
     border-top: 1px solid #444;
 }
@@ -45,7 +45,7 @@ body {
     flex-direction: column; /* Pour empiler les sliders verticalement */
     justify-content: center;
     align-items: center;
-    padding: 10px 5px;
+    /* padding: 10px 5px; */
     background-color: rgba(40, 40, 40, 0.8);
     border-left: 1px solid #444;
 }
@@ -63,16 +63,16 @@ body {
 
 /* Style pour les sliders verticaux */
 .sidebar-right input[type="range"] {
-    -webkit-appearance: slider-vertical; /* Fait le rendu vertical sur Chrome/Safari */
-    writing-mode: bt-lr; /* Standard pour l'orientation verticale */
+    writing-mode: vertical-lr; 
+    direction: rtl; /* Fait le rendu vertical sur Chrome/Safari */
     width: 20px;
     height: 180px; /* Hauteur du slider */
-    padding: 0 5px;
+    /*padding: 0 5px; */
 }
 
 /* Style des boutons */
 .sidebar-bottom button, #page-selector button {
-    padding: 8px 12px;
+    /*padding: 8px 12px; */
     border: 1px solid #555;
     background-color: #333;
     color: #eee;
@@ -86,6 +86,6 @@ body {
 
 #page-selector {
     display: flex;
-    gap: 4px;
+    gap: 1px;
 }
 

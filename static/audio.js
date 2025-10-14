@@ -30,7 +30,7 @@ export function setGrainEnvelope(attack, release) {
 }
 
 const slider = document.querySelector('#length');
-let paramLong = 0; // une variable pour jouer sur l'attaque et la longueur des grains joués
+let paramLong = 1; // une variable pour jouer sur l'attaque et la longueur des grains joués
 if (slider) {
 slider.addEventListener('input', (e) => {
   const raw = e.target.value;
